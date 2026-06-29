@@ -150,7 +150,7 @@ export const seedDatabaseIfEmpty = async () => {
       "Habilitaciones Certificadas: Un controlador solo puede ser asignado a un slot si posee la certificación correspondiente (CTE, TWR, GND, DEL, FIC) activa.",
       "Capacidad Máxima y Combinaciones Dobles: Jornada laboral máxima de 12 horas diarias. Se permiten únicamente turnos dobles en las combinaciones M+T (Mañana y Tarde) o T+N (Tarde y Noche).",
       "Sub-Posición FIC Limitada: Todos los slots de FIC (Información de Vuelo) trabajan únicamente en turnos de Mañana (M) y Tarde (T). No se permite FIC en Noche (N) ni Madrugada (A).",
-      "Alumnos y Entrenamiento (ENT): Slots marcados como ENT reservados para personal con trainingPreferred: true. Pueden tener turnos operativos normales y combinar turno ENT con operativo el mismo día sin exceder 12 horas."
+      "Alumnos y Entrenamiento (ENT): Slots marcados como ENT reservados para personal con trainingPreferred: true. Se permite entrenar en múltiples jornadas (turnos) el mismo día, sin limitaciones diarias de cantidad de alumnos entrenando, siempre que no excedan las 12 horas de jornada laboral máxima."
     ];
 
     if (!rulesSnap.exists()) {
@@ -158,8 +158,13 @@ export const seedDatabaseIfEmpty = async () => {
       await setDoc(rulesDocRef, { rules: DEFAULT_RULES });
     } else {
       const existingRules = rulesSnap.data().rules || [];
-      if (existingRules.length <= 5 || !existingRules.some(r => r.includes('FIC') && r.includes('Mañana'))) {
-        console.log('Auto-updating system rules to latest version (v13.5)...');
+      const needsUpdate = 
+        existingRules.length <= 5 || 
+        !existingRules.some(r => r.includes('FIC') && r.includes('Mañana')) ||
+        !existingRules.some(r => r.includes('múltiples jornadas') || r.includes('varias jornadas'));
+        
+      if (needsUpdate) {
+        console.log('Auto-updating system rules to latest version (v13.6)...');
         await setDoc(rulesDocRef, { rules: DEFAULT_RULES });
       }
     }

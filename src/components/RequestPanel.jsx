@@ -196,7 +196,7 @@ export default function RequestPanel({
               <option value="GND">Superficie (GND / GNT, GST, GPT)</option>
               <option value="DEL">Autorizaciones (DEL / DPT, DPR)</option>
               <option value="FIC">Información de Vuelo (FIC / FPT, FPA, FPR)</option>
-              <option value="CTE">Centro (CTE)</option>
+              <option value="CTE">Encargado de Turno (CTE)</option>
             </select>
           </div>
 

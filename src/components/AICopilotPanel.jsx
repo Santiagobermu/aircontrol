@@ -319,7 +319,7 @@ export default function AICopilotPanel({
       --- REGLAS DE ENTRENAMIENTO Y ALUMNOS (ENT) ---
       * Los slots marcados como ENT (entrenamiento) están reservados únicamente para controladores que tengan 'trainingPreferred: true'.
       * Los controladores con 'trainingPreferred: true' SÍ pueden realizar turnos operativos normales en cualquier posición que su licencia les permita.
-      * Se permite programar a un alumno un turno de entrenamiento (ENT) combinado con un turno operativo el mismo día (ej: Mañana y Tarde), siempre que no supere las 12 horas diarias y se respeten las combinaciones dobles válidas (M+T o T+N).
+      * Se permite programar a un alumno en múltiples turnos de entrenamiento (ENT) o turnos operativos el mismo día (por ejemplo, entrenar en la mañana y tarde, o combinar un turno operativo con uno de entrenamiento), sin límites diarios sobre cuántos alumnos estén entrenando ni restricciones de entrenamientos múltiples en la misma fecha, siempre que no se superen las 12 horas diarias y se respeten las combinaciones dobles válidas (M+T o T+N).
       * No existe ninguna prohibición de turnos de madrugada (A) para los alumnos.
 
       --- REGLAS DE DESCANSO Y FATIGA ---
@@ -347,12 +347,12 @@ export default function AICopilotPanel({
          * Superficie (3 slots): GND-1, GND-2, GND-3 (Habilitación GND requerida)
          * Autorizaciones (1 slot): DEL-1 (Habilitación DEL requerida)
          * Entrenamiento (1 slot): ENT-1 (Reservado únicamente para personal con 'trainingPreferred: true')
-         * Centro (0 slots): No se programa Centro en Madrugada. Asignar null.
+         * Encargado (0 slots): No se programa Encargado de Turno en Madrugada. Asignar null.
          * FIC (0 slots): No se programa FIC en Madrugada. Asignar null.
          *(Total slots en A: 8)
 
       2. Turno de Mañana (M) y Tarde (T):
-         * Centro (1 slot): CTE-1 (Habilitación CTE requerida)
+         * Encargado de Turno (1 slot): CTE-1 (Habilitación CTE requerida)
          * Torre (3 slots): TWR-1, TWR-2, TWR-3 (Habilitación TWR requerida)
          * Superficie (3 slots): GND-1, GND-2, GND-3 (Habilitación GND requerida)
          * Autorizaciones (2 slots): DEL-1, DEL-2 (Habilitación DEL requerida)
@@ -361,7 +361,7 @@ export default function AICopilotPanel({
          *(Total slots en M y T: 13)
 
       3. Turno de Noche (N):
-         * Centro (1 slot): CTE-1 (Habilitación CTE requerida)
+         * Encargado de Turno (1 slot): CTE-1 (Habilitación CTE requerida)
          * Torre (3 slots): TWR-1, TWR-2, TWR-3 (Habilitación TWR requerida)
          * Superficie (3 slots): GND-1, GND-2, GND-3 (Habilitación GND requerida)
          * Autorizaciones (2 slots): DEL-1, DEL-2 (Habilitación DEL requerida)

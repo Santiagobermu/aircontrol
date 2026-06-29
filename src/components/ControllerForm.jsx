@@ -75,7 +75,8 @@ export default function ControllerForm({ onAddController, editingController, onU
   };
 
   const skillOptions = [
-    { code: 'CTE', name: 'Centro (CTE)', description: 'Control de Ruta' },
+    { code: 'CTE', name: 'Encargado de Turno (CTE)', description: 'Supervisor de turno' },
+    { code: 'ACC', name: 'Ruta / ACC (ACC)', description: 'Control de Área' },
     { code: 'TWR', name: 'Torre (TWR)', description: 'Control de Pistas' },
     { code: 'GND', name: 'Superficie (GND)', description: 'Calles de Rodaje' },
     { code: 'DEL', name: 'Autorizaciones (DEL)', description: 'Planes de Vuelo' },

@@ -8,9 +8,12 @@ import {
   GraduationCap,
   X,
   User,
-  Trash2
+  Trash2,
+  Upload,
+  AlertCircle
 } from 'lucide-react';
-import { SHIFTS, isColombianHoliday, validateAssignment, getSlotAcronym, getSlotDescription } from '../utils/schedulerEngine';
+import * as XLSX from 'xlsx';
+import { SHIFTS, SHIFT_REQUIREMENTS, isColombianHoliday, validateAssignment, getSlotAcronym, getSlotDescription, adjustDynamicSlots } from '../utils/schedulerEngine';
 
 export default function MonthlyGrid({ 
   schedule, 
@@ -19,6 +22,7 @@ export default function MonthlyGrid({
   onUpdateController,
   onAssignController,
   onUpdateException,
+  onBulkImport,
   readOnly = false,
   userRole
 }) {
@@ -42,6 +46,477 @@ export default function MonthlyGrid({
   const [activeCell, setActiveCell] = useState(null); // { ctrl, dayStr }
   const [selectedNewSlot, setSelectedNewSlot] = useState('');
 
+  // Excel Import States
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState(null); // { assignments: [], warnings: [] }
+  const [isImporting, setIsImporting] = useState(false);
+  const [customMappings, setCustomMappings] = useState({});
+  const [unmappedTokens, setUnmappedTokens] = useState([]);
+  const [tempMappings, setTempMappings] = useState({});
+  const [tempRows, setTempRows] = useState(null);
+  const [tempDayCols, setTempDayCols] = useState(null);
+
+  const handleTempMappingChange = (token, mapping) => {
+    setTempMappings(prev => ({
+      ...prev,
+      [token]: mapping
+    }));
+  };
+
+  const applyCustomMappings = () => {
+    setCustomMappings(prev => ({
+      ...prev,
+      ...tempMappings
+    }));
+    setUnmappedTokens([]);
+    if (tempRows && tempDayCols) {
+      processRowsWithMappings(tempRows, tempDayCols, { ...customMappings, ...tempMappings });
+    }
+  };
+
+  // Mapear celdas de Excel a posición del sistema
+  const parseCellToAssignment = (cellValue) => {
+    if (!cellValue) return null;
+    const val = cellValue.trim().toUpperCase();
+    
+    if (val === 'LICR') return { exception: 'LICR' };
+    if (val === 'LICN') return { exception: 'LICN' };
+    if (val === 'MCAE') return { shift: 'M', slotKey: 'CAE-1' };
+    if (val === 'MCHEC') return { shift: 'M', slotKey: 'CHEC-1' };
+    if (val === 'TCHEC') return { shift: 'T', slotKey: 'CHEC-1' };
+    if (val === 'CMED') return { exception: 'CMED' };
+    if (val === 'SIND') return { exception: 'SIND' };
+    if (val === 'DESCANSO' || val === 'D' || val === 'DESC' || val === 'TROP') return { exception: 'DESCANSO' };
+    if (val === 'VACACIONES' || val === 'V' || val === 'VAC' || val === 'VACA') return { exception: 'VACACIONES' };
+    if (val === 'CAPACITACION' || val === 'CAP' || val === 'CAPA') return { exception: 'CAPACITACION' };
+    if (val === 'NO_OPERATIVO' || val === 'N/O') return { exception: 'NO_OPERATIVO' };
+    if (val === 'OPERATIVO' || val === '-' || val === '') return { exception: 'OPERATIVO' };
+    
+    const shift = val[0];
+    if (!['M', 'T', 'N', 'A'].includes(shift)) {
+      return null;
+    }
+    
+    const rest = val.substring(1);
+    if (rest === 'ACC') {
+      return { shift, slotKey: 'ACC-1' };
+    }
+    
+    const posLetter = rest[0];
+    const detail = rest.substring(1);
+    
+    let pos;
+    let idx = 1;
+    
+    if (posLetter === 'L') {
+      pos = 'TWR';
+      if (detail === 'NT') idx = 1;
+      else if (detail === 'ST') idx = 2;
+      else if (detail === 'PT') idx = 3;
+    } else if (posLetter === 'G') {
+      pos = 'GND';
+      if (detail === 'NT') idx = 1;
+      else if (detail === 'ST') idx = 2;
+      else if (detail === 'PT') idx = 3;
+    } else if (posLetter === 'D') {
+      pos = 'DEL';
+      if (detail === 'PT') idx = 1;
+      else if (detail === 'PR') idx = 2;
+    } else if (posLetter === 'F') {
+      pos = 'FIC';
+      if (detail === 'PT') idx = 1;
+      else if (detail === 'PR') idx = 2;
+      else if (detail === 'PA') idx = 3;
+    } else if (rest.startsWith('CTE')) {
+      pos = 'CTE';
+      idx = 1;
+    } else {
+      if (rest.startsWith('ENT')) {
+        pos = 'ENT';
+        const num = parseInt(rest.split('-')[1] || '1', 10);
+        idx = isNaN(num) ? 1 : num;
+      } else if (rest.startsWith('INS')) {
+        pos = 'INS';
+        const num = parseInt(rest.split('-')[1] || '1', 10);
+        idx = isNaN(num) ? 1 : num;
+      } else {
+        return null;
+      }
+    }
+    
+    return { shift, slotKey: `${pos}-${idx}` };
+  };
+
+  const validateParsedData = (assignments, warnings) => {
+    const tempSchedule = JSON.parse(JSON.stringify(schedule));
+    const tempExceptions = JSON.parse(JSON.stringify(exceptions));
+    
+    assignments.forEach(asg => {
+      if (asg.parsed.exception) {
+        if (!tempExceptions[asg.ctrlId]) tempExceptions[asg.ctrlId] = {};
+        tempExceptions[asg.ctrlId][asg.dateStr] = asg.parsed.exception;
+      }
+    });
+    
+    assignments.forEach(asg => {
+      if (asg.parsed.exception) return;
+      
+      const { ctrlId, ctrlName, dateStr, dayNum, cellVal, parsed } = asg;
+      const { shift, slotKey } = parsed;
+      const position = slotKey.split('-')[0];
+      
+      const ctrl = controllers.find(c => c.id === ctrlId);
+      
+      if (position === 'ENT' && !ctrl.trainingPreferred) {
+        warnings.push({
+          type: 'warning',
+          msg: `Día ${dayNum} · ${ctrlName}: Programado en ENT pero no es Alumno/Trainee.`
+        });
+      } else if (position !== 'ENT' && position !== 'INS' && position !== 'ACC' && (!ctrl.skills || !ctrl.skills.includes(position))) {
+        warnings.push({
+          type: 'warning',
+          msg: `Día ${dayNum} · ${ctrlName}: Programado en ${position} (${cellVal}) pero no está certificado.`
+        });
+      } else if (position === 'ACC' && (!ctrl.skills || !ctrl.skills.includes('ACC'))) {
+        warnings.push({
+          type: 'warning',
+          msg: `Día ${dayNum} · ${ctrlName}: Programado en ACC (${cellVal}) pero no está certificado.`
+        });
+      }
+      
+      const validation = validateAssignment(
+        ctrlId, 
+        dateStr, 
+        shift, 
+        slotKey, 
+        tempSchedule, 
+        controllers, 
+        tempExceptions, 
+        true
+      );
+      
+      if (!validation.isValid) {
+        warnings.push({
+          type: 'warning',
+          msg: `Día ${dayNum} · ${ctrlName} (${cellVal}): Conflicto de reglas - ${validation.error}`
+        });
+      }
+      
+      if (!tempSchedule[dateStr]) {
+        tempSchedule[dateStr] = { A: {}, M: {}, T: {}, N: {} };
+      }
+      if (!tempSchedule[dateStr][shift]) tempSchedule[dateStr][shift] = {};
+      tempSchedule[dateStr][shift][slotKey] = ctrlId;
+    });
+  };
+
+  const handleExcelUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        
+        if (rows.length === 0) {
+          alert('El archivo de Excel está vacío.');
+          return;
+        }
+        
+        // Buscar fila de cabecera que contenga días (1, 2, 3...)
+        let headerRowIdx = -1;
+        let dayCols = {}; // dayNum -> [colIdx1, colIdx2]
+        
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows[r];
+          let tempDayCols = {};
+          let numericIndices = [];
+          for (let c = 1; c < row.length; c++) {
+            const cellVal = parseInt(row[c], 10);
+            if (!isNaN(cellVal) && cellVal >= 1 && cellVal <= 31) {
+              tempDayCols[cellVal] = c;
+              numericIndices.push(c);
+            }
+          }
+          if (numericIndices.length >= 10) {
+            headerRowIdx = r;
+            
+            // Determinar si es de dos columnas
+            let spacingByTwo = 0;
+            for (let i = 1; i < numericIndices.length; i++) {
+              if (numericIndices[i] - numericIndices[i-1] === 2) {
+                spacingByTwo++;
+              }
+            }
+            
+            if (spacingByTwo >= 5) {
+              Object.keys(tempDayCols).forEach(dayNum => {
+                const c = tempDayCols[dayNum];
+                dayCols[dayNum] = [c - 1, c];
+              });
+            } else {
+              Object.keys(tempDayCols).forEach(dayNum => {
+                const c = tempDayCols[dayNum];
+                dayCols[dayNum] = [c];
+              });
+            }
+            break;
+          }
+        }
+        
+        if (headerRowIdx === -1) {
+          const firstRow = rows[0];
+          let colIdx = 1;
+          for (let c = 1; c < firstRow.length; c++) {
+            const num = parseInt(firstRow[c], 10);
+            if (!isNaN(num)) {
+              dayCols[num] = [c];
+            } else {
+              dayCols[colIdx++] = [c];
+            }
+          }
+          headerRowIdx = 0;
+        }
+        
+        // Escanear códigos no reconocidos
+        const scanUnmappedTokens = [];
+        
+        for (let r = headerRowIdx + 1; r < rows.length; r++) {
+          const row = rows[r];
+          if (!row || row.length === 0) continue;
+          
+          const val0 = String(row[0] || '').trim();
+          const val1 = String(row[1] || '').trim();
+          
+          const ctrl = controllers.find(c => c.name.toUpperCase() === val0.toUpperCase()) || 
+                       controllers.find(c => c.name.toUpperCase() === val1.toUpperCase());
+          if (!ctrl) continue;
+          
+          Object.keys(dayCols).forEach(dayNum => {
+            const cols = dayCols[dayNum];
+            cols.forEach(colIdx => {
+              const cellVal = String(row[colIdx] || '').trim();
+              if (!cellVal || cellVal === '-') return;
+              
+              const parts = cellVal.split(new RegExp('[/,+]'));
+              parts.forEach(part => {
+                const token = part.trim();
+                if (!token || token === '-') return;
+                
+                const standard = parseCellToAssignment(token);
+                const existingMapping = customMappings[token];
+                if (!standard && !existingMapping && !scanUnmappedTokens.includes(token)) {
+                  scanUnmappedTokens.push(token);
+                }
+              });
+            });
+          });
+        }
+        
+        setTempRows(rows);
+        setTempDayCols(dayCols);
+        
+        if (scanUnmappedTokens.length > 0) {
+          const initialTemp = {};
+          scanUnmappedTokens.forEach(t => {
+            initialTemp[t] = { type: 'ACC' };
+          });
+          setTempMappings(initialTemp);
+          setUnmappedTokens(scanUnmappedTokens);
+        } else {
+          processRowsWithMappings(rows, dayCols, customMappings);
+        }
+        
+      } catch (err) {
+        console.error(err);
+        alert('Error al leer el archivo Excel. Verifica el formato.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const processRowsWithMappings = (rows, dayCols, mappings) => {
+    const parsedAssignments = [];
+    const warnings = [];
+    
+    let headerRowIdx = -1;
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r];
+      let count = 0;
+      for (let c = 1; c < row.length; c++) {
+        const val = parseInt(row[c], 10);
+        if (!isNaN(val) && val >= 1 && val <= 31) count++;
+      }
+      if (count >= 10) {
+        headerRowIdx = r;
+        break;
+      }
+    }
+    if (headerRowIdx === -1) headerRowIdx = 0;
+
+    const parseToken = (token) => {
+      const custom = mappings[token];
+      if (custom) {
+        if (custom.type === 'SKIP') return null;
+        if (custom.type === 'SPEC') return { exception: custom.exception };
+        if (custom.type === 'ACC') {
+          const shift = ['M', 'T', 'N', 'A'].includes(token[0]) ? token[0] : 'M';
+          return { shift, slotKey: 'ACC-1' };
+        }
+        if (custom.type === 'OP') {
+          const [shift, slotKey] = custom.position.split('|');
+          return { shift, slotKey };
+        }
+      }
+      return parseCellToAssignment(token);
+    };
+
+    for (let r = headerRowIdx + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || row.length === 0) continue;
+      
+      const val0 = String(row[0] || '').trim();
+      const val1 = String(row[1] || '').trim();
+      
+      let ctrl = controllers.find(c => c.name.toUpperCase() === val0.toUpperCase());
+      let sigla = val0;
+      if (!ctrl) {
+        ctrl = controllers.find(c => c.name.toUpperCase() === val1.toUpperCase());
+        sigla = val1;
+      }
+      
+      if (!ctrl) {
+        const isLikeSigla = /^[A-Z]{2,4}$/i.test(val0) || /^[A-Z]{2,4}$/i.test(val1);
+        if (isLikeSigla) {
+          warnings.push({
+            type: 'danger',
+            msg: `Controlador con siglas "${val0 || val1}" (fila ${r + 1}) no está registrado en el sistema. Se omitieron sus asignaciones.`
+          });
+        }
+        continue;
+      }
+      
+      Object.keys(dayCols).forEach(dayNum => {
+        const cols = dayCols[dayNum];
+        const dayStr = String(dayNum).padStart(2, '0');
+        const monthStr = String(currentMonth + 1).padStart(2, '0');
+        const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
+        
+        cols.forEach(colIdx => {
+          const cellVal = String(row[colIdx] || '').trim();
+          if (!cellVal || cellVal === '-') return;
+          
+          const parts = cellVal.split(new RegExp('[/,+]'));
+          parts.forEach(part => {
+            const token = part.trim();
+            if (!token || token === '-') return;
+            
+            const parsed = parseToken(token);
+            if (!parsed) {
+              const custom = mappings[token];
+              if (custom && custom.type === 'SKIP') return;
+              
+              warnings.push({
+                type: 'warning',
+                msg: `Celda [Día ${dayNum}, Ctrl ${sigla}]: Valor "${token}" no reconocido. Se omitió.`
+              });
+              return;
+            }
+            
+            parsedAssignments.push({
+              ctrlId: ctrl.id,
+              ctrlName: ctrl.name,
+              dateStr,
+              dayNum,
+              cellVal: token,
+              parsed
+            });
+          });
+        });
+      });
+    }
+    
+    validateParsedData(parsedAssignments, warnings);
+    
+    setImportPreview({
+      assignments: parsedAssignments,
+      warnings
+    });
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importPreview || importPreview.assignments.length === 0) return;
+    
+    setIsImporting(true);
+    
+    const scheduleUpdates = {};
+    const exceptionUpdates = {};
+    
+    importPreview.assignments.forEach(asg => {
+      const { ctrlId, dateStr, parsed } = asg;
+      
+      if (parsed.exception) {
+        if (!exceptionUpdates[ctrlId]) exceptionUpdates[ctrlId] = {};
+        exceptionUpdates[ctrlId][dateStr] = parsed.exception;
+        
+        if (parsed.exception !== 'OPERATIVO') {
+          if (!scheduleUpdates[dateStr]) {
+            scheduleUpdates[dateStr] = schedule[dateStr] ? JSON.parse(JSON.stringify(schedule[dateStr])) : { A: {}, M: {}, T: {}, N: {} };
+          }
+          const daySched = scheduleUpdates[dateStr];
+          SHIFTS.forEach(s => {
+            if (daySched[s]) {
+              Object.keys(daySched[s]).forEach(slotKey => {
+                if (daySched[s][slotKey] === ctrlId) {
+                  daySched[s][slotKey] = null;
+                }
+              });
+            }
+          });
+        }
+      } else {
+        const { shift, slotKey } = parsed;
+        
+        if (!scheduleUpdates[dateStr]) {
+          scheduleUpdates[dateStr] = schedule[dateStr] ? JSON.parse(JSON.stringify(schedule[dateStr])) : { A: {}, M: {}, T: {}, N: {} };
+        }
+        
+        const daySched = scheduleUpdates[dateStr];
+        if (!daySched[shift]) daySched[shift] = {};
+        
+        daySched[shift][slotKey] = ctrlId;
+      }
+    });
+    
+    Object.keys(scheduleUpdates).forEach(dateStr => {
+      const daySched = scheduleUpdates[dateStr];
+      SHIFTS.forEach(shift => {
+        if (daySched[shift]) {
+          daySched[shift] = adjustDynamicSlots(daySched[shift], 'ENT', shift);
+          daySched[shift] = adjustDynamicSlots(daySched[shift], 'INS', shift);
+          daySched[shift] = adjustDynamicSlots(daySched[shift], 'CAE', shift);
+          daySched[shift] = adjustDynamicSlots(daySched[shift], 'CHEC', shift);
+        }
+      });
+    });
+    
+    try {
+      await onBulkImport(scheduleUpdates, exceptionUpdates);
+      setIsImportModalOpen(false);
+      setImportPreview(null);
+    } catch (err) {
+      console.error(err);
+      alert('Ocurrió un error al guardar los datos importados.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const getPositionColorClass = (pos) => {
     switch (pos) {
       case 'CTE': return 'cyan';
@@ -49,6 +524,10 @@ export default function MonthlyGrid({
       case 'GND': return 'emerald';
       case 'DEL': return 'purple';
       case 'FIC': return 'fic';
+      case 'INS': return 'ins';
+      case 'ACC': return 'acc';
+      case 'CAE': return 'mcae';
+      case 'CHEC': return 'mchec';
       default: return 'muted';
     }
   };
@@ -202,6 +681,10 @@ export default function MonthlyGrid({
     if (dayExc === 'CAPACITACION') return { type: 'CAPACITACION', label: 'C', color: 'var(--text-muted)' };
     if (dayExc === 'NO_OPERATIVO') return { type: 'NO_OPERATIVO', label: 'N/O', color: 'var(--status-danger)', details: 'Inhabilitado como NO OPERATIVO' };
     if (dayExc === 'DESCANSO') return { type: 'DESCANSO', label: 'D', color: 'rgba(255, 255, 255, 0.05)' };
+    if (dayExc === 'LICR') return { type: 'LICR', label: 'LR', color: 'var(--accent-purple)', details: 'Licencia Remunerada' };
+    if (dayExc === 'LICN') return { type: 'LICN', label: 'LN', color: 'var(--accent-fic)', details: 'Licencia No Remunerada' };
+    if (dayExc === 'CMED') return { type: 'CMED', label: 'MED', color: 'var(--accent-cmed)', details: 'Chequeo Médico' };
+    if (dayExc === 'SIND') return { type: 'SIND', label: 'SIND', color: 'var(--accent-sind)', details: 'Sindicato' };
 
     // Buscar asignaciones en los turnos
     const activeShifts = [];
@@ -232,6 +715,17 @@ export default function MonthlyGrid({
       };
     }
 
+    // Si tiene instrucción (INS)
+    const hasInstruction = assignedSlots.some(s => s.slotKey.startsWith('INS'));
+    if (hasInstruction && activeShifts.length === 1) {
+      return { 
+        type: 'INSTRUCCION', 
+        label: 'I', 
+        color: 'var(--accent-ins)',
+        details: `Instrucción hoy en turno ${activeShifts[0]}`
+      };
+    }
+
     if (activeShifts.length === 2) {
       // Turno Doble
       const isMT = activeShifts.includes('M') && activeShifts.includes('T');
@@ -239,6 +733,7 @@ export default function MonthlyGrid({
       
       let label = isMT ? 'MT' : isTN ? 'TN' : '2T';
       if (hasTraining) label += 'e';
+      if (hasInstruction) label += 'i';
       
       const slotsDesc = assignedSlots.map(s => `${s.shift}: ${s.slotKey.split('-')[0]}`).join(', ');
 
@@ -327,6 +822,16 @@ export default function MonthlyGrid({
               <ChevronRight size={16} />
             </button>
           </div>
+          {!isGridReadOnly && (
+            <button 
+              onClick={() => setIsImportModalOpen(true)}
+              className="btn btn-primary" 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 1rem', fontSize: '0.8rem' }}
+            >
+              <Upload size={16} />
+              <span>Importar Excel</span>
+            </button>
+          )}
         </div>
 
         {/* Búsqueda y Filtros Rápidos */}
@@ -639,8 +1144,20 @@ export default function MonthlyGrid({
           <span>Entrenamiento</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: 'var(--accent-ins)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.6rem' }}>I</span>
+          <span>Instrucción</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: 'var(--status-warning)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.6rem' }}>V</span>
           <span>Vacaciones</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: 'var(--accent-purple)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.55rem' }}>LR</span>
+          <span>Licencia Remunerada</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: 'var(--accent-fic)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.55rem' }}>LN</span>
+          <span>Licencia No Remunerada</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.6rem' }}>C</span>
@@ -872,7 +1389,7 @@ export default function MonthlyGrid({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <strong style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>1. Estado Especial de Asistencia:</strong>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                  {['OPERATIVO', 'VACACIONES', 'CAPACITACION', 'NO_OPERATIVO', 'DESCANSO'].map(status => {
+                  {['OPERATIVO', 'VACACIONES', 'CAPACITACION', 'NO_OPERATIVO', 'DESCANSO', 'LICR', 'LICN', 'CMED', 'SIND'].map(status => {
                     const isActive = currentException === status;
                     let activeBg = 'var(--bg-tertiary)';
                     let activeBorder = 'rgba(255,255,255,0.05)';
@@ -885,7 +1402,23 @@ export default function MonthlyGrid({
                       if (status === 'CAPACITACION') { activeBg = 'rgba(6, 182, 212, 0.15)'; activeBorder = 'var(--accent-cyan)'; }
                       if (status === 'NO_OPERATIVO') { activeBg = 'rgba(244, 63, 94, 0.15)'; activeBorder = 'var(--status-danger)'; }
                       if (status === 'DESCANSO') { activeBg = 'rgba(255, 255, 255, 0.08)'; activeBorder = 'var(--text-muted)'; }
+                      if (status === 'LICR') { activeBg = 'rgba(168, 85, 247, 0.15)'; activeBorder = 'var(--accent-purple)'; }
+                      if (status === 'LICN') { activeBg = 'rgba(245, 158, 11, 0.15)'; activeBorder = 'var(--accent-fic)'; }
+                      if (status === 'CMED') { activeBg = 'rgba(239, 68, 68, 0.15)'; activeBorder = 'var(--accent-cmed)'; }
+                      if (status === 'SIND') { activeBg = 'rgba(6, 182, 212, 0.15)'; activeBorder = 'var(--accent-sind)'; }
                     }
+
+                    const labelMap = {
+                      OPERATIVO: 'Operativo',
+                      VACACIONES: 'Vacaciones',
+                      CAPACITACION: 'Capacitación',
+                      NO_OPERATIVO: 'No Operativo',
+                      DESCANSO: 'Descanso',
+                      LICR: 'Lic. Remunerada (LICR)',
+                      LICN: 'Lic. No Remunerada (LICN)',
+                      CMED: 'Chequeo Médico (CMED)',
+                      SIND: 'Sindicato (SIND)'
+                    };
 
                     return (
                       <button
@@ -905,7 +1438,7 @@ export default function MonthlyGrid({
                           transition: 'var(--transition-fast)'
                         }}
                       >
-                        {status === 'CAPACITACION' ? 'CAPACITACIÓN' : status === 'NO_OPERATIVO' ? 'NO OPERATIVO' : status}
+                        {labelMap[status] || status}
                       </button>
                     );
                   })}
@@ -929,6 +1462,7 @@ export default function MonthlyGrid({
                     {currentAssignments.map(({ shift, slotKey }) => {
                       const position = slotKey.split('-')[0];
                       const isTraining = position === 'ENT';
+                      const isInstruction = position === 'INS';
                       return (
                         <div 
                           key={`${shift}-${slotKey}`}
@@ -948,14 +1482,14 @@ export default function MonthlyGrid({
                               borderRadius: '4px',
                               fontSize: '0.65rem',
                               fontWeight: '800',
-                              backgroundColor: isTraining ? 'rgba(99, 102, 241, 0.1)' : `rgba(255, 255, 255, 0.05)`,
-                              color: isTraining ? 'var(--accent-indigo)' : `var(--accent-${getPositionColorClass(position)})`,
-                              border: isTraining ? '1px solid rgba(99, 102, 241, 0.2)' : `1px solid rgba(255, 255, 255, 0.1)`
+                              backgroundColor: isTraining ? 'rgba(99, 102, 241, 0.1)' : isInstruction ? 'rgba(236, 72, 153, 0.1)' : `rgba(255, 255, 255, 0.05)`,
+                              color: isTraining ? 'var(--accent-indigo)' : isInstruction ? 'var(--accent-ins)' : `var(--accent-${getPositionColorClass(position)})`,
+                              border: isTraining ? '1px solid rgba(99, 102, 241, 0.2)' : isInstruction ? '1px solid rgba(236, 72, 153, 0.2)' : `1px solid rgba(255, 255, 255, 0.1)`
                             }}>
                               {shift}
                             </span>
                             <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>
-                              {isTraining ? 'Entrenamiento' : getSlotDescription(slotKey)} ({getSlotAcronym(slotKey)})
+                              {isTraining ? 'Entrenamiento' : isInstruction ? 'Instrucción' : getSlotDescription(slotKey, shift)} ({getSlotAcronym(slotKey, shift)})
                             </span>
                           </div>
                           <button
@@ -1006,14 +1540,17 @@ export default function MonthlyGrid({
                         {vacantValidSlots.map(({ shift, slotKey }) => {
                           const position = slotKey.split('-')[0];
                           const isTraining = position === 'ENT';
+                          const isInstruction = position === 'INS';
                           const shiftLabel = 
                             shift === 'A' ? 'Madrugada (A)' :
                             shift === 'M' ? 'Mañana (M)' :
                             shift === 'T' ? 'Tarde (T)' : 'Noche (N)';
                           
+                          const slotDesc = isTraining ? 'Entrenamiento' : isInstruction ? 'Instrucción' : getSlotDescription(slotKey, shift);
+                          
                           return (
                             <option key={`${shift}|${slotKey}`} value={`${shift}|${slotKey}`}>
-                              {shiftLabel} - {isTraining ? 'Entrenamiento' : getSlotDescription(slotKey)} ({getSlotAcronym(slotKey)})
+                              {shiftLabel} - {slotDesc} ({getSlotAcronym(slotKey, shift)})
                             </option>
                           );
                         })}
@@ -1046,6 +1583,294 @@ export default function MonthlyGrid({
           </div>
         );
       })()}
+
+      {/* Modal de Importación desde Excel */}
+      {isImportModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          <div className="glass-panel" style={{
+            width: '90%',
+            maxWidth: '650px',
+            padding: '2rem',
+            borderRadius: '16px',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            position: 'relative',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <button
+              onClick={() => {
+                setIsImportModalOpen(false);
+                setImportPreview(null);
+              }}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
+              <Upload size={22} style={{ color: 'var(--accent-cyan)' }} />
+              <span>Importar Roster de Excel ({monthNames[currentMonth]} {currentYear})</span>
+            </h3>
+
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+              <p style={{ margin: '0 0 0.5rem 0' }}>
+                Sube un archivo de Excel con formato <strong>Matriz (Opción B)</strong> para cargar de forma masiva los turnos del mes seleccionado:
+              </p>
+              <ul style={{ paddingLeft: '1.2rem', margin: '0 0 1rem 0' }}>
+                <li>La primera fila del archivo debe contener los días del mes (1 al 31).</li>
+                <li>La primera columna debe contener las siglas (firmas) de los controladores (ej: <code>JZA</code>, <code>GMB</code>).</li>
+                <li>Los códigos de turno deben seguir el estándar: <strong>Jornada + Posición</strong> (ej. <code>MLNT</code> = Mañana TWR Norte, <code>TGST</code> = Tarde GND Sur, <code>MACC</code> = Mañana ACC, <code>LICR</code> = Lic. Remunerada, <code>D</code> = Descanso).</li>
+                <li>Si un controlador tiene doble turno en el mismo día, sepáralos con una barra inclinada (ej: <code>MLNT / TGST</code>).</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label htmlFor="excel-file-input" style={{ fontSize: '0.85rem', fontWeight: '700' }}>Selecciona archivo de Excel (.xlsx, .xls)</label>
+              <input
+                id="excel-file-input"
+                type="file"
+                accept=".xlsx, .xls"
+                className="form-input"
+                onChange={handleExcelUpload}
+                style={{ padding: '0.5rem' }}
+              />
+            </div>
+
+            {unmappedTokens.length > 0 ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                padding: '1.25rem',
+                borderRadius: '12px',
+                border: '1px solid var(--color-border)'
+              }}>
+                <h4 style={{ margin: 0, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
+                  <AlertCircle size={18} />
+                  <span>Códigos no reconocidos encontrados ({unmappedTokens.length})</span>
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  Se encontraron códigos en el Excel que no corresponden a posiciones estándar. Por favor, selecciona cómo deseas procesar cada uno:
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  marginTop: '0.5rem',
+                  maxHeight: '250px',
+                  overflowY: 'auto',
+                  paddingRight: '0.5rem'
+                }}>
+                  {unmappedTokens.map(token => {
+                    const currentMapping = tempMappings[token] || { type: 'ACC' };
+                    return (
+                      <div key={token} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem',
+                        padding: '0.75rem',
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: '700', fontSize: '0.8rem', color: 'white' }}>
+                            Código: <code style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.1rem 0.4rem', borderRadius: '4px', color: 'var(--accent-cyan)' }}>{token}</code>
+                          </span>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                          <button
+                            type="button"
+                            className={`btn ${currentMapping.type === 'ACC' ? 'btn-primary' : 'btn-secondary'}`}
+                            onClick={() => handleTempMappingChange(token, { type: 'ACC' })}
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}
+                          >
+                            Categoría ACC
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn ${currentMapping.type === 'OP' ? 'btn-primary' : 'btn-secondary'}`}
+                            onClick={() => handleTempMappingChange(token, { type: 'OP', position: 'M|TWR-1' })}
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}
+                          >
+                            Turno Operativo
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn ${currentMapping.type === 'SPEC' ? 'btn-primary' : 'btn-secondary'}`}
+                            onClick={() => handleTempMappingChange(token, { type: 'SPEC', exception: 'DESCANSO' })}
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}
+                          >
+                            Turno Especial / Licencia
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn ${currentMapping.type === 'SKIP' ? 'btn-primary' : 'btn-secondary'}`}
+                            onClick={() => handleTempMappingChange(token, { type: 'SKIP' })}
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}
+                          >
+                            Ignorar / Omitir
+                          </button>
+                        </div>
+                        
+                        {currentMapping.type === 'OP' && (
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Asignar a posición:</span>
+                            <select
+                              value={currentMapping.position || 'M|TWR-1'}
+                              onChange={(e) => handleTempMappingChange(token, { type: 'OP', position: e.target.value })}
+                              className="form-input"
+                              style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem', width: 'auto', height: 'auto' }}
+                            >
+                              {SHIFTS.map(s => {
+                                const req = SHIFT_REQUIREMENTS[s];
+                                return Object.keys(req).flatMap(pos => {
+                                  const count = req[pos];
+                                  const list = [];
+                                  for (let i = 1; i <= count; i++) {
+                                    list.push({ shift: s, slotKey: `${pos}-${i}` });
+                                  }
+                                  return list;
+                                }).map(({ shift, slotKey }) => {
+                                  const label = shift === 'A' ? 'Madrugada' : shift === 'M' ? 'Mañana' : shift === 'T' ? 'Tarde' : 'Noche';
+                                  return (
+                                    <option key={`${shift}|${slotKey}`} value={`${shift}|${slotKey}`}>
+                                      {label} - {getSlotDescription(slotKey, shift)} ({getSlotAcronym(slotKey, shift)})
+                                    </option>
+                                  );
+                                });
+                              })}
+                            </select>
+                          </div>
+                        )}
+                        
+                        {currentMapping.type === 'SPEC' && (
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Asignar a estado:</span>
+                            <select
+                              value={currentMapping.exception || 'DESCANSO'}
+                              onChange={(e) => handleTempMappingChange(token, { type: 'SPEC', exception: e.target.value })}
+                              className="form-input"
+                              style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem', width: 'auto', height: 'auto' }}
+                            >
+                              <option value="DESCANSO">Descanso / Receso Operativo (D)</option>
+                              <option value="VACACIONES">Vacaciones (V)</option>
+                              <option value="CAPACITACION">Capacitación (C)</option>
+                              <option value="NO_OPERATIVO">No Operativo (N/O)</option>
+                              <option value="LICR">Licencia Remunerada (LICR)</option>
+                              <option value="LICN">Licencia No Remunerada (LICN)</option>
+                              <option value="CMED">Chequeo Médico (CMED)</option>
+                              <option value="SIND">Sindicato (SIND)</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={applyCustomMappings}
+                    style={{ padding: '0.4rem 1.5rem', fontSize: '0.8rem' }}
+                  >
+                    Aplicar Mapeo y Continuar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {importPreview && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: '700' }}>
+                      <span>Asignaciones encontradas: {importPreview.assignments.length}</span>
+                      <span style={{ color: importPreview.warnings.length > 0 ? 'var(--status-warning)' : 'var(--status-success)' }}>
+                        Advertencias: {importPreview.warnings.length}
+                      </span>
+                    </div>
+
+                    {importPreview.warnings.length > 0 && (
+                      <div style={{
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '8px',
+                        padding: '0.75rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.4rem',
+                        fontSize: '0.75rem'
+                      }}>
+                        {importPreview.warnings.map((warn, index) => (
+                          <div key={index} style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.4rem',
+                            color: warn.type === 'danger' ? 'var(--status-danger)' : 'var(--status-warning)'
+                          }}>
+                            <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '0.05rem' }} />
+                            <span>{warn.msg}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={isImporting}
+                    onClick={() => {
+                      setIsImportModalOpen(false);
+                      setImportPreview(null);
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={isImporting || !importPreview || importPreview.assignments.length === 0}
+                    onClick={handleConfirmImport}
+                  >
+                    {isImporting ? 'Importando...' : 'Confirmar Importación'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

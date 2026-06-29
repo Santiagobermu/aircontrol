@@ -11,12 +11,24 @@
   --color-border: hsla(220, 40%, 20%, 0.6);
   --color-border-glow: hsla(188, 86%, 53%, 0.15);
   
-  /* Colores de Acento / Estados ATC */
   --accent-cyan: hsl(188, 86%, 53%);     /* CTE - Centro de Control / Radar */
   --accent-indigo: hsl(239, 84%, 67%);   /* TWR - Torre */
   --accent-emerald: hsl(160, 84%, 39%);  /* GND - Superficie / Operativo */
   --accent-purple: hsl(271, 91%, 65%);   /* DEL - Autorizaciones */
   --accent-fic: hsl(35, 92%, 50%);       /* FIC - Información de Vuelo */
+  --accent-ins: hsl(330, 85%, 60%);      /* INS - Instrucción */
+  --accent-acc: hsl(200, 95%, 48%);      /* ACC - Ruta / Área */
+  --accent-mcae: hsl(280, 85%, 65%);     /* MCAE - Capacitación Especial */
+  --accent-mchec: hsl(340, 85%, 65%);    /* MCHEC / TCHEC - Chequeo */
+  --accent-cmed: hsl(15, 90%, 55%);      /* CMED - Chequeo Médico */
+  --accent-sind: hsl(120, 80%, 45%);     /* SIND - Sindicato */
+  
+  /* Alias de colores de acento para compatibilidad con nombres de posición */
+  --accent-cte: var(--accent-cyan);
+  --accent-twr: var(--accent-indigo);
+  --accent-gnd: var(--accent-emerald);
+  --accent-del: var(--accent-purple);
+  --accent-acc: var(--accent-acc);
   
   /* Estados de validación */
   --status-success: hsl(160, 84%, 39%);
@@ -708,6 +720,30 @@ input:checked + .skill-checkbox-inner .skill-abbr {
   background-color: rgba(245, 158, 11, 0.08);
   border-color: rgba(245, 158, 11, 0.15);
   color: var(--accent-fic);
+}
+
+.skill-chip.ins {
+  background-color: rgba(236, 72, 153, 0.08);
+  border-color: rgba(236, 72, 153, 0.15);
+  color: var(--accent-ins);
+}
+
+.skill-chip.acc {
+  background-color: rgba(14, 165, 233, 0.08);
+  border-color: rgba(14, 165, 233, 0.15);
+  color: var(--accent-acc);
+}
+
+.skill-chip.mcae {
+  background-color: rgba(168, 85, 247, 0.08);
+  border-color: rgba(168, 85, 247, 0.15);
+  color: var(--accent-mcae);
+}
+
+.skill-chip.mchec {
+  background-color: rgba(236, 72, 153, 0.08);
+  border-color: rgba(236, 72, 153, 0.15);
+  color: var(--accent-mchec);
 }
 
 .controller-footer {

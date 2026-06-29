@@ -8,10 +8,10 @@ export const SHIFTS = ['A', 'M', 'T', 'N'];
 
 // Estructura de requerimientos de slots por turno y posición (Se añade ENT-1 para entrenamiento y FIC-3 para M y T)
 export const SHIFT_REQUIREMENTS = {
-  A: { CTE: 0, TWR: 3, GND: 3, DEL: 1, ENT: 1 }, // A: 7 op + 1 ent = 8 slots
-  M: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3, ENT: 1 }, // M: 12 op + 1 ent = 13 slots
-  T: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3, ENT: 1 }, // T: 12 op + 1 ent = 13 slots
-  N: { CTE: 1, TWR: 3, GND: 3, DEL: 2, ENT: 1 }  // N: 9 op + 1 ent = 10 slots
+  A: { CTE: 0, TWR: 3, GND: 3, DEL: 1, ENT: 1, ACC: 1 },
+  M: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3, ENT: 1, INS: 1, CAE: 1, CHEC: 1, ACC: 1 },
+  T: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3, ENT: 1, INS: 1, CHEC: 1, ACC: 1 },
+  N: { CTE: 1, TWR: 3, GND: 3, DEL: 2, ENT: 1, ACC: 1 }
 };
 
 // Fecha ancla para cálculo de desfase rotativo de 6 días (Lunes 2026-05-25)
@@ -20,8 +20,18 @@ const ANCHOR_DATE_STR = '2026-05-25';
 /**
  * Retorna la sigla oficial de la sub-posición a partir del slotKey (ej. 'TWR-1' -> 'LNT')
  */
-export const getSlotAcronym = (slotKey) => {
+export const getSlotAcronym = (slotKey, shift) => {
   if (!slotKey) return '';
+  const pos = slotKey.split('-')[0];
+  if (pos === 'ACC') {
+    return `${shift || ''}ACC`;
+  }
+  if (pos === 'CAE') {
+    return 'MCAE';
+  }
+  if (pos === 'CHEC') {
+    return `${shift || ''}CHEC`;
+  }
   switch (slotKey) {
     case 'TWR-1': return 'LNT';
     case 'TWR-2': return 'LST';
@@ -44,8 +54,20 @@ export const getSlotAcronym = (slotKey) => {
 /**
  * Retorna la descripción operativa en Eldorado a partir del slotKey (ej. 'TWR-1' -> 'Torre Norte')
  */
-export const getSlotDescription = (slotKey) => {
+export const getSlotDescription = (slotKey, shift) => {
   if (!slotKey) return '';
+  if (slotKey.startsWith('ENT-')) return 'Entrenamiento Alumno';
+  if (slotKey.startsWith('INS-')) return 'Instrucción';
+  const pos = slotKey.split('-')[0];
+  if (pos === 'CAE') return 'Capacitación Especial';
+  if (pos === 'CHEC') return 'Chequeo';
+  if (pos === 'ACC') {
+    const shiftName = 
+      shift === 'A' ? 'Madrugada' :
+      shift === 'M' ? 'Mañana' :
+      shift === 'T' ? 'Tarde' : 'Noche';
+    return `Centro Control Área - ${shiftName} (${shift || ''}ACC)`;
+  }
   switch (slotKey) {
     case 'TWR-1': return 'Torre Norte';
     case 'TWR-2': return 'Torre Sur';
@@ -58,8 +80,7 @@ export const getSlotDescription = (slotKey) => {
     case 'FIC-1': return 'FIC Titular';
     case 'FIC-2': return 'FIC Apoyo';
     case 'FIC-3': return 'FIC Reserva';
-    case 'CTE-1': return 'Centro Titular';
-    case 'ENT-1': return 'Entrenamiento Alumno';
+    case 'CTE-1': return 'Encargado de Turno';
     default: {
       const parts = slotKey.split('-');
       return `${parts[0]} ${parts[1] || ''}`;
@@ -240,6 +261,50 @@ export const getSequenceDayIndex = (controllerIndex, dateStr) => {
 };
 
 /**
+ * Ajusta los slots dinámicos (ENT o INS) para que sean consecutivos (PFX-1, PFX-2, etc.)
+ * y que siempre haya exactamente un slot vacío al final (si el turno lo permite o si ya hay asignaciones).
+ */
+export const adjustDynamicSlots = (shiftSchedule, prefix, shift) => {
+  if (!shiftSchedule) return {};
+  
+  const newShiftSchedule = { ...shiftSchedule };
+
+  // Obtener todas las llaves de slots del prefijo (ej. 'ENT-' o 'INS-')
+  const keys = Object.keys(newShiftSchedule)
+    .filter(k => k.startsWith(`${prefix}-`))
+    .sort((a, b) => {
+      const numA = parseInt(a.split('-')[1], 10);
+      const numB = parseInt(b.split('-')[1], 10);
+      return numA - numB;
+    });
+    
+  // Filtrar las que tienen controladores asignados (no null)
+  const assignedKeys = keys.filter(k => newShiftSchedule[k] !== null);
+  
+  // Eliminar todas las llaves viejas
+  keys.forEach(k => {
+    delete newShiftSchedule[k];
+  });
+  
+  // Re-insertar las asignadas ordenadamente
+  assignedKeys.forEach((oldKey, idx) => {
+    newShiftSchedule[`${prefix}-${idx + 1}`] = shiftSchedule[oldKey];
+  });
+  
+  // Determinar si debemos agregar el primer slot vacío
+  const shouldHaveAtLeastOne = (prefix === 'ENT') || 
+                               (prefix === 'INS' && (shift === 'M' || shift === 'T')) ||
+                               (prefix === 'CAE' && shift === 'M') ||
+                               (prefix === 'CHEC' && (shift === 'M' || shift === 'T'));
+  
+  if (assignedKeys.length > 0 || shouldHaveAtLeastOne) {
+    newShiftSchedule[`${prefix}-${assignedKeys.length + 1}`] = null;
+  }
+  
+  return newShiftSchedule;
+};
+
+/**
  * Inicializa un cuadrante vacío para una fecha específica.
  */
 export const createEmptyDaySchedule = (dateStr) => {
@@ -275,28 +340,46 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
 
   const position = targetSlot.split('-')[0]; // Extrae 'CTE', 'TWR', 'ENT', etc.
 
-  // 1. Validar Habilidad / Certificación de la Posición o Autorización de Entrenamiento (ENT)
+  // Validar que la posición INS solo se programe en Mañana (M) o Tarde (T)
+  if (position === 'INS' && targetShift !== 'M' && targetShift !== 'T') {
+    return { isValid: false, error: `La posición de Instrucción (INS) solo se permite en jornadas de Mañana (M) o Tarde (T).` };
+  }
+
+  // Validar que la posición CAE solo se programe en Mañana (M)
+  if (position === 'CAE' && targetShift !== 'M') {
+    return { isValid: false, error: `La posición de Capacitación Especial (CAE) solo se permite en la jornada de Mañana (M).` };
+  }
+
+  // Validar que la posición CHEC solo se programe en Mañana (M) o Tarde (T)
+  if (position === 'CHEC' && targetShift !== 'M' && targetShift !== 'T') {
+    return { isValid: false, error: `La posición de Chequeo (CHEC) solo se permite en las jornadas de Mañana (M) o Tarde (T).` };
+  }
+
+  // 1. Validar Habilidad / Certificación de la Posición
   if (position === 'ENT') {
     if (!controller.trainingPreferred) {
       return { isValid: false, error: `${controller.name} no está seleccionado para entrenamiento (no es Alumno).` };
     }
+  } else if (position === 'INS' || position === 'CAE' || position === 'CHEC') {
+    // Cualquier controlador puede recibir la posición, por lo tanto no hay validación
   } else if (!controller.skills || !controller.skills.includes(position)) {
     return { isValid: false, error: `${controller.name} no está certificado para la posición ${position}.` };
   }
 
-  // 2. Validar Estados Especiales de la Fecha (Vacaciones, Capacitación, Inoperatividad)
+  // 2. Validar Estados Especiales de la Fecha (Vacaciones, Capacitación, Inoperatividad, Licencias)
   const dateException = exceptions[controllerId]?.[dateStr] || 'OPERATIVO';
-  if (dateException === 'VACACIONES') {
-    return { isValid: false, error: `${controller.name} está en VACACIONES el día ${dateStr}.` };
-  }
-  if (dateException === 'CAPACITACION') {
-    return { isValid: false, error: `${controller.name} está en CAPACITACIÓN el día ${dateStr}.` };
-  }
-  if (dateException === 'NO_OPERATIVO') {
-    return { isValid: false, error: `${controller.name} está marcado como NO OPERATIVO el día ${dateStr}.` };
-  }
-  if (dateException === 'DESCANSO') {
-    return { isValid: false, error: `${controller.name} tiene un DESCANSO programado el día ${dateStr}.` };
+  if (dateException !== 'OPERATIVO') {
+    let errorMsg = `${controller.name} tiene un estado especial de ${dateException} el día ${dateStr}.`;
+    if (dateException === 'VACACIONES') errorMsg = `${controller.name} está en VACACIONES el día ${dateStr}.`;
+    else if (dateException === 'CAPACITACION') errorMsg = `${controller.name} está en CAPACITACIÓN el día ${dateStr}.`;
+    else if (dateException === 'NO_OPERATIVO') errorMsg = `${controller.name} está marcado como NO OPERATIVO el día ${dateStr}.`;
+    else if (dateException === 'DESCANSO') errorMsg = `${controller.name} tiene un DESCANSO programado el día ${dateStr}.`;
+    else if (dateException === 'LICR') errorMsg = `${controller.name} tiene una Licencia Remunerada (LICR) el día ${dateStr}.`;
+    else if (dateException === 'LICN') errorMsg = `${controller.name} tiene una Licencia No Remunerada (LICN) el día ${dateStr}.`;
+    else if (dateException === 'CMED') errorMsg = `${controller.name} tiene Chequeo Médico (CMED) el día ${dateStr}.`;
+    else if (dateException === 'SIND') errorMsg = `${controller.name} tiene Sindicato (SIND) el día ${dateStr}.`;
+    
+    return { isValid: false, error: errorMsg };
   }
 
   // Obtener todas las asignaciones en esta fecha específica
@@ -359,12 +442,8 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
     }
   }
 
-  // 5. Validar Regla de Entrenamiento Único en el Día
-  const isTargetTraining = position === 'ENT';
-  const alreadyTrainingToday = dayAssignments.some(a => a.slot.startsWith('ENT'));
-  if (isTargetTraining && alreadyTrainingToday) {
-    return { isValid: false, error: `${controller.name} no puede entrenar en más de una jornada al día.` };
-  }
+  // 5. Validar Regla de Entrenamiento Único en el Día - ELIMINADO
+  // Se permite que estén entrenando en varias jornadas el mismo día y sin limitación de cantidad.
 
   // 6. Validar Regla del Turno Nocturno (A)
   if (targetShift === 'A' && dayAssignments.length > 0) {
@@ -814,29 +893,35 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
 
     // --- PASADA 5: Asignación de Alumnos y Entrenamiento (ENT) ---
     for (const shift of SHIFTS) {
-      const slotKey = 'ENT-1';
       const slots = updatedSchedule[day][shift] || {};
-      if (slots[slotKey] === undefined || slots[slotKey] !== null) continue;
+      const entSlotKeys = Object.keys(slots).filter(k => k.startsWith('ENT'));
 
-      const candidates = controllers.filter(c => {
-        if (!c.active) return false;
-        slots[slotKey] = c.id;
-        const val = validateAssignment(c.id, day, shift, slotKey, updatedSchedule, controllers, exceptions);
-        slots[slotKey] = null;
-        return val.isValid;
-      });
+      for (const slotKey of entSlotKeys) {
+        if (slots[slotKey] !== null) continue;
 
-      candidates.sort((a, b) => {
-        if (a.trainingPreferred && !b.trainingPreferred) return -1;
-        if (!a.trainingPreferred && b.trainingPreferred) return 1;
-        return workLoads[a.id] - workLoads[b.id];
-      });
+        const candidates = controllers.filter(c => {
+          if (!c.active) return false;
+          slots[slotKey] = c.id;
+          const val = validateAssignment(c.id, day, shift, slotKey, updatedSchedule, controllers, exceptions);
+          slots[slotKey] = null;
+          return val.isValid;
+        });
 
-      if (candidates.length > 0) {
-        const chosen = candidates[0];
-        slots[slotKey] = chosen.id;
-        workLoads[chosen.id]++;
+        candidates.sort((a, b) => {
+          if (a.trainingPreferred && !b.trainingPreferred) return -1;
+          if (!a.trainingPreferred && b.trainingPreferred) return 1;
+          return workLoads[a.id] - workLoads[b.id];
+        });
+
+        if (candidates.length > 0) {
+          const chosen = candidates[0];
+          slots[slotKey] = chosen.id;
+          workLoads[chosen.id]++;
+        }
       }
+      
+      // Ajustar slots de entrenamiento después de la pasada de asignación
+      updatedSchedule[day][shift] = adjustDynamicSlots(updatedSchedule[day][shift], 'ENT', shift);
     }
 
     // --- POST-BARAJADO DIARIO DE SUB-POSICIONES (ALEATORIZACIÓN) ---

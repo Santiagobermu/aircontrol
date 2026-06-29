@@ -93,6 +93,10 @@ export default function SchedulerGrid({
       case 'DEL': return 'del';
       case 'FIC': return 'fic';
       case 'ENT': return 'del'; // Entrenamiento
+      case 'INS': return 'ins'; // Instrucción
+      case 'CAE': return 'mcae'; // Capacitación Especial
+      case 'CHEC': return 'mchec'; // Chequeo
+      case 'ACC': return 'acc'; // Centro de Control de Área
       default: return '';
     }
   };
@@ -536,13 +540,17 @@ export default function SchedulerGrid({
                     ? controllers.find(c => c.id === assignedId)
                     : null;
                   const isTrainingSlot = position === 'ENT';
+                  const isInstructionSlot = position === 'INS';
+                  const isCaeSlot = position === 'CAE';
+                  const isChecSlot = position === 'CHEC';
+                  const isSpecialSlot = isTrainingSlot || isInstructionSlot || isCaeSlot || isChecSlot;
 
                   return (
                     <div 
                       key={slotKey}
                       style={{
-                        backgroundColor: isTrainingSlot ? 'rgba(99, 102, 241, 0.02)' : 'var(--bg-tertiary)',
-                        border: isTrainingSlot ? '1px dashed rgba(99, 102, 241, 0.2)' : '1px solid var(--color-border)',
+                        backgroundColor: isTrainingSlot ? 'rgba(99, 102, 241, 0.02)' : isInstructionSlot ? 'rgba(236, 72, 153, 0.02)' : isCaeSlot ? 'rgba(168, 85, 247, 0.02)' : isChecSlot ? 'rgba(236, 72, 153, 0.02)' : 'var(--bg-tertiary)',
+                        border: isSpecialSlot ? (isTrainingSlot ? '1px dashed rgba(99, 102, 241, 0.2)' : isInstructionSlot ? '1px dashed rgba(236, 72, 153, 0.2)' : isCaeSlot ? '1px dashed rgba(168, 85, 247, 0.2)' : '1px dashed rgba(236, 72, 153, 0.2)') : '1px solid var(--color-border)',
                         borderRadius: '10px',
                         padding: '0.65rem 0.85rem',
                         display: 'flex',
@@ -551,7 +559,13 @@ export default function SchedulerGrid({
                         position: 'relative',
                         borderLeft: isTrainingSlot 
                           ? '3px solid var(--accent-indigo)' 
-                          : `3px solid var(--accent-${getPositionColorClass(position)})`,
+                          : isInstructionSlot
+                            ? '3px solid var(--accent-ins)'
+                            : isCaeSlot
+                              ? '3px solid var(--accent-mcae)'
+                              : isChecSlot
+                                ? '3px solid var(--accent-mchec)'
+                                : `3px solid var(--accent-${getPositionColorClass(position)})`,
                         transition: 'var(--transition-fast)'
                       }}
                     >
@@ -561,11 +575,11 @@ export default function SchedulerGrid({
                           <span className={`skill-chip ${position.toLowerCase()}`} style={{ 
                             fontSize: '0.6rem', 
                             padding: '0.1rem 0.35rem',
-                            backgroundColor: isTrainingSlot ? 'rgba(99, 102, 241, 0.1)' : '',
-                            color: isTrainingSlot ? 'var(--accent-indigo)' : '',
-                            borderColor: isTrainingSlot ? 'rgba(99, 102, 241, 0.2)' : ''
+                            backgroundColor: isTrainingSlot ? 'rgba(99, 102, 241, 0.1)' : isInstructionSlot ? 'rgba(236, 72, 153, 0.1)' : isCaeSlot ? 'rgba(168, 85, 247, 0.1)' : isChecSlot ? 'rgba(236, 72, 153, 0.1)' : '',
+                            color: isTrainingSlot ? 'var(--accent-indigo)' : isInstructionSlot ? 'var(--accent-ins)' : isCaeSlot ? 'var(--accent-mcae)' : isChecSlot ? 'var(--accent-mchec)' : '',
+                            borderColor: isTrainingSlot ? 'rgba(99, 102, 241, 0.2)' : isInstructionSlot ? 'rgba(236, 72, 153, 0.2)' : isCaeSlot ? 'rgba(168, 85, 247, 0.2)' : isChecSlot ? 'rgba(236, 72, 153, 0.2)' : ''
                           }}>
-                            {isTrainingSlot ? `ENTRENAMIENTO ${index}` : getSlotAcronym(slotKey)}
+                            {isTrainingSlot ? `ENTRENAMIENTO ${index}` : isInstructionSlot ? `INSTRUCCIÓN ${index}` : isCaeSlot ? `MCAE ${index}` : isChecSlot ? `${shift}CHEC ${index}` : getSlotAcronym(slotKey, shift)}
                           </span>
                           {isCustomSlot && (
                             <span style={{ 
@@ -705,7 +719,7 @@ export default function SchedulerGrid({
                   Asignar Personal Técnico
                 </h3>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  {formatCalendarDayName(activeAssignSlot.day)} · Turno {activeAssignSlot.shift} · Posición {getSlotDescription(activeAssignSlot.slotKey)} ({getSlotAcronym(activeAssignSlot.slotKey)})
+                  {formatCalendarDayName(activeAssignSlot.day)} · Turno {activeAssignSlot.shift} · Posición {getSlotDescription(activeAssignSlot.slotKey, activeAssignSlot.shift)} ({getSlotAcronym(activeAssignSlot.slotKey, activeAssignSlot.shift)})
                 </p>
               </div>
               <button 
@@ -942,6 +956,14 @@ export default function SchedulerGrid({
               }}>
                 {[
                   { id: 'ENT', name: 'Entrenamiento (ENT)', color: 'var(--accent-indigo)', bg: 'rgba(99, 102, 241, 0.1)' },
+                  ...((activeAddPositionShift === 'M' || activeAddPositionShift === 'T') ? [
+                    { id: 'INS', name: 'Instrucción (INS)', color: 'var(--accent-ins)', bg: 'rgba(236, 72, 153, 0.1)' },
+                    { id: 'CHEC', name: 'Chequeo (CHEC)', color: 'var(--accent-mchec)', bg: 'rgba(236, 72, 153, 0.1)' }
+                  ] : []),
+                  ...(activeAddPositionShift === 'M' ? [
+                    { id: 'CAE', name: 'Cap. Especial (CAE)', color: 'var(--accent-mcae)', bg: 'rgba(168, 85, 247, 0.1)' }
+                  ] : []),
+                  { id: 'ACC', name: 'Ruta / ACC (ACC)', color: 'var(--accent-acc)', bg: 'rgba(56, 189, 248, 0.1)' },
                   { id: 'CTE', name: 'Centro de Control (CTE)', color: 'var(--accent-cte)', bg: 'rgba(59, 130, 246, 0.1)' },
                   { id: 'TWR', name: 'Torre de Control (TWR)', color: 'var(--accent-twr)', bg: 'rgba(236, 72, 153, 0.1)' },
                   { id: 'GND', name: 'Superficie / Ground (GND)', color: 'var(--accent-gnd)', bg: 'rgba(16, 185, 129, 0.1)' },

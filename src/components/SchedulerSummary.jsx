@@ -226,6 +226,14 @@ export default function SchedulerSummary({
         return <span style={{ color: 'var(--status-danger)', backgroundColor: 'rgba(244, 63, 94, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>NO OPERATIVO</span>;
       case 'DESCANSO':
         return <span style={{ color: 'var(--text-muted)', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>DESCANSO</span>;
+      case 'LICR':
+        return <span style={{ color: 'var(--accent-purple)', backgroundColor: 'rgba(168, 85, 247, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>LIC. REMUNERADA (LICR)</span>;
+      case 'LICN':
+        return <span style={{ color: 'var(--accent-fic)', backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>LIC. NO REMUNERADA (LICN)</span>;
+      case 'CMED':
+        return <span style={{ color: 'var(--accent-cmed)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>CMED</span>;
+      case 'SIND':
+        return <span style={{ color: 'var(--accent-sind)', backgroundColor: 'rgba(6, 182, 212, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>SIND</span>;
       default:
         return <span style={{ color: 'var(--status-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>OPERATIVO</span>;
     }
@@ -599,6 +607,10 @@ export default function SchedulerSummary({
                       <option value="CAPACITACION">Capacitación / Curso (C)</option>
                       <option value="NO_OPERATIVO">NO OPERATIVO (N/O)</option>
                       <option value="DESCANSO">Descanso Programado (D)</option>
+                      <option value="LICR">Licencia Remunerada (LICR)</option>
+                      <option value="LICN">Licencia No Remunerada (LICN)</option>
+                      <option value="CMED">Chequeo Médico (CMED)</option>
+                      <option value="SIND">Sindicato (SIND)</option>
                     </select>
                   </div>
                 </div>

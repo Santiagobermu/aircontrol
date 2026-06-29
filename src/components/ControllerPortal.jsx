@@ -109,8 +109,8 @@ export default function ControllerPortal({
     return controllers.find(c => c.email && c.email.toLowerCase() === userEmail.toLowerCase());
   }, [controllers, userEmail]);
 
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(4); // Mayo (0-indexed = 4)
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 

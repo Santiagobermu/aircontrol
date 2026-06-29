@@ -17,13 +17,15 @@ import {
   ClipboardList,
   RefreshCw,
   Menu,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 import { 
   createEmptyDaySchedule,
   runAutoSchedulerForMonth,
   getWeekDaysOfDate,
-  validateAssignment
+  validateAssignment,
+  adjustDynamicSlots
 } from './utils/schedulerEngine';
 import ControllerForm from './components/ControllerForm';
 import ControllerList from './components/ControllerList';
@@ -38,8 +40,8 @@ import AICopilotPanel from './components/AICopilotPanel';
 
 // Firebase & Firestore Sync
 import { db, auth } from './utils/firebase';
-import { onSnapshot, collection, doc } from 'firebase/firestore';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { onSnapshot, collection, doc, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword } from 'firebase/auth';
 import {
   seedDatabaseIfEmpty,
   addControllerDB,
@@ -64,6 +66,10 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   
   // Adaptabilidad Móvil
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -138,11 +144,20 @@ export default function App() {
         }
       });
 
-      // 4. Set up real-time listener for Schedule
       unsubSchedule = onSnapshot(collection(db, 'schedule'), (snapshot) => {
         const schedMap = {};
         snapshot.forEach(docSnap => {
-          schedMap[docSnap.id] = docSnap.data();
+          const dayData = docSnap.data() || {};
+          const SHIFTS = ['A', 'M', 'T', 'N'];
+          SHIFTS.forEach(shift => {
+            if (dayData[shift]) {
+              dayData[shift] = adjustDynamicSlots(dayData[shift], 'ENT', shift);
+              dayData[shift] = adjustDynamicSlots(dayData[shift], 'INS', shift);
+              dayData[shift] = adjustDynamicSlots(dayData[shift], 'CAE', shift);
+              dayData[shift] = adjustDynamicSlots(dayData[shift], 'CHEC', shift);
+            }
+          });
+          schedMap[docSnap.id] = dayData;
         });
         setSchedule(schedMap);
       });
@@ -214,6 +229,40 @@ export default function App() {
         }
       }
       throw err;
+    }
+  };
+
+  const handleAdminPasswordChange = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      showNotification('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showNotification('Las contraseñas no coinciden.');
+      return;
+    }
+
+    setIsSubmittingPassword(true);
+    try {
+      if (auth.currentUser) {
+        await updatePassword(auth.currentUser, newPassword);
+        showNotification('Contraseña actualizada correctamente.');
+        setIsChangePasswordModalOpen(false);
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        showNotification('No hay una sesión activa.');
+      }
+    } catch (err) {
+      console.error(err);
+      if (err.code === 'auth/requires-recent-login') {
+        showNotification('Por seguridad, debes cerrar sesión y volver a ingresar para cambiar la contraseña.');
+      } else {
+        showNotification('Error al cambiar la contraseña: ' + err.message);
+      }
+    } finally {
+      setIsSubmittingPassword(false);
     }
   };
 
@@ -335,6 +384,12 @@ export default function App() {
     
     updatedSchedule[dateStr][shift][slotKey] = controllerId;
     
+    // Ajustar los slots dinámicamente tras la asignación
+    updatedSchedule[dateStr][shift] = adjustDynamicSlots(updatedSchedule[dateStr][shift], 'ENT', shift);
+    updatedSchedule[dateStr][shift] = adjustDynamicSlots(updatedSchedule[dateStr][shift], 'INS', shift);
+    updatedSchedule[dateStr][shift] = adjustDynamicSlots(updatedSchedule[dateStr][shift], 'CAE', shift);
+    updatedSchedule[dateStr][shift] = adjustDynamicSlots(updatedSchedule[dateStr][shift], 'CHEC', shift);
+    
     await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
     
     if (controllerId) {
@@ -345,6 +400,28 @@ export default function App() {
     }
 
     setSelectedDayStr(dateStr);
+  };
+
+  // Guardar importación de Excel en lote (Roster y Excepciones)
+  const handleBulkImport = async (scheduleUpdates, exceptionUpdates) => {
+    // 1. Guardar todos los días del cuadrante modificados
+    const dayPromises = Object.keys(scheduleUpdates).map(dateStr => {
+      return saveScheduleDayDB(dateStr, scheduleUpdates[dateStr]);
+    });
+    
+    // 2. Guardar todas las excepciones modificadas
+    const exceptionPromises = Object.keys(exceptionUpdates).map(async (ctrlId) => {
+      const ref = doc(db, 'exceptions', ctrlId);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? snap.data() : {};
+      Object.keys(exceptionUpdates[ctrlId]).forEach(dateStr => {
+        data[dateStr] = exceptionUpdates[ctrlId][dateStr];
+      });
+      return setDoc(ref, data);
+    });
+    
+    await Promise.all([...dayPromises, ...exceptionPromises]);
+    showNotification("Importación de Excel completada exitosamente.");
   };
 
   // Abrir posición adicional (custom slot)
@@ -854,6 +931,23 @@ export default function App() {
             </div>
             
             <button 
+              onClick={() => setIsChangePasswordModalOpen(true)}
+              className="btn btn-secondary"
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.85rem',
+                fontWeight: '700'
+              }}
+            >
+              <Lock size={14} />
+              Contraseña
+            </button>
+
+            <button 
               onClick={handleLogout}
               className="btn btn-danger-outline"
               style={{
@@ -887,7 +981,7 @@ export default function App() {
             </div>
             <div className="stat-info">
               <span className="stat-value">{countCTE}</span>
-              <span className="stat-label">Licencia CTE</span>
+              <span className="stat-label">Habilitación CTE (Encargado)</span>
             </div>
           </div>
           <div className="stat-card">
@@ -1064,6 +1158,7 @@ export default function App() {
             onUpdateController={handleUpdateController}
             onAssignController={handleAssignController}
             onUpdateException={handleUpdateException}
+            onBulkImport={handleBulkImport}
             userRole={userRole}
           />
         )}
@@ -1100,6 +1195,107 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Modal de Cambio de Contraseña de Admin */}
+      {isChangePasswordModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          <div className="glass-panel" style={{
+            width: '90%',
+            maxWidth: '450px',
+            padding: '2rem',
+            borderRadius: '16px',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => {
+                setIsChangePasswordModalOpen(false);
+                setNewPassword('');
+                setConfirmPassword('');
+              }}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Lock size={22} style={{ color: 'var(--accent-cyan)' }} />
+              <span>Cambiar Contraseña</span>
+            </h3>
+
+            <form onSubmit={handleAdminPasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className="form-group">
+                <label htmlFor="new-password">Nueva Contraseña</label>
+                <input
+                  id="new-password"
+                  type="password"
+                  className="form-input"
+                  placeholder="Min. 6 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirm-password">Confirmar Contraseña</label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  className="form-input"
+                  placeholder="Repite la contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setIsChangePasswordModalOpen(false);
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmittingPassword}
+                >
+                  {isSubmittingPassword ? 'Guardando...' : 'Actualizar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
