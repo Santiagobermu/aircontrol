@@ -42,6 +42,7 @@ import AICopilotPanel from './components/AICopilotPanel';
 import { db, auth } from './utils/firebase';
 import { onSnapshot, collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword } from 'firebase/auth';
+import { triggerCalendarSyncIfEnabled } from './utils/calendarExport';
 import {
   seedDatabaseIfEmpty,
   addControllerDB,
@@ -382,6 +383,7 @@ export default function App() {
       updatedSchedule[dateStr] = createEmptyDaySchedule(dateStr);
     }
     
+    const oldControllerId = schedule[dateStr]?.[shift]?.[slotKey];
     updatedSchedule[dateStr][shift][slotKey] = controllerId;
     
     // Ajustar los slots dinámicamente tras la asignación
@@ -391,6 +393,16 @@ export default function App() {
     updatedSchedule[dateStr][shift] = adjustDynamicSlots(updatedSchedule[dateStr][shift], 'CHEC', shift);
     
     await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
+
+    const parts = dateStr.split('-');
+    const yr = parseInt(parts[0], 10);
+    const mo = parseInt(parts[1], 10) - 1;
+    if (oldControllerId) {
+      await triggerCalendarSyncIfEnabled(oldControllerId, controllers, yr, mo, updatedSchedule, exceptions);
+    }
+    if (controllerId && controllerId !== oldControllerId) {
+      await triggerCalendarSyncIfEnabled(controllerId, controllers, yr, mo, updatedSchedule, exceptions);
+    }
     
     if (controllerId) {
       const name = controllers.find(c => c.id === controllerId)?.name || 'Controlador';
@@ -422,6 +434,20 @@ export default function App() {
     
     await Promise.all([...dayPromises, ...exceptionPromises]);
     showNotification("Importación de Excel completada exitosamente.");
+
+    controllers.forEach(c => {
+      if (c.calendarSyncEnabled) {
+        const combinedSchedule = { ...schedule, ...scheduleUpdates };
+        const combinedExceptions = { ...exceptions };
+        Object.keys(exceptionUpdates).forEach(ctrlId => {
+          if (!combinedExceptions[ctrlId]) combinedExceptions[ctrlId] = {};
+          Object.keys(exceptionUpdates[ctrlId]).forEach(dateStr => {
+            combinedExceptions[ctrlId][dateStr] = exceptionUpdates[ctrlId][dateStr];
+          });
+        });
+        triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, combinedSchedule, combinedExceptions);
+      }
+    });
   };
 
   // Abrir posición adicional (custom slot)
@@ -504,6 +530,18 @@ export default function App() {
     
     if (dates.length > 0) {
       setSelectedDayStr(dates[0]);
+
+      const parts = dates[0].split('-');
+      const yr = parseInt(parts[0], 10);
+      const mo = parseInt(parts[1], 10) - 1;
+
+      const updatedExceptions = { ...exceptions };
+      if (!updatedExceptions[ctrlId]) updatedExceptions[ctrlId] = {};
+      dates.forEach(d => {
+        updatedExceptions[ctrlId][d] = newStatus;
+      });
+
+      await triggerCalendarSyncIfEnabled(ctrlId, controllers, yr, mo, updatedSchedule, updatedExceptions);
     }
   };
 
@@ -620,6 +658,13 @@ export default function App() {
     const updatedTrade = { ...trade, status: 'APROBADO' };
     await updateTradeDB(updatedTrade);
 
+    // Auto-sincronizar calendarios de los controladores
+    const parts = dateStr.split('-');
+    const yr = parseInt(parts[0], 10);
+    const mo = parseInt(parts[1], 10) - 1;
+    await triggerCalendarSyncIfEnabled(trade.fromControllerId, controllers, yr, mo, updatedSchedule, exceptions);
+    await triggerCalendarSyncIfEnabled(trade.toControllerId, controllers, yr, mo, updatedSchedule, exceptions);
+
     // Forzar actualización de vista
     setSelectedDayStr(dateStr);
   };
@@ -649,6 +694,11 @@ export default function App() {
     if (result) {
       await saveScheduleMonthDB(result);
       showNotification(`¡Todo el mes de ${monthNames[currentMonth]} programado con éxito de forma balanceada!`, 'success');
+      controllers.forEach(c => {
+        if (c.calendarSyncEnabled) {
+          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, result, exceptions);
+        }
+      });
     } else {
       showNotification('No se pudo generar una malla perfecta para el mes. Revisa que no haya demasiadas excepciones o personal de baja.', 'error');
     }
@@ -670,6 +720,11 @@ export default function App() {
       
       await saveScheduleMonthDB(updatedSchedule);
       showNotification(`Se han vaciado todos los turnos de ${monthNames[currentMonth]}.`, 'warning');
+      controllers.forEach(c => {
+        if (c.calendarSyncEnabled) {
+          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, updatedSchedule, exceptions);
+        }
+      });
     }
   };
 
@@ -740,6 +795,7 @@ export default function App() {
         requests={requests}
         trades={trades}
         onLogout={handleLogout}
+        onUpdateController={handleUpdateController}
       />
     );
   }

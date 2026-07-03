@@ -35,6 +35,7 @@ import {
 import { auth } from '../utils/firebase';
 import { updatePassword } from 'firebase/auth';
 import MonthlyGrid from './MonthlyGrid';
+import { generateICS, uploadCalendarToStorage } from '../utils/calendarExport';
 
 export default function ControllerPortal({ 
   userEmail, 
@@ -43,7 +44,8 @@ export default function ControllerPortal({
   exceptions, 
   requests, 
   trades, 
-  onLogout 
+  onLogout,
+  onUpdateController
 }) {
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'radar' | 'trades' | 'requests'
 
@@ -58,6 +60,13 @@ export default function ControllerPortal({
   const [passSuccess, setPassSuccess] = useState(null);
 
   const [selectedDayActionDate, setSelectedDayActionDate] = useState(null);
+
+  // Estados para Exportación / Sincronización de Calendario
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [includeOps, setIncludeOps] = useState(true);
+  const [includeExceptions, setIncludeExceptions] = useState(true);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -119,6 +128,56 @@ export default function ControllerPortal({
 
   const getDaysInMonth = (year, month) => {
     return new Date(year, month + 1, 0).getDate();
+  };
+
+  // Descargar archivo ICS
+  const handleDownloadICS = () => {
+    if (!currentController) return;
+    try {
+      const icsContent = generateICS(currentController, currentYear, currentMonth, myMonthlyShifts, { includeOps, includeExceptions });
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `horario_${currentController.name.toLowerCase()}_${currentYear}_${currentMonth + 1}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Error al generar el archivo de calendario.');
+    }
+  };
+
+  // Activar o actualizar la sincronización en la nube
+  const handleToggleCloudSync = async () => {
+    if (!currentController) return;
+    setSyncLoading(true);
+    try {
+      if (currentController.calendarSyncEnabled) {
+        // Desactivar
+        await onUpdateController({
+          ...currentController,
+          calendarSyncEnabled: false,
+          calendarSyncUrl: null
+        });
+      } else {
+        // Activar
+        const icsContent = generateICS(currentController, currentYear, currentMonth, myMonthlyShifts, { includeOps, includeExceptions });
+        const downloadUrl = await uploadCalendarToStorage(currentController.id, icsContent);
+        await onUpdateController({
+          ...currentController,
+          calendarSyncEnabled: true,
+          calendarSyncUrl: downloadUrl
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error al gestionar la sincronización de calendario: ' + err.message);
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   // 2. Obtener los turnos asignados a este controlador en el mes activo
@@ -770,7 +829,21 @@ export default function ControllerPortal({
                 <CalendarIcon size={20} style={{ color: 'var(--accent-cyan)' }} />
                 <span>Mes de {monthNames[currentMonth]} {currentYear}</span>
               </h2>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button 
+                  onClick={() => setIsExportModalOpen(true)} 
+                  className="btn btn-primary" 
+                  style={{ 
+                    padding: '0.4rem 0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  <CalendarIcon size={14} />
+                  Sincronizar Calendario
+                </button>
                 <button onClick={() => handleNavigateMonth('prev')} className="btn btn-secondary" style={{ padding: '0.4rem 0.75rem' }}>
                   Atrás
                 </button>
@@ -1652,6 +1725,228 @@ export default function ControllerPortal({
               style={{ width: '100%', padding: '0.65rem', fontWeight: '700', marginTop: '0.5rem' }}
             >
               Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Exportación y Sincronización de Calendario */}
+      {isExportModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          <div className="glass-panel" style={{
+            width: '90%',
+            maxWidth: '520px',
+            padding: '2rem',
+            borderRadius: '16px',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            position: 'relative',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <button
+              onClick={() => {
+                setIsExportModalOpen(false);
+                setCopiedLink(false);
+              }}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CalendarIcon size={22} style={{ color: 'var(--accent-cyan)' }} />
+              <span>Sincronizar Calendario Personal</span>
+            </h3>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+              Lleva tus turnos y estados especiales directamente a tu calendario personal (Google Calendar, iPhone/iCloud, Mac, Outlook).
+            </p>
+
+            {/* Opciones de Filtro */}
+            <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.01)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+              <strong style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>Opciones de Exportación:</strong>
+              
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                <input
+                  type="checkbox"
+                  checked={includeOps}
+                  onChange={(e) => setIncludeOps(e.target.checked)}
+                />
+                <span>Incluir turnos operativos (Madrugada, Mañana, Tarde, Noche)</span>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                <input
+                  type="checkbox"
+                  checked={includeExceptions}
+                  onChange={(e) => setIncludeExceptions(e.target.checked)}
+                />
+                <span>Incluir estados especiales y descansos (Vacaciones, CMED, TROP, etc.)</span>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Opción A: Descarga Manual */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <strong style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>Opción 1: Exportar archivo local</strong>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleDownloadICS}
+                  style={{ width: '100%', padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                >
+                  📥 Descargar Archivo .ICS
+                </button>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  Descarga el archivo e impórtalo manualmente en tu iPhone, Mac o Google Calendar.
+                </span>
+              </div>
+
+              {/* Opción B: Suscripción en Tiempo Real */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+                <strong style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>Opción 2: Sincronización automática en la nube (Suscripción)</strong>
+                
+                {currentController?.calendarSyncEnabled ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--status-success)', fontWeight: '600' }}>✓ Sincronización Activa</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                        Cualquier cambio de turno (como swaps o covers) se actualizará en este enlace automáticamente.
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={async () => {
+                          const icsContent = generateICS(currentController, currentYear, currentMonth, myMonthlyShifts, { includeOps, includeExceptions });
+                          setSyncLoading(true);
+                          try {
+                            const newUrl = await uploadCalendarToStorage(currentController.id, icsContent);
+                            await onUpdateController({
+                              ...currentController,
+                              calendarSyncUrl: newUrl
+                            });
+                            alert('Sincronización forzada con éxito.');
+                          } catch (e) {
+                            alert('Error al forzar actualización: ' + e.message);
+                          } finally {
+                            setSyncLoading(false);
+                          }
+                        }}
+                        disabled={syncLoading}
+                        style={{ flex: 1, padding: '0.5rem', fontSize: '0.75rem' }}
+                      >
+                        {syncLoading ? 'Actualizando...' : '🔄 Forzar Actualización'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        onClick={handleToggleCloudSync}
+                        disabled={syncLoading}
+                        style={{ flex: 1, padding: '0.5rem', fontSize: '0.75rem' }}
+                      >
+                        Desactivar
+                      </button>
+                    </div>
+
+                    {/* Copiar enlace */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.25rem' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Enlace de suscripción para añadir en calendarios:</span>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={currentController.calendarSyncUrl || ''}
+                          className="form-input"
+                          style={{ padding: '0.35rem 0.5rem', fontSize: '0.7rem', flex: 1, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--color-border)' }}
+                          onClick={(e) => e.target.select()}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => {
+                            navigator.clipboard.writeText(currentController.calendarSyncUrl || '');
+                            setCopiedLink(true);
+                            setTimeout(() => setCopiedLink(false), 2000);
+                          }}
+                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.7rem' }}
+                        >
+                          {copiedLink ? 'Copiado!' : 'Copiar'}
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                        <a
+                          href={currentController.calendarSyncUrl ? currentController.calendarSyncUrl.replace(/^https:\/\//, 'webcal://') : '#'}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.7rem', padding: '0.35rem 0.5rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', width: '100%' }}
+                        >
+                          📅 Suscribirse en iPhone / Mac (Un Clic)
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Instrucciones */}
+                    <div style={{ borderTop: '1px dashed var(--color-border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                      <strong style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>¿Cómo agregarlo a Google Calendar?</strong>
+                      <ol style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 1rem', padding: 0, lineHeight: 1.4 }}>
+                        <li>Copia el enlace de arriba.</li>
+                        <li>En Google Calendar web, ve a "Otros calendarios" (+) &gt; "Desde URL".</li>
+                        <li>Pega el enlace y haz clic en "Agregar calendario".</li>
+                      </ol>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleToggleCloudSync}
+                      disabled={syncLoading}
+                      style={{ width: '100%', padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                    >
+                      ☁️ Activar Sincronización en la Nube
+                    </button>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      Crea un feed dinámico seguro. Podrás suscribirte desde tu iPhone o Google Calendar y tus turnos se actualizarán solos.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsExportModalOpen(false);
+                setCopiedLink(false);
+              }}
+              className="btn btn-secondary"
+              style={{ width: '100%', padding: '0.65rem', fontWeight: '700', marginTop: '0.5rem' }}
+            >
+              Cerrar
             </button>
           </div>
         </div>
