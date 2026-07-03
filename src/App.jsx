@@ -22,11 +22,11 @@ import {
 } from 'lucide-react';
 import { 
   createEmptyDaySchedule,
-  runAutoSchedulerForMonth,
   getWeekDaysOfDate,
   validateAssignment,
   adjustDynamicSlots
 } from './utils/schedulerEngine';
+import { runOrToolsScheduler } from './utils/ortoolsScheduler';
 import ControllerForm from './components/ControllerForm';
 import ControllerList from './components/ControllerList';
 import SchedulerGrid from './components/SchedulerGrid';
@@ -689,7 +689,7 @@ export default function App() {
       }
     });
 
-    const result = runAutoSchedulerForMonth(daysInMonth, controllers, exceptions, sequencePattern, requests);
+    const result = await runOrToolsScheduler(daysInMonth, controllers, exceptions, sequencePattern, requests, schedule);
     
     if (result) {
       await saveScheduleMonthDB(result);
