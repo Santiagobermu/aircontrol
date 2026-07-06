@@ -28,7 +28,7 @@ export const runOrToolsScheduler = async (daysInMonth, controllers, exceptions, 
       const c = controllers.find(ctrl => ctrl.id === req.controllerId);
       if (!c || !c.active) return;
       
-      if (req.position === 'DESCANSO' || req.position === 'LICN') return;
+      if (req.position === 'DESCANSO' || req.position === 'LICN' || req.position === 'LICR') return;
       
       const shift = req.shift !== 'Cualquiera' ? req.shift : 'M'; // Default to Morning if Cualquiera
       const pos = req.position !== 'Cualquiera' ? req.position : (c.skills && c.skills[0] ? c.skills[0] : 'TWR');

@@ -692,7 +692,7 @@ export default function App() {
     // Pre-procesar peticiones de descanso y licencia (excepciones) para el solver
     const tempExceptions = JSON.parse(JSON.stringify(exceptions || {}));
     requests.forEach(req => {
-      if (req.position === 'DESCANSO' || req.position === 'LICN') {
+      if (req.position === 'DESCANSO' || req.position === 'LICN' || req.position === 'LICR') {
         if (!tempExceptions[req.controllerId]) tempExceptions[req.controllerId] = {};
         tempExceptions[req.controllerId][req.date] = req.position;
       }
@@ -706,7 +706,7 @@ export default function App() {
       // Persistir las excepciones derivadas de las peticiones en la base de datos
       const exceptionPromises = [];
       requests.forEach(req => {
-        if (req.position === 'DESCANSO' || req.position === 'LICN') {
+        if (req.position === 'DESCANSO' || req.position === 'LICN' || req.position === 'LICR') {
           const ref = doc(db, 'exceptions', req.controllerId);
           exceptionPromises.push((async () => {
             const snap = await getDoc(ref);

@@ -24,6 +24,7 @@ export default function RequestPanel({
   const [position, setPosition] = useState('Cualquiera');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMonth, setFilterMonth] = useState('all');
+  const [comment, setComment] = useState('');
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -61,12 +62,12 @@ export default function RequestPanel({
       if (filterMonth !== 'all') {
         matchesMonth = r.date.startsWith(filterMonth);
       }
-
+ 
       return matchesSearch && matchesMonth;
     }).sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [requests, controllers, searchQuery, filterMonth]);
 
-  const isExceptionRequest = position === 'DESCANSO' || position === 'LICN';
+  const isExceptionRequest = position === 'DESCANSO' || position === 'LICN' || position === 'LICR';
 
   const handleRegister = (e) => {
     e.preventDefault();
@@ -77,15 +78,17 @@ export default function RequestPanel({
       controllerId: ctrlId,
       date,
       shift: isExceptionRequest ? 'Cualquiera' : shift,
-      position
+      position,
+      comment: comment.trim()
     };
 
     onAddRequest(newRequest);
     
-    // Resetear solo la fecha para permitir registros rápidos para el mismo controlador
+    // Resetear campos para permitir registros rápidos
     setDate('');
     setShift('Cualquiera');
     setPosition('Cualquiera');
+    setComment('');
   };
 
   const getShiftBadge = (s) => {
@@ -105,6 +108,7 @@ export default function RequestPanel({
     if (pos === 'Cualquiera') return <span style={{ color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>CUALQUIERA</span>;
     if (pos === 'DESCANSO') return <span style={{ color: 'var(--status-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(16, 185, 129, 0.2)' }}>DESCANSO</span>;
     if (pos === 'LICN') return <span style={{ color: 'var(--accent-indigo)', backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(99, 102, 241, 0.2)' }}>LIC. NO REMUN. (LICN)</span>;
+    if (pos === 'LICR') return <span style={{ color: 'var(--accent-purple)', backgroundColor: 'rgba(168, 85, 247, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(168, 85, 247, 0.2)' }}>LIC. REMUNERADA (LICR)</span>;
     return <span className={`skill-chip ${pos.toLowerCase()}`} style={{ fontSize: '0.65rem', padding: '0.05rem 0.35rem' }}>{pos}</span>;
   };
 
@@ -205,7 +209,24 @@ export default function RequestPanel({
               <option value="CTE">Encargado de Turno (CTE)</option>
               <option value="DESCANSO">Día de Descanso (DESCANSO)</option>
               <option value="LICN">Licencia No Remunerada (LICN)</option>
+              <option value="LICR">Licencia Remunerada (LICR)</option>
             </select>
+          </div>
+
+          {/* Comentarios */}
+          <div className="form-group">
+            <label htmlFor="req-comment" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <ClipboardList size={14} /> Comentarios / Justificación
+            </label>
+            <textarea
+              id="req-comment"
+              className="form-input"
+              rows={2}
+              placeholder="Escribe una breve razón o comentario (opcional)..."
+              style={{ resize: 'vertical', minHeight: '60px', padding: '0.5rem 0.75rem', fontFamily: 'inherit' }}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
           </div>
 
           <button 
@@ -334,6 +355,22 @@ export default function RequestPanel({
                       )}
                     </div>
                   </div>
+
+                  {r.comment && (
+                    <div style={{
+                      marginTop: '0.4rem',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-secondary)',
+                      fontStyle: 'italic',
+                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: '6px',
+                      borderLeft: '2px solid var(--accent-indigo)',
+                      wordBreak: 'break-word'
+                    }}>
+                      "{r.comment}"
+                    </div>
+                  )}
 
                   <div style={{ 
                     borderTop: '1px solid rgba(255, 255, 255, 0.05)', 
