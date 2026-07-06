@@ -689,14 +689,41 @@ export default function App() {
       }
     });
 
-    const result = await runOrToolsScheduler(daysInMonth, controllers, exceptions, sequencePattern, requests, schedule);
+    // Pre-procesar peticiones de descanso y licencia (excepciones) para el solver
+    const tempExceptions = JSON.parse(JSON.stringify(exceptions || {}));
+    requests.forEach(req => {
+      if (req.position === 'DESCANSO' || req.position === 'LICN') {
+        if (!tempExceptions[req.controllerId]) tempExceptions[req.controllerId] = {};
+        tempExceptions[req.controllerId][req.date] = req.position;
+      }
+    });
+
+    const result = await runOrToolsScheduler(daysInMonth, controllers, tempExceptions, sequencePattern, requests, schedule);
     
     if (result) {
       await saveScheduleMonthDB(result);
+      
+      // Persistir las excepciones derivadas de las peticiones en la base de datos
+      const exceptionPromises = [];
+      requests.forEach(req => {
+        if (req.position === 'DESCANSO' || req.position === 'LICN') {
+          const ref = doc(db, 'exceptions', req.controllerId);
+          exceptionPromises.push((async () => {
+            const snap = await getDoc(ref);
+            const data = snap.exists() ? snap.data() : {};
+            data[req.date] = req.position;
+            await setDoc(ref, data);
+          })());
+        }
+      });
+      if (exceptionPromises.length > 0) {
+        await Promise.all(exceptionPromises);
+      }
+
       showNotification(`¡Todo el mes de ${monthNames[currentMonth]} programado con éxito de forma balanceada!`, 'success');
       controllers.forEach(c => {
         if (c.calendarSyncEnabled) {
-          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, result, exceptions);
+          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, result, tempExceptions);
         }
       });
     } else {

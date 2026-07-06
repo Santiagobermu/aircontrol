@@ -626,6 +626,8 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
     // --- PASADA 0: Pre-asignación de Peticiones Especiales (Fase 9) ---
     const dayRequests = requests.filter(r => r.date === day);
     dayRequests.forEach(req => {
+      if (req.position === 'DESCANSO' || req.position === 'LICN') return;
+      
       const c = controllers.find(ctrl => ctrl.id === req.controllerId);
       if (c && c.active) {
         // Determinar turnos a intentar
