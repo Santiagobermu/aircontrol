@@ -21,6 +21,7 @@ def solve():
         days = data.get('days', [])
         holidays = data.get('holidays', [])
         current_schedule = data.get('schedule', {})
+        requests_list = data.get('requests', [])
         
         if not controllers or not days:
             return jsonify({"error": "Missing controllers or days lists"}), 400
@@ -31,7 +32,8 @@ def solve():
             sequence_pattern=sequence_pattern,
             days=days,
             holidays=holidays,
-            current_schedule=current_schedule
+            current_schedule=current_schedule,
+            requests=requests_list
         )
         
         return jsonify(result), 200

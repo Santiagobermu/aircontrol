@@ -17,6 +17,8 @@ export const SHIFT_REQUIREMENTS = {
 // Fecha ancla para cálculo de desfase rotativo de 6 días (Lunes 2026-05-25)
 const ANCHOR_DATE_STR = '2026-05-25';
 
+let activeRequests = [];
+
 /**
  * Retorna la sigla oficial de la sub-posición a partir del slotKey (ej. 'TWR-1' -> 'LNT')
  */
@@ -328,7 +330,7 @@ export const createEmptyDaySchedule = (dateStr) => {
 /**
  * Valida una asignación individual en una fecha YYYY-MM-DD.
  */
-export const validateAssignment = (controllerId, dateStr, targetShift, targetSlot, schedule, controllers, exceptions = {}, isManual = false) => {
+export const validateAssignment = (controllerId, dateStr, targetShift, targetSlot, schedule, controllers, exceptions = {}, isManual = false, requests = []) => {
   const controller = controllers.find(c => c.id === controllerId);
   if (!controller) {
     return { isValid: false, error: 'Controlador no encontrado.' };
@@ -336,6 +338,17 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
 
   if (!controller.active) {
     return { isValid: false, error: `${controller.name} está inactivo.` };
+  }
+
+  // Validar Petición de Evitar (NO ser programado en esta jornada)
+  const reqs = requests && requests.length > 0 ? requests : activeRequests;
+  if (reqs && reqs.length > 0) {
+    const avoidReq = reqs.find(r => r.controllerId === controllerId && r.date === dateStr && r.position === 'AVOID');
+    if (avoidReq) {
+      if (avoidReq.shift === 'Cualquiera' || avoidReq.shift === targetShift) {
+        return { isValid: false, error: `${controller.name} solicitó evitar el turno ${targetShift} el día ${dateStr}.` };
+      }
+    }
   }
 
   const position = targetSlot.split('-')[0]; // Extrae 'CTE', 'TWR', 'ENT', etc.
@@ -579,6 +592,7 @@ export const runAutoSchedulerForWeek = (weekDays, controllers, exceptions = {}, 
  * orientado a secuencias estrictas, acoplamiento de dobles turnos y balanceo de cargas.
  */
 export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = {}, sequencePattern = [], requests = []) => {
+  activeRequests = requests || [];
   const updatedSchedule = {};
   
   // Inicializar slots vacíos para todo el mes

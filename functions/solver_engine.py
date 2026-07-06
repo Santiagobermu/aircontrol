@@ -59,7 +59,7 @@ def has_certification(controller, position):
     skills = controller.get('skills', [])
     return pos_prefix in skills
 
-def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, current_schedule):
+def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, current_schedule, requests=[]):
     """
     Solves the monthly roster using Google OR-Tools CP-SAT.
     """
@@ -117,7 +117,16 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
                     has_skill = has_certification(c, slot)
                     is_operative = exceptions.get(c_id, {}).get(d, 'OPERATIVO') == 'OPERATIVO'
                     
-                    if has_skill and is_operative and c.get('active', True):
+                    # Check avoid requests
+                    is_avoided = False
+                    for req in requests:
+                        if req.get('position') == 'AVOID' and req.get('controllerId') == c_id and req.get('date') == d:
+                            req_shift = req.get('shift')
+                            if req_shift == 'Cualquiera' or req_shift == s:
+                                is_avoided = True
+                                break
+                    
+                    if has_skill and is_operative and c.get('active', True) and not is_avoided:
                         if preset_c_id:
                             # If slot is preset to this controller, fix to 1. Otherwise fix to 0.
                             val = 1 if preset_c_id == c_id else 0
@@ -131,8 +140,7 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
                                 # Regular day variable
                                 x[c_id, d, s, slot] = model.NewBoolVar(f"x_{c_id}_{d}_{s}_{slot}")
                     else:
-                        # Controller not qualified, inactive, or has exception (Vacation, Leave, Sick)
-                        # Fix to 1 if preset despite exception (override), otherwise fix to 0
+                        # Controller not qualified, inactive, has exception, or has avoid request
                         val = 1 if preset_c_id == c_id else 0
                         x[c_id, d, s, slot] = model.NewIntVar(val, val, f"x_{c_id}_{d}_{s}_{slot}")
 

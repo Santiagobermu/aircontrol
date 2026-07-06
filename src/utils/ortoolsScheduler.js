@@ -64,7 +64,8 @@ export const runOrToolsScheduler = async (daysInMonth, controllers, exceptions, 
         sequencePattern,
         days: daysInMonth,
         holidays: [], // Holidays are determined internally or can be passed
-        schedule: preScheduled
+        schedule: preScheduled,
+        requests
       }),
     });
 

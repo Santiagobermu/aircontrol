@@ -109,6 +109,7 @@ export default function RequestPanel({
     if (pos === 'DESCANSO') return <span style={{ color: 'var(--status-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(16, 185, 129, 0.2)' }}>DESCANSO</span>;
     if (pos === 'LICN') return <span style={{ color: 'var(--accent-indigo)', backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(99, 102, 241, 0.2)' }}>LIC. NO REMUN. (LICN)</span>;
     if (pos === 'LICR') return <span style={{ color: 'var(--accent-purple)', backgroundColor: 'rgba(168, 85, 247, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(168, 85, 247, 0.2)' }}>LIC. REMUNERADA (LICR)</span>;
+    if (pos === 'AVOID') return <span style={{ color: 'var(--status-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(239, 68, 68, 0.2)' }}>EVITAR JORNADA</span>;
     return <span className={`skill-chip ${pos.toLowerCase()}`} style={{ fontSize: '0.65rem', padding: '0.05rem 0.35rem' }}>{pos}</span>;
   };
 
@@ -210,6 +211,7 @@ export default function RequestPanel({
               <option value="DESCANSO">Día de Descanso (DESCANSO)</option>
               <option value="LICN">Licencia No Remunerada (LICN)</option>
               <option value="LICR">Licencia Remunerada (LICR)</option>
+              <option value="AVOID">Evitar Turno Específico (Evitar)</option>
             </select>
           </div>
 
@@ -383,7 +385,9 @@ export default function RequestPanel({
                     gap: '0.5rem'
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Turno:</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                        {r.position === 'AVOID' ? 'Turno a evitar:' : 'Turno:'}
+                      </span>
                       {getShiftBadge(r.shift)}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', alignItems: 'flex-end' }}>
