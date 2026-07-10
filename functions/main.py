@@ -3,10 +3,11 @@ from firebase_admin import initialize_app
 import json
 from solver_engine import solve_schedule
 
-initialize_app()
-
 @https_fn.on_request()
 def solve_schedule_api(req: https_fn.Request) -> https_fn.Response:
+    from firebase_admin import _apps, initialize_app
+    if not _apps:
+        initialize_app()
     # Manage CORS options requests
     if req.method == 'OPTIONS':
         headers = {
@@ -30,6 +31,7 @@ def solve_schedule_api(req: https_fn.Request) -> https_fn.Response:
         days = data.get('days', [])
         holidays = data.get('holidays', [])
         current_schedule = data.get('schedule', {})
+        requests_list = data.get('requests', [])
         
         if not controllers or not days:
             return https_fn.Response(
@@ -45,7 +47,8 @@ def solve_schedule_api(req: https_fn.Request) -> https_fn.Response:
             sequence_pattern=sequence_pattern,
             days=days,
             holidays=holidays,
-            current_schedule=current_schedule
+            current_schedule=current_schedule,
+            requests=requests_list
         )
         
         return https_fn.Response(

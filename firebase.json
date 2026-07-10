@@ -11,6 +11,18 @@
   "storage": {
     "rules": "storage.rules"
   },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "runtime": "python312",
+    "ignore": [
+      "venv",
+      ".git",
+      "firebase-debug.log",
+      "firestore-debug.log",
+      "ui-debug.log"
+    ]
+  },
   "hosting": {
     "public": "dist",
     "ignore": [

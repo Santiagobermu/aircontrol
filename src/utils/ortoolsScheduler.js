@@ -3,8 +3,8 @@ import { runAutoSchedulerForMonth as localScheduler } from './schedulerEngine';
 // Local development endpoint for Flask server
 const LOCAL_API_URL = 'http://localhost:8080/solve';
 
-// Production Firebase Cloud Function endpoint (will be set after deployment)
-const PROD_API_URL = 'https://solve-schedule-api-a6wq44c5vq-uc.a.run.app'; // Fallback / placeholder
+// Production Firebase Cloud Function endpoint
+const PROD_API_URL = 'https://us-central1-aircontrol-skbo-sbg.cloudfunctions.net/solve_schedule_api';
 
 export const runOrToolsScheduler = async (daysInMonth, controllers, exceptions, sequencePattern, requests, currentSchedule) => {
   // Pre-process special requests client-side first so they act as fixed presets for the solver
