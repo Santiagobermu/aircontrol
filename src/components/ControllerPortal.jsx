@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Menu,
   Lock,
-  Grid
+  Grid,
+  EyeOff
 } from 'lucide-react';
 import { 
   getSlotAcronym, 
@@ -44,6 +45,7 @@ export default function ControllerPortal({
   exceptions, 
   requests, 
   trades, 
+  publishState = {},
   onLogout,
   onUpdateController
 }) {
@@ -120,6 +122,9 @@ export default function ControllerPortal({
 
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+
+  const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const isMonthPublished = publishState && publishState[monthKey];
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -853,155 +858,231 @@ export default function ControllerPortal({
               </div>
             </div>
 
-            {/* Calendario Grid */}
-            <div 
-              className="portal-calendar-headers"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: '0.5rem',
-                textAlign: 'center',
-                marginBottom: '0.5rem'
-              }}
-            >
-              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
-                <div key={d} style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', padding: '0.5rem 0' }}>
-                  {d}
+            {isMonthPublished ? (
+              <>
+                {/* Calendario Grid */}
+                <div 
+                  className="portal-calendar-headers"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: '0.5rem',
+                    textAlign: 'center',
+                    marginBottom: '0.5rem'
+                  }}
+                >
+                  {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
+                    <div key={d} style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', padding: '0.5rem 0' }}>
+                      {d}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <div 
-              className="portal-calendar-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: '0.5rem',
-                minHeight: '380px'
-              }}
-            >
-              {/* Espacios vacíos antes del primer día del mes */}
-              {Array.from({ length: calendarDays[0]?.dayOfWeek || 0 }).map((_, idx) => (
-                <div key={`empty-${idx}`} style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.02)', borderRadius: '12px' }} />
-              ))}
+                <div 
+                  className="portal-calendar-grid"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: '0.5rem',
+                    minHeight: '380px'
+                  }}
+                >
+                  {/* Espacios vacíos antes del primer día del mes */}
+                  {Array.from({ length: calendarDays[0]?.dayOfWeek || 0 }).map((_, idx) => (
+                    <div key={`empty-${idx}`} style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.02)', borderRadius: '12px' }} />
+                  ))}
 
-              {/* Días del mes */}
-              {calendarDays.map((day) => {
-                const shifts = myMonthlyShifts[day.dateStr] || [];
-                const hasShift = shifts.some(s => s.type === 'SHIFT');
-                const hasException = shifts.some(s => s.type === 'EXCEPTION');
-                
-                let cardBg = 'rgba(255,255,255,0.02)';
-                let borderCol = 'var(--color-border)';
-                let glowShadow = 'none';
+                  {/* Días del mes */}
+                  {calendarDays.map((day) => {
+                    const shifts = myMonthlyShifts[day.dateStr] || [];
+                    const hasShift = shifts.some(s => s.type === 'SHIFT');
+                    const hasException = shifts.some(s => s.type === 'EXCEPTION');
+                    
+                    let cardBg = 'rgba(255,255,255,0.02)';
+                    let borderCol = 'var(--color-border)';
+                    let glowShadow = 'none';
 
-                if (hasException) {
-                  const excStatus = shifts.find(s => s.type === 'EXCEPTION').status;
-                  cardBg = excStatus === 'VACACIONES' ? 'rgba(6, 182, 212, 0.05)' : 'rgba(244, 63, 94, 0.05)';
-                  borderCol = excStatus === 'VACACIONES' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(244, 63, 94, 0.25)';
-                } else if (hasShift) {
-                  cardBg = 'rgba(99, 102, 241, 0.04)';
-                  borderCol = 'rgba(99, 102, 241, 0.3)';
-                  glowShadow = '0 0 10px rgba(99, 102, 241, 0.05)';
-                }
+                    if (hasException) {
+                      const excStatus = shifts.find(s => s.type === 'EXCEPTION').status;
+                      cardBg = excStatus === 'VACACIONES' ? 'rgba(6, 182, 212, 0.05)' : 'rgba(244, 63, 94, 0.05)';
+                      borderCol = excStatus === 'VACACIONES' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(244, 63, 94, 0.25)';
+                    } else if (hasShift) {
+                      cardBg = 'rgba(99, 102, 241, 0.04)';
+                      borderCol = 'rgba(99, 102, 241, 0.3)';
+                      glowShadow = '0 0 10px rgba(99, 102, 241, 0.05)';
+                    }
 
-                return (
-                  <div 
-                    key={day.dateStr}
-                    className="portal-calendar-day-card"
-                    onClick={() => setSelectedDayActionDate(day.dateStr)}
-                    style={{
-                      backgroundColor: cardBg,
-                      border: `1px solid ${borderCol}`,
-                      boxShadow: glowShadow,
-                      borderRadius: '12px',
-                      padding: '0.65rem 0.5rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      minHeight: '80px',
-                      position: 'relative',
-                      cursor: 'pointer'
-                    }}
-                    title="Presiona para proponer cambios o registrar peticiones para este día"
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.1rem' }}>
-                      <span style={{ 
-                        fontSize: '0.85rem', 
-                        fontWeight: '700', 
-                        color: day.isHoliday || day.dayOfWeek === 0 ? 'var(--status-danger)' : 'var(--text-primary)' 
-                      }}>
-                        {day.dayNum}
-                      </span>
-                      {day.isHoliday && (
-                        <span style={{ fontSize: '0.55rem', color: 'var(--status-danger)', fontWeight: '800', lineHeight: 1 }}>FEST</span>
-                      )}
-                    </div>
+                    return (
+                      <div 
+                        key={day.dateStr}
+                        className="portal-calendar-day-card"
+                        onClick={() => setSelectedDayActionDate(day.dateStr)}
+                        style={{
+                          backgroundColor: cardBg,
+                          border: `1px solid ${borderCol}`,
+                          boxShadow: glowShadow,
+                          borderRadius: '12px',
+                          padding: '0.65rem 0.5rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          minHeight: '80px',
+                          position: 'relative',
+                          cursor: 'pointer'
+                        }}
+                        title="Presiona para proponer cambios o registrar peticiones para este día"
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.1rem' }}>
+                          <span style={{ 
+                            fontSize: '0.85rem', 
+                            fontWeight: '700', 
+                            color: day.isHoliday || day.dayOfWeek === 0 ? 'var(--status-danger)' : 'var(--text-primary)' 
+                          }}>
+                            {day.dayNum}
+                          </span>
+                          {day.isHoliday && (
+                            <span style={{ fontSize: '0.55rem', color: 'var(--status-danger)', fontWeight: '800', lineHeight: 1 }}>FEST</span>
+                          )}
+                        </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.4rem' }}>
-                      {shifts.map((s, idx) => {
-                        if (s.type === 'EXCEPTION') {
-                          return (
-                            <span key={idx} style={{
-                              fontSize: '0.65rem',
-                              backgroundColor: s.status === 'VACACIONES' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                              color: s.status === 'VACACIONES' ? 'var(--accent-cyan)' : 'var(--status-danger)',
-                              padding: '0.1rem 0.25rem',
-                              borderRadius: '4px',
-                              fontWeight: '700'
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.4rem' }}>
+                          {shifts.map((s, idx) => {
+                            if (s.type === 'EXCEPTION') {
+                              return (
+                                <span key={idx} style={{
+                                  fontSize: '0.65rem',
+                                  backgroundColor: s.status === 'VACACIONES' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                                  color: s.status === 'VACACIONES' ? 'var(--accent-cyan)' : 'var(--status-danger)',
+                                  padding: '0.15rem 0.25rem',
+                                  borderRadius: '4px',
+                                  fontWeight: '700'
+                                }}>
+                                  {getShortExceptionLabel(s.status)}
+                                </span>
+                              );
+                            } else {
+                              return (
+                                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                  <span style={{
+                                    fontSize: '0.75rem',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                                    color: 'var(--accent-indigo)',
+                                    padding: '0.15rem 0.4rem',
+                                    borderRadius: '6px',
+                                    fontWeight: '800',
+                                    width: '100%'
+                                  }}>
+                                    Turno {s.shift}
+                                  </span>
+                                  <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.1rem', fontWeight: '600' }}>
+                                    {s.acronym} · {s.description}
+                                  </span>
+                                </div>
+                              );
+                            }
+                          })}
+
+                          {shifts.length === 0 && (
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: 'var(--text-muted)',
+                              fontStyle: 'italic',
+                              fontWeight: '500'
                             }}>
-                              {getShortExceptionLabel(s.status)}
+                              {day.dayOfWeek === 0 || day.isHoliday ? 'LIBRE' : 'DESCANSO'}
                             </span>
-                          );
-                        } else {
-                          return (
-                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                              <span style={{
-                                fontSize: '0.75rem',
-                                backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                                color: 'var(--accent-indigo)',
-                                padding: '0.15rem 0.4rem',
-                                borderRadius: '6px',
-                                fontWeight: '800',
-                                width: '100%'
-                              }}>
-                                Turno {s.shift}
-                              </span>
-                              <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.1rem', fontWeight: '600' }}>
-                                {s.acronym} · {s.description}
-                              </span>
-                            </div>
-                          );
-                        }
-                      })}
-
-                      {shifts.length === 0 && (
-                        <span style={{
-                          fontSize: '0.7rem',
-                          color: 'var(--text-muted)',
-                          fontStyle: 'italic',
-                          fontWeight: '500'
-                        }}>
-                          {day.dayOfWeek === 0 || day.isHoliday ? 'LIBRE' : 'DESCANSO'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4rem 2rem',
+                backgroundColor: 'rgba(244, 63, 94, 0.02)',
+                border: '1px dashed rgba(244, 63, 94, 0.15)',
+                borderRadius: '16px',
+                textAlign: 'center',
+                marginTop: '1rem',
+                gap: '1.25rem'
+              }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--status-danger)'
+                }}>
+                  <EyeOff size={32} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    Roster en Planificación
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto', lineHeight: '1.5' }}>
+                    El cuadrante de turnos para {monthNames[currentMonth]} {currentYear} se encuentra actualmente en borrador y no ha sido publicado oficialmente por la administración.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Tab: MALLA COMPLETA DEL MES */}
         {activeTab === 'monthlyGrid' && (
           <div className="glass-panel" style={{ padding: '1.5rem', overflow: 'hidden', width: '100%' }}>
-            <MonthlyGrid 
-              schedule={schedule}
-              controllers={controllers}
-              exceptions={exceptions}
-              readOnly={true}
-            />
+            {isMonthPublished ? (
+              <MonthlyGrid 
+                schedule={schedule}
+                controllers={controllers}
+                exceptions={exceptions}
+                publishState={publishState}
+                readOnly={true}
+              />
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4rem 2rem',
+                backgroundColor: 'rgba(244, 63, 94, 0.02)',
+                border: '1px dashed rgba(244, 63, 94, 0.15)',
+                borderRadius: '16px',
+                textAlign: 'center',
+                gap: '1.25rem'
+              }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--status-danger)'
+                }}>
+                  <EyeOff size={32} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    Malla en Planificación
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto', lineHeight: '1.5' }}>
+                    La malla global para {monthNames[currentMonth]} {currentYear} se encuentra en borrador y no está publicada oficialmente.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

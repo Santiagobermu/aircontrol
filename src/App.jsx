@@ -105,6 +105,7 @@ export default function App() {
   const [notification, setNotification] = useState(null);
   const [requests, setRequests] = useState([]);
   const [trades, setTrades] = useState([]);
+  const [publishState, setPublishState] = useState({});
 
   // Calcular dinámicamente los 7 días de la semana de la fecha seleccionada en el planificador
   const weekDays = getWeekDaysOfDate(selectedDayStr);
@@ -117,6 +118,7 @@ export default function App() {
     let unsubExceptions = () => {};
     let unsubRequests = () => {};
     let unsubTrades = () => {};
+    let unsubPublishState = () => {};
 
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -190,6 +192,15 @@ export default function App() {
         setTrades(tradeList);
       });
 
+      // 8. Set up real-time listener for Publish State
+      unsubPublishState = onSnapshot(doc(db, 'settings', 'publishState'), (docSnap) => {
+        if (docSnap.exists()) {
+          setPublishState(docSnap.data() || {});
+        } else {
+          setPublishState({});
+        }
+      });
+
       setLoading(false);
     };
 
@@ -205,6 +216,7 @@ export default function App() {
       unsubExceptions();
       unsubRequests();
       unsubTrades();
+      unsubPublishState();
     };
   }, []);
 
@@ -448,6 +460,29 @@ export default function App() {
         triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, combinedSchedule, combinedExceptions);
       }
     });
+  };
+
+  // Cambiar el estado de publicación oficial de un mes
+  const handleTogglePublishMonth = async (year, month) => {
+    const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const newStatus = !publishState[monthKey];
+    
+    try {
+      const ref = doc(db, 'settings', 'publishState');
+      await setDoc(ref, {
+        ...publishState,
+        [monthKey]: newStatus
+      });
+      showNotification(
+        newStatus 
+          ? `Turnos de ${monthNames[month]} ${year} publicados oficialmente.` 
+          : `Turnos de ${monthNames[month]} ${year} revertidos a borrador.`,
+        newStatus ? 'success' : 'warning'
+      );
+    } catch (error) {
+      console.error("Error setting publish state:", error);
+      showNotification('Error al cambiar el estado de publicación.', 'danger');
+    }
   };
 
   // Abrir posición adicional (custom slot)
@@ -821,6 +856,7 @@ export default function App() {
         exceptions={exceptions}
         requests={requests}
         trades={trades}
+        publishState={publishState}
         onLogout={handleLogout}
         onUpdateController={handleUpdateController}
       />
@@ -1238,6 +1274,8 @@ export default function App() {
             schedule={schedule}
             controllers={controllers}
             exceptions={exceptions}
+            publishState={publishState}
+            onTogglePublishMonth={handleTogglePublishMonth}
             onUpdateController={handleUpdateController}
             onAssignController={handleAssignController}
             onUpdateException={handleUpdateException}

@@ -10,7 +10,9 @@ import {
   User,
   Trash2,
   Upload,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SHIFTS, SHIFT_REQUIREMENTS, isColombianHoliday, validateAssignment, getSlotAcronym, getSlotDescription, adjustDynamicSlots } from '../utils/schedulerEngine';
@@ -19,6 +21,8 @@ export default function MonthlyGrid({
   schedule, 
   controllers, 
   exceptions,
+  publishState = {},
+  onTogglePublishMonth,
   onUpdateController,
   onAssignController,
   onUpdateException,
@@ -830,6 +834,39 @@ export default function MonthlyGrid({
             >
               <Upload size={16} />
               <span>Importar Excel</span>
+            </button>
+          )}
+          {userRole === 'admin' && onTogglePublishMonth && (
+            <button 
+              onClick={() => onTogglePublishMonth(currentYear, currentMonth)}
+              className="btn"
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.4rem', 
+                padding: '0.4rem 1rem', 
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                border: 'none',
+                color: 'white',
+                backgroundColor: publishState[`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`] ? 'var(--status-danger)' : 'var(--status-success)',
+                transition: 'all 0.2s ease',
+                boxShadow: publishState[`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`] ? 'none' : '0 0 12px rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              {publishState[`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`] ? (
+                <>
+                  <EyeOff size={16} />
+                  <span>Revertir a Borrador</span>
+                </>
+              ) : (
+                <>
+                  <Eye size={16} />
+                  <span>Publicar Oficialmente</span>
+                </>
+              )}
             </button>
           )}
         </div>

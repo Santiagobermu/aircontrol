@@ -64,10 +64,10 @@ export const getSlotDescription = (slotKey, shift) => {
   if (pos === 'CAE') return 'Capacitación Especial';
   if (pos === 'CHEC') return 'Chequeo';
   if (pos === 'ACC') {
-    const shiftName = 
+    const shiftName =
       shift === 'A' ? 'Madrugada' :
-      shift === 'M' ? 'Mañana' :
-      shift === 'T' ? 'Tarde' : 'Noche';
+        shift === 'M' ? 'Mañana' :
+          shift === 'T' ? 'Tarde' : 'Noche';
     return `Centro Control Área - ${shiftName} (${shift || ''}ACC)`;
   }
   switch (slotKey) {
@@ -171,10 +171,11 @@ export const getColombianHolidays = (year) => {
   addEmilianiHoliday(10, 12, 'Día de la Raza');
   addEmilianiHoliday(11, 1, 'Todos los Santos');
   addEmilianiHoliday(11, 11, 'Independencia de Cartagena');
+  addEmilianiHoliday(9, 6, 'Nuestra Señora del Rosario de Chiquinquirá')
 
   // 3. Festivos variables basados en la Pascua (Easter)
   const easter = getEasterDate(year);
-  
+
   // Jueves Santo
   const juevesSanto = new Date(easter);
   juevesSanto.setDate(easter.getDate() - 3);
@@ -239,7 +240,7 @@ export const getWeekDaysOfDate = (dateStr) => {
   const date = new Date(dateStr + 'T00:00:00');
   const day = date.getDay(); // 0 es Domingo, 1 es Lunes...
   const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajustar para Lunes
-  
+
   const mon = new Date(date.setDate(diff));
   const week = [];
   for (let i = 0; i < 7; i++) {
@@ -268,7 +269,7 @@ export const getSequenceDayIndex = (controllerIndex, dateStr) => {
  */
 export const adjustDynamicSlots = (shiftSchedule, prefix, shift) => {
   if (!shiftSchedule) return {};
-  
+
   const newShiftSchedule = { ...shiftSchedule };
 
   // Obtener todas las llaves de slots del prefijo (ej. 'ENT-' o 'INS-')
@@ -279,30 +280,30 @@ export const adjustDynamicSlots = (shiftSchedule, prefix, shift) => {
       const numB = parseInt(b.split('-')[1], 10);
       return numA - numB;
     });
-    
+
   // Filtrar las que tienen controladores asignados (no null)
   const assignedKeys = keys.filter(k => newShiftSchedule[k] !== null);
-  
+
   // Eliminar todas las llaves viejas
   keys.forEach(k => {
     delete newShiftSchedule[k];
   });
-  
+
   // Re-insertar las asignadas ordenadamente
   assignedKeys.forEach((oldKey, idx) => {
     newShiftSchedule[`${prefix}-${idx + 1}`] = shiftSchedule[oldKey];
   });
-  
+
   // Determinar si debemos agregar el primer slot vacío
-  const shouldHaveAtLeastOne = (prefix === 'ENT') || 
-                               (prefix === 'INS' && (shift === 'M' || shift === 'T')) ||
-                               (prefix === 'CAE' && shift === 'M') ||
-                               (prefix === 'CHEC' && (shift === 'M' || shift === 'T'));
-  
+  const shouldHaveAtLeastOne = (prefix === 'ENT') ||
+    (prefix === 'INS' && (shift === 'M' || shift === 'T')) ||
+    (prefix === 'CAE' && shift === 'M') ||
+    (prefix === 'CHEC' && (shift === 'M' || shift === 'T'));
+
   if (assignedKeys.length > 0 || shouldHaveAtLeastOne) {
     newShiftSchedule[`${prefix}-${assignedKeys.length + 1}`] = null;
   }
-  
+
   return newShiftSchedule;
 };
 
@@ -391,7 +392,7 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
     else if (dateException === 'LICN') errorMsg = `${controller.name} tiene una Licencia No Remunerada (LICN) el día ${dateStr}.`;
     else if (dateException === 'CMED') errorMsg = `${controller.name} tiene Chequeo Médico (CMED) el día ${dateStr}.`;
     else if (dateException === 'SIND') errorMsg = `${controller.name} tiene Sindicato (SIND) el día ${dateStr}.`;
-    
+
     return { isValid: false, error: errorMsg };
   }
 
@@ -402,7 +403,7 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
     Object.keys(slots).forEach(slotKey => {
       // Ignorar el slot actual que estamos intentando ocupar
       if (shift === targetShift && slotKey === targetSlot) return;
-      
+
       if (slots[slotKey] === controllerId) {
         dayAssignments.push({ shift, slot: slotKey });
       }
@@ -434,7 +435,7 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
     // Si estamos agregando un segundo turno, se convertirá en un doble turno. Verificar límite mensual de 8 dobles
     const monthPrefix = dateStr.substring(0, 7); // e.g. "2026-05"
     let doubleShiftsInMonth = 0;
-    
+
     Object.keys(schedule).forEach(day => {
       if (day.startsWith(monthPrefix) && day !== dateStr) {
         let countOnDay = 0;
@@ -470,16 +471,16 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
   // 7. Validar Turnos Dobles Consecutivos (si trabaja 2 turnos, deben ser consecuentes)
   if (dayAssignments.length === 1) {
     const existingShift = dayAssignments[0].shift;
-    const isConsecutive = 
+    const isConsecutive =
       (existingShift === 'M' && targetShift === 'T') ||
       (existingShift === 'T' && targetShift === 'M') ||
       (existingShift === 'T' && targetShift === 'N') ||
       (existingShift === 'N' && targetShift === 'T');
-      
+
     if (!isConsecutive) {
-      return { 
-        isValid: false, 
-        error: `Los turnos dobles deben ser consecutivamente contiguos (M+T o T+N). Prohibidos turnos separados.` 
+      return {
+        isValid: false,
+        error: `Los turnos dobles deben ser consecutivamente contiguos (M+T o T+N). Prohibidos turnos separados.`
       };
     }
   }
@@ -500,7 +501,7 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
   let workedDaysInWindow = 0;
   windowDays.forEach(wDay => {
     if (wDay === dateStr) return;
-    
+
     let hasShiftsOnDay = false;
     SHIFTS.forEach(shift => {
       const slots = schedule[wDay]?.[shift] || {};
@@ -516,9 +517,9 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
 
   if (isTargetInWindow && workedDaysInWindow >= maxWorkedDaysInWindow) {
     const windowLabel = isMondayHoliday ? 'Martes a Sábado' : 'Lunes a Sábado';
-    return { 
-      isValid: false, 
-      error: `${controller.name} debe cumplir con sus 2 descansos semanales de ${windowLabel}. Límite de días laborados superado.` 
+    return {
+      isValid: false,
+      error: `${controller.name} debe cumplir con sus 2 descansos semanales de ${windowLabel}. Límite de días laborados superado.`
     };
   }
 
@@ -527,11 +528,11 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
   const prevDate = new Date(date);
   prevDate.setDate(date.getDate() - 1);
   const prevDateStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
-  
+
   if (schedule[prevDateStr]) {
     let workedNPrev = false;
     let workedTPrev = false;
-    
+
     SHIFTS.forEach(s => {
       const slots = schedule[prevDateStr][s] || {};
       if (Object.values(slots).includes(controllerId)) {
@@ -539,11 +540,11 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
         if (s === 'T') workedTPrev = true;
       }
     });
-    
+
     if (workedNPrev && targetShift === 'M') {
       return { isValid: false, error: `${controller.name} laboró el turno N (Noche) ayer y no puede hacer el turno M (Mañana) hoy (Descanso mínimo insuficiente).` };
     }
-    
+
     if (workedTPrev && targetShift === 'A') {
       return { isValid: false, error: `${controller.name} laboró el turno T (Tarde) ayer y no puede hacer el turno A (Madrugada) hoy (Descanso mínimo insuficiente).` };
     }
@@ -553,11 +554,11 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
   const nextDate = new Date(date);
   nextDate.setDate(date.getDate() + 1);
   const nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
-  
+
   if (schedule[nextDateStr]) {
     let worksMNext = false;
     let worksANext = false;
-    
+
     SHIFTS.forEach(s => {
       const slots = schedule[nextDateStr][s] || {};
       if (Object.values(slots).includes(controllerId)) {
@@ -565,11 +566,11 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
         if (s === 'A') worksANext = true;
       }
     });
-    
+
     if (targetShift === 'N' && worksMNext) {
       return { isValid: false, error: `${controller.name} ya está programado en el turno M (Mañana) mañana y no puede laborar el turno N (Noche) hoy.` };
     }
-    
+
     if (targetShift === 'T' && worksANext) {
       return { isValid: false, error: `${controller.name} ya está programado en el turno A (Madrugada) mañana y no puede laborar el turno T (Tarde) hoy.` };
     }
@@ -594,7 +595,7 @@ export const runAutoSchedulerForWeek = (weekDays, controllers, exceptions = {}, 
 export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = {}, sequencePattern = [], requests = []) => {
   activeRequests = requests || [];
   const updatedSchedule = {};
-  
+
   // Inicializar slots vacíos para todo el mes
   daysInMonth.forEach(day => {
     updatedSchedule[day] = createEmptyDaySchedule(day);
@@ -626,7 +627,7 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
       const idx = controllers.indexOf(c);
       const seqDay = getSequenceDayIndex(idx, dayStr);
       const pat = sequencePattern[seqDay] || 'DESCANSO';
-      
+
       if (isSpecialDay) {
         // En domingos y festivos especiales, nadie descansa de forma teórica en la secuencia
         // ni trabaja dobles estrictos. Todo se flexibiliza a Cualquiera.
@@ -641,7 +642,7 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
     const dayRequests = requests.filter(r => r.date === day);
     dayRequests.forEach(req => {
       if (req.position === 'DESCANSO' || req.position === 'LICN' || req.position === 'LICR') return;
-      
+
       const c = controllers.find(ctrl => ctrl.id === req.controllerId);
       if (c && c.active) {
         // Determinar turnos a intentar
@@ -659,11 +660,11 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
         // Intentar las combinaciones de turno y posición
         for (const shift of shiftsToTry) {
           const slots = updatedSchedule[day][shift] || {};
-          
+
           for (const pos of positionsToTry) {
             // Encontrar todos los slots de esta posición en este turno que estén vacantes
             const posSlots = Object.keys(slots).filter(k => k.startsWith(pos) && slots[k] === null);
-            
+
             // Barajarlos para cumplir con la asignación aleatoria
             const shuffledSlots = shuffleArray(posSlots);
 
@@ -792,7 +793,7 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
         // Intentar M+T
         const slotsM = updatedSchedule[day]['M'] || {};
         const slotsT = updatedSchedule[day]['T'] || {};
-        
+
         for (const slotKeyM of shuffleArray(Object.keys(slotsM))) {
           if (slotKeyM.startsWith('ENT')) continue;
           if (slotsM[slotKeyM] !== null) continue;
@@ -890,7 +891,7 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
         const position = slotKey.split('-')[0];
         const candidates = controllers.filter(c => {
           if (!c.active) return false;
-          if (!['INS', 'CAE', 'CHEC'].includes(position) && (!c.skills || !c.skills.includes(position))) return false;
+          if (!c.skills || !c.skills.includes(position)) return false;
           slots[slotKey] = c.id;
           const val = validateAssignment(c.id, day, shift, slotKey, updatedSchedule, controllers, exceptions);
           slots[slotKey] = null;
@@ -935,7 +936,7 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
           workLoads[chosen.id]++;
         }
       }
-      
+
       // Ajustar slots de entrenamiento después de la pasada de asignación
       updatedSchedule[day][shift] = adjustDynamicSlots(updatedSchedule[day][shift], 'ENT', shift);
     }
