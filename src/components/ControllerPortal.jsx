@@ -1364,9 +1364,18 @@ export default function ControllerPortal({
               .spin-animation {
                 animation: spin 1s linear infinite;
               }
+              .radar-positions-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+              }
               @media (max-width: 990px) {
                 .radar-grid-container {
-                  grid-template-columns: 1fr !important;
+                  display: flex !important;
+                  flex-direction: column-reverse !important;
+                }
+                .radar-positions-grid {
+                  grid-template-columns: repeat(2, 1fr) !important;
                 }
               }
             `}</style>
@@ -1409,11 +1418,7 @@ export default function ControllerPortal({
                           </h4>
 
                           {activeAssignments.length > 0 ? (
-                            <div style={{
-                              display: 'grid',
-                              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                              gap: '0.75rem'
-                            }}>
+                            <div className="radar-positions-grid">
                               {activeAssignments.map(slotKey => {
                                 const ctrlId = slots[slotKey];
                                 const ctrl = controllers.find(c => c.id === ctrlId);
