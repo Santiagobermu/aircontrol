@@ -85,6 +85,7 @@ export default function ControllerPortal({
   const [syncingNotams, setSyncingNotams] = useState(false);
   const [activeNotamSubTab, setActiveNotamSubTab] = useState('today');
   const [notamSearchQuery, setNotamSearchQuery] = useState('');
+  const [selectedNotamCategory, setSelectedNotamCategory] = useState('ALL');
   
   const [isAddingAlert, setIsAddingAlert] = useState(false);
   const [newAlertContent, setNewAlertContent] = useState('');
@@ -123,6 +124,9 @@ export default function ControllerPortal({
   };
 
   const isNotamActiveTomorrowEarly = (n) => {
+    // Exclude "todo el día" (all-day NOTAMs).
+    if (!n.schedule) return false;
+
     const start = parseNotamDate(n.start_date);
     if (!start) return false;
     if (start > nextDay1100) return false;
@@ -131,6 +135,33 @@ export default function ControllerPortal({
     const end = parseNotamDate(n.end_date);
     if (!end) return true;
     return end >= nextDay0500;
+  };
+
+  const categorizeNotam = (n) => {
+    const desc = (n.description || '').toUpperCase();
+    
+    // 1. RWY
+    if (desc.includes('RWY') || desc.includes('RUNWAY') || desc.includes('PISTA')) {
+      return 'RWY';
+    }
+    // 2. TXY
+    if (desc.includes('TWY') || desc.includes('TXY') || desc.includes('TAXIWAY') || desc.includes('CALLE DE RODAJE') || desc.includes('RODAJE') || desc.includes('ROD')) {
+      return 'TXY';
+    }
+    // 3. SID/STAR/APP
+    if (desc.includes('SID') || desc.includes('STAR') || desc.includes('APP') || desc.includes('PROC') || desc.includes('APPROACH') || desc.includes('SALIDA') || desc.includes('LLEGADA')) {
+      return 'SID/STAR/APP';
+    }
+    // 4. Ayudas a la navegación (ILS/ALS)
+    if (desc.includes('ILS') || desc.includes('ALS') || desc.includes('VOR') || desc.includes('DME') || desc.includes('GP') || desc.includes('LLZ') || desc.includes('ATIS') || desc.includes('NDB') || desc.includes('FREQ') || desc.includes('FRECUENCIA')) {
+      return 'NAV_AIDS';
+    }
+    // 5. Procedimientos (LVP)
+    if (desc.includes('LVP') || desc.includes('LOW VISIBILITY') || desc.includes('VISIBILIDAD')) {
+      return 'LVP';
+    }
+    // 6. Misceláneos
+    return 'MISC';
   };
 
   const handleSyncNotams = async () => {
@@ -1519,11 +1550,55 @@ export default function ControllerPortal({
                     />
                   </div>
 
+                  {/* Panel de Categorías */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.25rem',
+                    flexWrap: 'wrap',
+                    marginBottom: '0.75rem'
+                  }}>
+                    {[
+                      { key: 'ALL', label: 'Todos' },
+                      { key: 'RWY', label: 'RWY' },
+                      { key: 'TXY', label: 'TXY' },
+                      { key: 'SID/STAR/APP', label: 'SID/STAR/APP' },
+                      { key: 'NAV_AIDS', label: 'Ayudas (ILS/ALS)' },
+                      { key: 'LVP', label: 'Proc. (LVP)' },
+                      { key: 'MISC', label: 'Misceláneos' }
+                    ].map(cat => {
+                      const isSelected = selectedNotamCategory === cat.key;
+                      return (
+                        <button
+                          key={cat.key}
+                          onClick={() => setSelectedNotamCategory(cat.key)}
+                          className="btn"
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            border: 'none',
+                            backgroundColor: isSelected ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.03)',
+                            color: isSelected ? 'black' : 'var(--text-secondary)',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   {/* Lista de NOTAMs */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '280px', overflowY: 'auto', paddingRight: '0.2rem' }}>
                     {(() => {
                       const filteredList = (notamsData.notams || [])
                         .filter(activeNotamSubTab === 'today' ? isNotamActiveToday : isNotamActiveTomorrowEarly)
+                        .filter(n => {
+                          if (selectedNotamCategory === 'ALL') return true;
+                          return categorizeNotam(n) === selectedNotamCategory;
+                        })
                         .filter(n => {
                           if (!notamSearchQuery.trim()) return true;
                           const query = notamSearchQuery.toLowerCase();
