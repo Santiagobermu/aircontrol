@@ -869,13 +869,9 @@ export default function App() {
     controllers.some(c => c.email && c.email.toLowerCase() === currentUser.email.toLowerCase() && c.isAdmin)
   );
 
-  const isUserSupervisor = currentUser.email && !isUserAdmin && (
-    controllers.some(c => c.email && c.email.toLowerCase() === currentUser.email.toLowerCase() && c.isSupervisor)
-  );
+  const userRole = isUserAdmin ? 'admin' : 'controller';
 
-  const userRole = isUserAdmin ? 'admin' : (isUserSupervisor ? 'supervisor' : 'controller');
-
-  const showControllerPortal = userRole === 'controller' || (viewAsController && (userRole === 'admin' || userRole === 'supervisor'));
+  const showControllerPortal = userRole === 'controller' || (viewAsController && userRole === 'admin');
 
   if (showControllerPortal) {
     return (
@@ -892,7 +888,7 @@ export default function App() {
         manualAlerts={manualAlerts}
         onLogout={handleLogout}
         onUpdateController={handleUpdateController}
-        onToggleViewMode={() => setViewAsController(false)}
+        onToggleViewMode={userRole === 'admin' ? () => setViewAsController(false) : null}
       />
     );
   }

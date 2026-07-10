@@ -38,12 +38,13 @@ import {
   updateTradeDB, 
   deleteTradeDB,
   addManualAlertDB,
-  deleteManualAlertDB
+  deleteManualAlertDB,
+  saveScheduleDayDB
 } from '../utils/db';
 import { auth } from '../utils/firebase';
 import { updatePassword } from 'firebase/auth';
 import MonthlyGrid from './MonthlyGrid';
-import { generateICS, uploadCalendarToStorage } from '../utils/calendarExport';
+import { generateICS, uploadCalendarToStorage, triggerCalendarSyncIfEnabled } from '../utils/calendarExport';
 
 export default function ControllerPortal({ 
   userEmail, 
@@ -702,6 +703,107 @@ export default function ControllerPortal({
     if (window.confirm('¿Desea cancelar esta propuesta de cambio enviada?')) {
       await deleteTradeDB(tradeId);
       alert('Propuesta cancelada.');
+    }
+  };
+
+  const handleApproveTrade = async (id) => {
+    const trade = trades.find(t => t.id === id);
+    if (!trade || trade.status !== 'PENDIENTE_APROBACION') return;
+
+    const updatedSchedule = { ...schedule };
+    const dateStr = trade.date;
+
+    if (!updatedSchedule[dateStr]) {
+      updatedSchedule[dateStr] = createEmptyDaySchedule(dateStr);
+    }
+
+    const testSchedule = JSON.parse(JSON.stringify(updatedSchedule));
+    let warnings = [];
+
+    const ctrlA = controllers.find(c => c.id === trade.fromControllerId);
+    const ctrlB = controllers.find(c => c.id === trade.toControllerId);
+
+    if (trade.type === 'SWAP') {
+      const fromShift = trade.fromSlot.shift;
+      const fromSlotKey = trade.fromSlot.slotKey;
+      const toShift = trade.toSlot.shift;
+      const toSlotKey = trade.toSlot.slotKey;
+
+      testSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
+      testSchedule[dateStr][toShift][toSlotKey] = trade.fromControllerId;
+
+      const valA = validateAssignment(trade.fromControllerId, dateStr, toShift, toSlotKey, testSchedule, controllers, exceptions);
+      if (!valA.isValid) {
+        warnings.push(`[${ctrlA?.name || trade.fromControllerId}]: ${valA.error}`);
+      }
+
+      const valB = validateAssignment(trade.toControllerId, dateStr, fromShift, fromSlotKey, testSchedule, controllers, exceptions);
+      if (!valB.isValid) {
+        warnings.push(`[${ctrlB?.name || trade.toControllerId}]: ${valB.error}`);
+      }
+    } else if (trade.type === 'COVER') {
+      const fromShift = trade.fromSlot.shift;
+      const fromSlotKey = trade.fromSlot.slotKey;
+
+      testSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
+
+      const valB = validateAssignment(trade.toControllerId, dateStr, fromShift, fromSlotKey, testSchedule, controllers, exceptions);
+      if (!valB.isValid) {
+        warnings.push(`[${ctrlB?.name || trade.toControllerId}]: ${valB.error}`);
+      }
+    }
+
+    if (warnings.length > 0) {
+      const proceed = window.confirm(
+        `Se han detectado los siguientes conflictos / advertencias en las habilitaciones o Roster para esta solicitud:\n\n` +
+        warnings.map(w => `• ${w}`).join('\n') +
+        `\n\n¿Desea forzar la aprobación y ejecución de todas formas?`
+      );
+      if (!proceed) return;
+    }
+
+    if (trade.type === 'SWAP') {
+      const fromShift = trade.fromSlot.shift;
+      const fromSlotKey = trade.fromSlot.slotKey;
+      const toShift = trade.toSlot.shift;
+      const toSlotKey = trade.toSlot.slotKey;
+
+      updatedSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
+      updatedSchedule[dateStr][toShift][toSlotKey] = trade.fromControllerId;
+    } else if (trade.type === 'COVER') {
+      const fromShift = trade.fromSlot.shift;
+      const fromSlotKey = trade.fromSlot.slotKey;
+
+      updatedSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
+    }
+
+    try {
+      await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
+
+      const updatedTrade = { ...trade, status: 'APROBADO' };
+      await updateTradeDB(updatedTrade);
+
+      const parts = dateStr.split('-');
+      const yr = parseInt(parts[0], 10);
+      const mo = parseInt(parts[1], 10) - 1;
+      await triggerCalendarSyncIfEnabled(trade.fromControllerId, controllers, yr, mo, updatedSchedule, exceptions);
+      await triggerCalendarSyncIfEnabled(trade.toControllerId, controllers, yr, mo, updatedSchedule, exceptions);
+      
+      alert('Solicitud de cambio aprobada y ejecutada con éxito.');
+    } catch (err) {
+      console.error(err);
+      alert('Error al ejecutar la aprobación: ' + err.message);
+    }
+  };
+
+  const handleRejectTradeByAdmin = async (id) => {
+    if (!window.confirm('¿Estás seguro de rechazar y eliminar esta propuesta de cambio de turno?')) return;
+    try {
+      await deleteTradeDB(id);
+      alert('Solicitud de cambio rechazada.');
+    } catch (err) {
+      console.error(err);
+      alert('Error al rechazar la solicitud: ' + err.message);
     }
   };
 
@@ -1381,7 +1483,7 @@ export default function ControllerPortal({
                       <Bell size={18} style={{ color: 'var(--status-warning)' }} />
                       <span>Alertas de la Torre (Locales)</span>
                     </h3>
-                    {(userRole === 'admin' || userRole === 'supervisor') && (
+                    {(userRole === 'admin' || currentController?.isSupervisor) && (
                       <button 
                         onClick={() => setIsAddingAlert(!isAddingAlert)} 
                         className="btn"
@@ -1435,7 +1537,7 @@ export default function ControllerPortal({
                             position: 'relative'
                           }}
                         >
-                          {(userRole === 'admin' || userRole === 'supervisor') && (
+                          {(userRole === 'admin' || currentController?.isSupervisor) && (
                             <button
                               onClick={() => handleDeleteAlert(alertItem.id)}
                               style={{
@@ -1478,7 +1580,7 @@ export default function ControllerPortal({
                       <span>NOTAMs Eldorado (SKBO)</span>
                     </h3>
                     
-                    {(userRole === 'admin' || userRole === 'supervisor') && (
+                    {(userRole === 'admin' || currentController?.isSupervisor) && (
                       <button 
                         onClick={handleSyncNotams} 
                         disabled={syncingNotams}
@@ -1983,6 +2085,95 @@ export default function ControllerPortal({
                   </p>
                 )}
               </div>
+
+              {/* Solicitudes Pendientes de Aprobación CTE/Admin */}
+              {(currentController?.isSupervisor || userRole === 'admin') && (
+                <div className="glass-panel" style={{ borderLeft: '4px solid var(--accent-cyan)' }}>
+                  <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldCheck size={20} style={{ color: 'var(--accent-cyan)' }} />
+                    <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      Solicitudes por Aprobar (Panel CTE)
+                      <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)', padding: '0.1rem 0.4rem', borderRadius: '10px' }}>
+                        {trades.filter(t => t.status === 'PENDIENTE_APROBACION').length}
+                      </span>
+                    </h3>
+                  </div>
+
+                  {trades.filter(t => t.status === 'PENDIENTE_APROBACION').length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {trades.filter(t => t.status === 'PENDIENTE_APROBACION').map(t => {
+                        const sender = controllers.find(c => c.id === t.fromControllerId);
+                        const receiver = controllers.find(c => c.id === t.toControllerId);
+                        
+                        return (
+                          <div 
+                            key={t.id}
+                            style={{
+                              backgroundColor: 'var(--bg-tertiary)',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: '12px',
+                              padding: '1rem',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.5rem',
+                              animation: 'fadeIn 0.2s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                              <span style={{
+                                fontWeight: '800',
+                                backgroundColor: t.type === 'SWAP' ? 'rgba(6, 182, 212, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                color: t.type === 'SWAP' ? 'var(--accent-cyan)' : 'var(--accent-fic)',
+                                padding: '0.1rem 0.35rem',
+                                borderRadius: '4px'
+                              }}>
+                                {t.type === 'SWAP' ? 'SWAP' : 'COVER'}
+                              </span>
+                              <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>
+                                Fecha: {t.date}
+                              </span>
+                            </div>
+
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: '0.2rem 0', lineHeight: '1.4' }}>
+                              {t.type === 'SWAP' ? (
+                                <>
+                                  <strong>{sender?.name || t.fromControllerId}</strong> cede <em>{t.fromSlot.shift} ({getSlotAcronym(t.fromSlot.slotKey)})</em> <br/>
+                                  <strong>{receiver?.name || t.toControllerId}</strong> cede <em>{t.toSlot.shift} ({getSlotAcronym(t.toSlot.slotKey)})</em>
+                                </>
+                              ) : (
+                                <>
+                                  <strong>{receiver?.name || t.toControllerId}</strong> cubre a <strong>{sender?.name || t.fromControllerId}</strong> en <em>{t.fromSlot.shift} ({getSlotAcronym(t.fromSlot.slotKey)})</em>
+                                </>
+                              )}
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                              <button
+                                onClick={() => handleApproveTrade(t.id)}
+                                className="btn btn-primary"
+                                style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
+                              >
+                                <Check size={14} /> Aprobar y Ejecutar
+                              </button>
+                              <button
+                                onClick={() => handleRejectTradeByAdmin(t.id)}
+                                className="btn btn-danger-outline"
+                                style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                              >
+                                <X size={14} /> Rechazar
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', margin: '1rem 0' }}>
+                      No hay solicitudes pendientes de aprobación de jefatura.
+                    </p>
+                  )}
+                </div>
+              )}
 
             </div>
 

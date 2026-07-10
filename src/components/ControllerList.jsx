@@ -95,7 +95,7 @@ export default function ControllerList({ controllers, onEditController, onDelete
                       <Shield size={14} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} title="Administrador (Acceso Total)" />
                     )}
                     {controller.isSupervisor && (
-                      <Shield size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} title="Supervisor (Aprobación de Cambios)" />
+                      <Shield size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} title="Encargado de Turno (CTE)" />
                     )}
                   </div>
                   <span className="controller-id">{controller.id}</span>

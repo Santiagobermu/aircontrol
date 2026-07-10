@@ -272,7 +272,7 @@ export default function ControllerForm({ onAddController, editingController, onU
               }}
             />
             <label htmlFor="ctrl-supervisor" style={{ fontSize: '0.85rem', color: 'var(--text-primary)', cursor: 'pointer', textTransform: 'none', letterSpacing: 'normal' }}>
-              Habilitar Perfil de Supervisor (Aprobación de Cambios)
+              Habilitar como Encargado de Turno (CTE) (Aprobación de Cambios y alertas de Radar)
             </label>
           </div>
         </div>
