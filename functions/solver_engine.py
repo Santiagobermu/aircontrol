@@ -70,7 +70,7 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
     # Standard operational requirements for non-holiday days
     standard_slots = {
         'A': ['TWR-1', 'GND-1', 'DEL-1'],
-        'M': ['TWR-1', 'TWR-2', 'GND-1', 'GND-2', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'CTE-1'],
+        'M': ['TWR-1', 'TWR-2', 'GND-1', 'GND-2', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'CTE-1', 'CAE-1'],
         'T': ['TWR-1', 'TWR-2', 'GND-1', 'GND-2', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'CTE-1'],
         'N': ['TWR-1', 'TWR-2', 'GND-1', 'GND-2', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'CTE-1']
     }

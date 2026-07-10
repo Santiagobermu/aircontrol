@@ -57,7 +57,7 @@ Es el núcleo de optimización. Utiliza **Google OR-Tools CP-SAT** para resolver
 
 * **Entrada**: Controladores activos, excepciones vigentes (vacaciones, licencias, etc.), patrón secuencial seleccionado, días del mes, festivos nacionales y pre-asignaciones existentes (presets).
 * **Restricciones Duras (Hard Constraints)**:
-  * **Certificaciones**: Solo asigna a un controlador si sus `skills` contienen la posición operativa (ej. `TWR`, `GND`, `DEL`, `FIC`, `CTE`).
+  * **Certificaciones**: Solo asigna a un controlador si sus `skills` contienen la posición operativa (ej. `TWR`, `GND`, `DEL`, `FIC`, `CTE`). Las posiciones dinámicas/especiales de capacitación (`CAE`, `INS`, `CHEC`) no requieren habilidades específicas y cualquier controlador puede recibirlas.
   * **Excepciones**: Si el controlador tiene un estado especial en un día (`VACACIONES`, `DESCANSO`, `LICR`, `LICN`, `CMED`, `SIND`), no se le puede asignar jornada.
   * **Carga Máxima**: Límite de 12 horas diarias (máximo 2 turnos de 6 horas) por controlador.
   * **Consecutividad**: Si trabaja doble turno en un día, deben ser seguidos (`M+T` o `T+N`). No se permiten turnos alternados como `M+N` o jornada de madrugada `A` con otra jornada.

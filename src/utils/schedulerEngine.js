@@ -890,7 +890,7 @@ export const runAutoSchedulerForMonth = (daysInMonth, controllers, exceptions = 
         const position = slotKey.split('-')[0];
         const candidates = controllers.filter(c => {
           if (!c.active) return false;
-          if (!c.skills || !c.skills.includes(position)) return false;
+          if (!['INS', 'CAE', 'CHEC'].includes(position) && (!c.skills || !c.skills.includes(position))) return false;
           slots[slotKey] = c.id;
           const val = validateAssignment(c.id, day, shift, slotKey, updatedSchedule, controllers, exceptions);
           slots[slotKey] = null;
