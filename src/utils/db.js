@@ -293,3 +293,19 @@ export const getSystemRulesDB = async () => {
 export const saveSystemRulesDB = async (rules) => {
   await setDoc(doc(db, 'settings', 'rules'), { rules });
 };
+
+// Manual Alerts CRUD
+export const addManualAlertDB = async (alertData) => {
+  const ref = doc(collection(db, 'manual_alerts'));
+  await setDoc(ref, { 
+    ...alertData, 
+    id: ref.id,
+    createdAt: new Date().toISOString()
+  });
+  return ref.id;
+};
+
+export const deleteManualAlertDB = async (id) => {
+  await deleteDoc(doc(db, 'manual_alerts', id));
+};
+

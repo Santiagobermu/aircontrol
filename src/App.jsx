@@ -57,7 +57,9 @@ import {
   addTradeDB,
   updateTradeDB,
   deleteTradeDB,
-  registerUserInAuth
+  registerUserInAuth,
+  addManualAlertDB,
+  deleteManualAlertDB
 } from './utils/db';
 
 export default function App() {
@@ -106,6 +108,9 @@ export default function App() {
   const [requests, setRequests] = useState([]);
   const [trades, setTrades] = useState([]);
   const [publishState, setPublishState] = useState({});
+  const [notamsData, setNotamsData] = useState({ notams: [], lastUpdated: null, pdfUrl: null });
+  const [manualAlerts, setManualAlerts] = useState([]);
+  const [viewAsController, setViewAsController] = useState(false);
 
   // Calcular dinámicamente los 7 días de la semana de la fecha seleccionada en el planificador
   const weekDays = getWeekDaysOfDate(selectedDayStr);
@@ -119,6 +124,8 @@ export default function App() {
     let unsubRequests = () => {};
     let unsubTrades = () => {};
     let unsubPublishState = () => {};
+    let unsubNotams = () => {};
+    let unsubManualAlerts = () => {};
 
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -201,12 +208,30 @@ export default function App() {
         }
       });
 
+      // 9. Set up real-time listener for NOTAMs
+      unsubNotams = onSnapshot(doc(db, 'settings', 'notams_skbo'), (docSnap) => {
+        if (docSnap.exists()) {
+          setNotamsData(docSnap.data() || { notams: [], lastUpdated: null, pdfUrl: null });
+        } else {
+          setNotamsData({ notams: [], lastUpdated: null, pdfUrl: null });
+        }
+      });
+
+      // 10. Set up real-time listener for Manual Alerts
+      unsubManualAlerts = onSnapshot(collection(db, 'manual_alerts'), (snapshot) => {
+        const alertList = [];
+        snapshot.forEach(docSnap => {
+          alertList.push(docSnap.data());
+        });
+        // Sort alerts by creation date descending
+        alertList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setManualAlerts(alertList);
+      });
+
       setLoading(false);
     };
 
     init();
-
-
 
     return () => {
       unsubAuth();
@@ -217,6 +242,8 @@ export default function App() {
       unsubRequests();
       unsubTrades();
       unsubPublishState();
+      unsubNotams();
+      unsubManualAlerts();
     };
   }, []);
 
@@ -847,7 +874,9 @@ export default function App() {
 
   const userRole = isUserAdmin ? 'admin' : (isUserSupervisor ? 'supervisor' : 'controller');
 
-  if (userRole === 'controller') {
+  const showControllerPortal = userRole === 'controller' || (viewAsController && (userRole === 'admin' || userRole === 'supervisor'));
+
+  if (showControllerPortal) {
     return (
       <ControllerPortal
         userEmail={currentUser.email}
@@ -857,8 +886,12 @@ export default function App() {
         requests={requests}
         trades={trades}
         publishState={publishState}
+        userRole={userRole}
+        notamsData={notamsData}
+        manualAlerts={manualAlerts}
         onLogout={handleLogout}
         onUpdateController={handleUpdateController}
+        onToggleViewMode={() => setViewAsController(false)}
       />
     );
   }
@@ -972,6 +1005,34 @@ export default function App() {
             </ul>
           </nav>
         </div>
+
+        {(userRole === 'admin' || userRole === 'supervisor') && (
+          <div style={{ padding: '0 1.5rem', marginBottom: '1rem' }}>
+            <button 
+              onClick={() => setViewAsController(true)} 
+              className="btn" 
+              style={{ 
+                width: '100%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                justifyContent: 'center',
+                fontSize: '0.8rem',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                border: '1px solid rgba(6, 182, 212, 0.2)',
+                color: 'var(--accent-cyan)',
+                cursor: 'pointer',
+                fontWeight: '700',
+                transition: 'all 0.2s'
+              }}
+            >
+              <User size={14} />
+              <span>Vista de Controlador</span>
+            </button>
+          </div>
+        )}
 
         <div className="sidebar-footer">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-cyan)' }}>
