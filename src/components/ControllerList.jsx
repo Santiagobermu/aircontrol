@@ -29,6 +29,7 @@ export default function ControllerList({ controllers, onEditController, onDelete
       case 'TWR': return 'Torre';
       case 'GND': return 'Superficie';
       case 'DEL': return 'Autorizaciones';
+      case 'FIC': return 'Información de Vuelo';
       default: return skill;
     }
   };
@@ -67,7 +68,7 @@ export default function ControllerList({ controllers, onEditController, onDelete
         </div>
 
         <div className="filter-group">
-          {['ALL', 'CTE', 'TWR', 'GND', 'DEL'].map((filter) => (
+          {['ALL', 'CTE', 'TWR', 'GND', 'DEL', 'FIC'].map((filter) => (
             <button
               key={filter}
               onClick={() => handleFilterClick(filter)}
@@ -79,88 +80,90 @@ export default function ControllerList({ controllers, onEditController, onDelete
         </div>
       </div>
 
-      {/* Lista Grid */}
-      <div className="controllers-grid">
-        {filteredControllers.length > 0 ? (
-          filteredControllers.map((controller) => (
-            <div key={controller.id} className="controller-card">
-              <div className="controller-header">
-                <div className="controller-info">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    <span className="controller-name">{controller.name}</span>
-                    {controller.trainingPreferred && (
-                      <GraduationCap size={15} style={{ color: 'var(--accent-indigo)', flexShrink: 0 }} title="Entrenamiento Preferente" />
-                    )}
-                    {controller.isAdmin && (
-                      <Shield size={14} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} title="Administrador (Acceso Total)" />
-                    )}
-                    {controller.isSupervisor && (
-                      <Shield size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} title="Encargado de Turno (CTE)" />
+      {/* Contenedor con Scroll para la Lista de Controladores */}
+      <div className="controllers-scroll-container">
+        <div className="controllers-grid">
+          {filteredControllers.length > 0 ? (
+            filteredControllers.map((controller) => (
+              <div key={controller.id} className="controller-card">
+                <div className="controller-header">
+                  <div className="controller-info">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <span className="controller-name">{controller.name}</span>
+                      {controller.trainingPreferred && (
+                        <GraduationCap size={15} style={{ color: 'var(--accent-indigo)', flexShrink: 0 }} title="Entrenamiento Preferente" />
+                      )}
+                      {controller.isAdmin && (
+                        <Shield size={14} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} title="Administrador (Acceso Total)" />
+                      )}
+                      {controller.isSupervisor && (
+                        <Shield size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} title="Encargado de Turno (CTE)" />
+                      )}
+                    </div>
+                    <span className="controller-id">{controller.id}</span>
+                    {controller.email && (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem', display: 'block', wordBreak: 'break-all' }}>
+                        {controller.email}
+                      </span>
                     )}
                   </div>
-                  <span className="controller-id">{controller.id}</span>
-                  {controller.email && (
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem', display: 'block', wordBreak: 'break-all' }}>
-                      {controller.email}
-                    </span>
-                  )}
+                  <div 
+                    className="controller-status-dot" 
+                    title={controller.active ? "Activo para programación" : "Inactivo"}
+                    style={{
+                      backgroundColor: controller.active ? 'var(--status-success)' : 'var(--status-danger)',
+                      boxShadow: controller.active ? '0 0 8px var(--status-success)' : '0 0 8px var(--status-danger)'
+                    }}
+                  />
                 </div>
-                <div 
-                  className="controller-status-dot" 
-                  title={controller.active ? "Activo para programación" : "Inactivo"}
-                  style={{
-                    backgroundColor: controller.active ? 'var(--status-success)' : 'var(--status-danger)',
-                    boxShadow: controller.active ? '0 0 8px var(--status-success)' : '0 0 8px var(--status-danger)'
-                  }}
-                />
-              </div>
 
-              <div className="controller-body">
-                <span className="skills-label">Habilitaciones Certificadas:</span>
-                <div className="controller-skills">
-                  {(controller.skills || []).map((skill) => (
-                    <span 
-                      key={skill} 
-                      className={`skill-chip ${skill.toLowerCase()}`}
-                      title={getSkillLabel(skill)}
+                <div className="controller-body">
+                  <span className="skills-label">Habilitaciones Certificadas:</span>
+                  <div className="controller-skills">
+                    {(controller.skills || []).map((skill) => (
+                      <span 
+                        key={skill} 
+                        className={`skill-chip ${skill.toLowerCase()}`}
+                        title={getSkillLabel(skill)}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {userRole === 'admin' && (
+                  <div className="controller-footer">
+                    <button
+                      onClick={() => onEditController(controller)}
+                      className="btn btn-secondary btn-icon-only"
+                      title="Editar controlador"
                     >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => onDeleteController(controller.id)}
+                      className="btn btn-danger-outline btn-icon-only"
+                      title="Eliminar controlador"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
-
-              {userRole === 'admin' && (
-                <div className="controller-footer">
-                  <button
-                    onClick={() => onEditController(controller)}
-                    className="btn btn-secondary btn-icon-only"
-                    title="Editar controlador"
-                  >
-                    <Edit3 size={16} />
-                  </button>
-                  <button
-                    onClick={() => onDeleteController(controller.id)}
-                    className="btn btn-danger-outline btn-icon-only"
-                    title="Eliminar controlador"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )}
+            ))
+          ) : (
+            <div className="empty-state">
+              <AlertCircle size={40} />
+              <p style={{ fontWeight: '500', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                No se encontraron controladores
+              </p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Prueba cambiando la búsqueda o el filtro de habilidad, o registra un controlador nuevo.
+              </p>
             </div>
-          ))
-        ) : (
-          <div className="empty-state">
-            <AlertCircle size={40} />
-            <p style={{ fontWeight: '500', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-              No se encontraron controladores
-            </p>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Prueba cambiando la búsqueda o el filtro de habilidad, o registra un controlador nuevo.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -589,7 +589,15 @@ input:checked + .skill-checkbox-inner .skill-abbr {
   color: var(--accent-cyan);
 }
 
-/* Tarjetas de Controlador */
+/* Tarjetas de Controlador y Scroll Container */
+.controllers-scroll-container {
+  max-height: calc(100vh - 280px);
+  min-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+  margin-top: 0.5rem;
+}
+
 .controllers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
