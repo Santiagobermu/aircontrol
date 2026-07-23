@@ -96,15 +96,25 @@ export const seedDatabaseIfEmpty = async () => {
     const snapshot = await getDocs(controllersColl);
     
     if (snapshot.empty) {
-      console.log('Seeding initial controllers...');
-      // Use batches (limit 500)
+      console.log('Verificando y registrando controladores iniciales de forma segura...');
       const batch = writeBatch(db);
-      INITIAL_CONTROLLERS.forEach(c => {
+      let seededCount = 0;
+      
+      for (const c of INITIAL_CONTROLLERS) {
         const ref = doc(db, 'controllers', c.id);
-        batch.set(ref, c);
-      });
-      await batch.commit();
-      console.log('Controllers seeded successfully.');
+        const docSnap = await getDoc(ref);
+        if (!docSnap.exists()) {
+          batch.set(ref, c);
+          seededCount++;
+        }
+      }
+
+      if (seededCount > 0) {
+        await batch.commit();
+        console.log(`Se registraron ${seededCount} controladores iniciales con éxito.`);
+      } else {
+        console.log('Los controladores ya existían en Firestore; no se sobreescribieron.');
+      }
       
       // Asegurar que se registren los usuarios demo en Firebase Auth
       try {
@@ -115,7 +125,7 @@ export const seedDatabaseIfEmpty = async () => {
         console.error('Error registering admin account:', authErr);
       }
     } else {
-      // Verificar y autocurar correos en Firestore de los controladores existentes
+      // Verificar y autocurar correos en Firestore de los controladores existentes sin alterar sus skills o atributos
       const batch = writeBatch(db);
       let updatedCount = 0;
       snapshot.forEach(docSnap => {
@@ -175,11 +185,11 @@ export const seedDatabaseIfEmpty = async () => {
 
 // Controllers CRUD
 export const addControllerDB = async (c) => {
-  await setDoc(doc(db, 'controllers', c.id), c);
+  await setDoc(doc(db, 'controllers', c.id), c, { merge: true });
 };
 
 export const updateControllerDB = async (c) => {
-  await setDoc(doc(db, 'controllers', c.id), c);
+  await setDoc(doc(db, 'controllers', c.id), c, { merge: true });
 };
 
 export const deleteControllerDB = async (id) => {

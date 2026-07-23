@@ -560,9 +560,11 @@ export default function MonthlyGrid({
       active: editActive,
       skills: editSkills,
       trainingPreferred: editTrainingPreferred,
-      email: editEmail.trim().toLowerCase(),
-      password: editPassword
+      email: editEmail.trim().toLowerCase()
     };
+    if (editPassword) {
+      updated.password = editPassword;
+    }
 
     onUpdateController(updated);
     setEditingCtrl(null);

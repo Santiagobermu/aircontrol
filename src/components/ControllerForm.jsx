@@ -48,6 +48,7 @@ export default function ControllerForm({ onAddController, editingController, onU
     }
 
     const controllerData = {
+      ...(editingController || {}),
       id: id.trim(),
       name: name.trim(),
       skills,
@@ -55,9 +56,12 @@ export default function ControllerForm({ onAddController, editingController, onU
       isAdmin,
       isSupervisor,
       active: editingController ? editingController.active : true,
-      email: email.trim().toLowerCase(),
-      password: password
+      email: email.trim().toLowerCase()
     };
+
+    if (password) {
+      controllerData.password = password;
+    }
 
     const validation = validateController(controllerData, controllers, !!editingController);
 
