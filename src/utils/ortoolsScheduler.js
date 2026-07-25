@@ -76,7 +76,7 @@ export const runOrToolsScheduler = async (daysInMonth, controllers, exceptions, 
     const data = await response.json();
     if (data.status === 'OPTIMAL' || data.status === 'FEASIBLE') {
       console.log('[OR-Tools Scheduler] Solver succeeded! Metrics:', data.metrics);
-      return data.schedule;
+      return { schedule: data.schedule, exceptions: data.exceptions };
     } else {
       console.warn('[OR-Tools Scheduler] Solver returned INFEASIBLE. Falling back to local JS engine.');
     }
@@ -86,5 +86,6 @@ export const runOrToolsScheduler = async (daysInMonth, controllers, exceptions, 
   }
 
   // Graceful fallback to client-side heuristic scheduler
-  return localScheduler(daysInMonth, controllers, exceptions, sequencePattern, requests);
+  const localRes = localScheduler(daysInMonth, controllers, exceptions, sequencePattern, requests);
+  return { schedule: localRes, exceptions: null };
 };

@@ -194,7 +194,7 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
             a_curr = sum(x[c_id, d_curr, 'A', slot] for slot in day_shift_slots[d_curr]['A'])
             model.Add(t_prev + a_curr <= 1)
 
-    # 8b. Rule: Encadenamiento NCTE -> ACTE (Noche CTE en día d implica Madrugada CTE en día d+1)
+    # 8b. Rule: Encadenamiento NCTE -> ACTE (Noche CTE el día d obliga Madrugada CTE el día d+1)
     for c_id in controller_ids:
         for i in range(len(days) - 1):
             d_curr = days[i]
@@ -205,16 +205,16 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
             
             model.Add(n_cte <= a_cte)
 
-    # 8c. Rule: Encadenamiento ADPR -> ADPR (Madrugada DEL-2 en día d implica Madrugada DEL-2 en día d+1)
+    # 8c. Rule: Encadenamiento NDPR -> ADPR (Noche DEL-2 el día d obliga Madrugada DEL-2 el día d+1)
     for c_id in controller_ids:
         for i in range(len(days) - 1):
             d_curr = days[i]
             d_next = days[i+1]
             
-            a_adpr_curr = sum(x[c_id, d_curr, 'A', slot] for slot in day_shift_slots[d_curr]['A'] if slot == 'DEL-2')
+            n_adpr_curr = sum(x[c_id, d_curr, 'N', slot] for slot in day_shift_slots[d_curr]['N'] if slot == 'DEL-2')
             a_adpr_next = sum(x[c_id, d_next, 'A', slot] for slot in day_shift_slots[d_next]['A'] if slot == 'DEL-2')
             
-            model.Add(a_adpr_curr <= a_adpr_next)
+            model.Add(n_adpr_curr <= a_adpr_next)
 
     # 9. Rule: Weekly Rest Window (Mon-Sat, or Tue-Sat if Monday is a holiday)
     # We group days into weeks
@@ -382,8 +382,13 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
     elif status == cp_model.FEASIBLE:
         status_label = "FEASIBLE"
         
-    # Reconstruct schedule output
+    # Reconstruct schedule & explicit rest exceptions output
     solution_schedule = {}
+    solution_exceptions = {}
+    
+    for c_id in controller_ids:
+        solution_exceptions[c_id] = dict(exceptions.get(c_id, {}))
+
     for d in days:
         solution_schedule[d] = {}
         for s in shifts_list:
@@ -398,9 +403,26 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
                         break
                 solution_schedule[d][s][slot] = assigned_c_id
 
+    # For days where a controller works 0 shifts and has no explicit prior leave/exception, assign DESCANSO
+    if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
+        for c_id in controller_ids:
+            for d in days:
+                worked_any = False
+                for s in shifts_list:
+                    for slot in day_shift_slots[d][s]:
+                        if solution_schedule[d][s].get(slot) == c_id:
+                            worked_any = True
+                            break
+                    if worked_any:
+                        break
+                
+                if not worked_any and solution_exceptions[c_id].get(d, 'OPERATIVO') == 'OPERATIVO':
+                    solution_exceptions[c_id][d] = 'DESCANSO'
+
     return {
         "status": status_label,
         "schedule": solution_schedule,
+        "exceptions": solution_exceptions,
         "metrics": {
             "unassigned_slots": int(solver.Value(sum_unassigned)) if status in [cp_model.OPTIMAL, cp_model.FEASIBLE] else -1,
             "fairness_diff": int(solver.Value(fairness_diff)) if status in [cp_model.OPTIMAL, cp_model.FEASIBLE] else -1,

@@ -766,13 +766,25 @@ export default function App() {
       }
     });
 
-    const result = await runOrToolsScheduler(daysInMonth, controllers, tempExceptions, sequencePattern, requests, schedule);
+    const resultObj = await runOrToolsScheduler(daysInMonth, controllers, tempExceptions, sequencePattern, requests, schedule);
+    const newSchedule = resultObj?.schedule || resultObj;
+    const newExceptions = resultObj?.exceptions;
     
-    if (result) {
-      await saveScheduleMonthDB(result);
+    if (newSchedule) {
+      await saveScheduleMonthDB(newSchedule);
       
-      // Persistir las excepciones derivadas de las peticiones en la base de datos
+      // Persistir las excepciones explícitas y descansos generados en la base de datos
       const exceptionPromises = [];
+
+      if (newExceptions) {
+        Object.keys(newExceptions).forEach(cId => {
+          const ref = doc(db, 'exceptions', cId);
+          exceptionPromises.push((async () => {
+            await setDoc(ref, newExceptions[cId], { merge: true });
+          })());
+        });
+      }
+
       requests.forEach(req => {
         if (req.position === 'DESCANSO' || req.position === 'LICN' || req.position === 'LICR') {
           const ref = doc(db, 'exceptions', req.controllerId);
@@ -780,10 +792,11 @@ export default function App() {
             const snap = await getDoc(ref);
             const data = snap.exists() ? snap.data() : {};
             data[req.date] = req.position;
-            await setDoc(ref, data);
+            await setDoc(ref, data, { merge: true });
           })());
         }
       });
+
       if (exceptionPromises.length > 0) {
         await Promise.all(exceptionPromises);
       }
@@ -791,7 +804,7 @@ export default function App() {
       showNotification(`¡Todo el mes de ${monthNames[currentMonth]} programado con éxito de forma balanceada!`, 'success');
       controllers.forEach(c => {
         if (c.calendarSyncEnabled) {
-          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, result, tempExceptions);
+          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, newSchedule, newExceptions || tempExceptions);
         }
       });
     } else {
