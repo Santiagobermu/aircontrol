@@ -8,10 +8,10 @@ export const SHIFTS = ['A', 'M', 'T', 'N'];
 
 // Estructura de requerimientos de slots por turno y posición (Se añade ENT-1 para entrenamiento y FIC-3 para M y T)
 export const SHIFT_REQUIREMENTS = {
-  A: { CTE: 0, TWR: 3, GND: 3, DEL: 1, ENT: 1, ACC: 1 },
-  M: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3, ENT: 1, INS: 1, CAE: 1, CHEC: 1, ACC: 1 },
-  T: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3, ENT: 1, INS: 1, CHEC: 1, ACC: 1 },
-  N: { CTE: 1, TWR: 3, GND: 3, DEL: 2, ENT: 1, ACC: 1 }
+  A: { CTE: 1, TWR: 2, GND: 2, DEL: 2 },
+  M: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3 },
+  T: { CTE: 1, TWR: 3, GND: 3, DEL: 2, FIC: 3 },
+  N: { CTE: 1, TWR: 3, GND: 3, DEL: 2 }
 };
 
 // Fecha ancla para cálculo de desfase rotativo de 6 días (Lunes 2026-05-25)

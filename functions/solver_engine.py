@@ -71,23 +71,22 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
     
     shifts_list = ['A', 'M', 'T', 'N']
     
-    # Standard operational requirements for non-holiday days
+    # Standard operational requirements for EVERY day (39 slots total)
     standard_slots = {
-        'A': ['TWR-1', 'GND-1', 'DEL-1'],
-        'M': ['TWR-1', 'TWR-2', 'GND-1', 'GND-2', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'CTE-1', 'CAE-1'],
-        'T': ['TWR-1', 'TWR-2', 'GND-1', 'GND-2', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'CTE-1'],
-        'N': ['TWR-1', 'TWR-2', 'GND-1', 'GND-2', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'CTE-1']
+        'A': ['TWR-1', 'TWR-2', 'CTE-1', 'GND-1', 'GND-2', 'DEL-2'],
+        'M': ['CTE-1', 'TWR-1', 'TWR-2', 'TWR-3', 'GND-1', 'GND-2', 'GND-3', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'FIC-3'],
+        'T': ['CTE-1', 'TWR-1', 'TWR-2', 'TWR-3', 'GND-1', 'GND-2', 'GND-3', 'DEL-1', 'DEL-2', 'FIC-1', 'FIC-2', 'FIC-3'],
+        'N': ['CTE-1', 'TWR-1', 'TWR-2', 'TWR-3', 'GND-1', 'GND-2', 'GND-3', 'DEL-1', 'DEL-2']
     }
     
     # 1. Discover all slots for each day and shift
     day_shift_slots = {}
     for d in days:
         day_shift_slots[d] = {}
-        is_h = is_colombian_holiday(d, holidays)
         for s in shifts_list:
-            # If not holiday, standard slots are required. If holiday, no slots are required by default.
-            slots = list(standard_slots[s]) if not is_h else []
-            # Keep preset assignments (even on holidays or custom positions)
+            # Standard slots are required every day
+            slots = list(standard_slots[s])
+            # Keep preset assignments (even on custom positions like ENT)
             preset_slots = current_schedule.get(d, {}).get(s, {}) if current_schedule else {}
             for slot_key, assigned_c_id in preset_slots.items():
                 if assigned_c_id and slot_key not in slots:
@@ -103,7 +102,6 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
     controller_ids = [c['id'] for c in controllers]
     
     for d in days:
-        is_h = is_colombian_holiday(d, holidays)
         for s in shifts_list:
             for slot in day_shift_slots[d][s]:
                 # Boolean variable for unassigned slot
@@ -136,13 +134,8 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
                             val = 1 if preset_c_id == c_id else 0
                             x[c_id, d, s, slot] = model.NewIntVar(val, val, f"x_{c_id}_{d}_{s}_{slot}")
                         else:
-                            # Standard optimization variable
-                            if is_h:
-                                # On holidays, we do not auto-assign new shifts (only keep presets)
-                                x[c_id, d, s, slot] = model.NewIntVar(0, 0, f"x_{c_id}_{d}_{s}_{slot}")
-                            else:
-                                # Regular day variable
-                                x[c_id, d, s, slot] = model.NewBoolVar(f"x_{c_id}_{d}_{s}_{slot}")
+                            # Regular day optimization variable
+                            x[c_id, d, s, slot] = model.NewBoolVar(f"x_{c_id}_{d}_{s}_{slot}")
                     else:
                         # Controller not qualified, inactive, has exception, or has avoid request
                         val = 1 if preset_c_id == c_id else 0
@@ -166,7 +159,7 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
         for d in days:
             model.Add(sum(x[c_id, d, s, slot] for s in shifts_list for slot in day_shift_slots[d][s]) <= 2)
 
-    # 6. Rule: No dobles (supplementary shifts) on Sundays/Holidays
+    # 6. Rule: Limit of 1 shift on Sundays/Holidays if restricted
     for d in days:
         if is_colombian_holiday(d, holidays):
             for c_id in controller_ids:
@@ -200,6 +193,28 @@ def solve_schedule(controllers, exceptions, sequence_pattern, days, holidays, cu
             t_prev = sum(x[c_id, d_prev, 'T', slot] for slot in day_shift_slots[d_prev]['T'])
             a_curr = sum(x[c_id, d_curr, 'A', slot] for slot in day_shift_slots[d_curr]['A'])
             model.Add(t_prev + a_curr <= 1)
+
+    # 8b. Rule: Encadenamiento NCTE -> ACTE (Noche CTE en día d implica Madrugada CTE en día d+1)
+    for c_id in controller_ids:
+        for i in range(len(days) - 1):
+            d_curr = days[i]
+            d_next = days[i+1]
+            
+            n_cte = sum(x[c_id, d_curr, 'N', slot] for slot in day_shift_slots[d_curr]['N'] if slot == 'CTE-1')
+            a_cte = sum(x[c_id, d_next, 'A', slot] for slot in day_shift_slots[d_next]['A'] if slot == 'CTE-1')
+            
+            model.Add(n_cte <= a_cte)
+
+    # 8c. Rule: Encadenamiento ADPR -> ADPR (Madrugada DEL-2 en día d implica Madrugada DEL-2 en día d+1)
+    for c_id in controller_ids:
+        for i in range(len(days) - 1):
+            d_curr = days[i]
+            d_next = days[i+1]
+            
+            a_adpr_curr = sum(x[c_id, d_curr, 'A', slot] for slot in day_shift_slots[d_curr]['A'] if slot == 'DEL-2')
+            a_adpr_next = sum(x[c_id, d_next, 'A', slot] for slot in day_shift_slots[d_next]['A'] if slot == 'DEL-2')
+            
+            model.Add(a_adpr_curr <= a_adpr_next)
 
     # 9. Rule: Weekly Rest Window (Mon-Sat, or Tue-Sat if Monday is a holiday)
     # We group days into weeks
