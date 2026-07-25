@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { PlaneTakeoff, Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { PlaneTakeoff, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginScreen({ onLogin }) {
-  const [email, setEmail] = useState('');
+  const [userInput, setUserInput] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -10,20 +10,25 @@ export default function LoginScreen({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password) return;
+    if (!userInput.trim() || !password) return;
 
     setLoading(true);
     setError(null);
 
+    let cleanInput = userInput.trim().toLowerCase();
+    if (!cleanInput.includes('@')) {
+      cleanInput = `${cleanInput}@aircontrol.com`;
+    }
+
     try {
-      await onLogin(email.trim().toLowerCase(), password);
+      await onLogin(cleanInput, password);
     } catch (err) {
       console.error(err);
       let errMsg = 'Error al iniciar sesión. Inténtalo de nuevo.';
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         errMsg = 'Credenciales incorrectas o usuario no registrado.';
       } else if (err.code === 'auth/invalid-email') {
-        errMsg = 'El formato del correo electrónico no es válido.';
+        errMsg = 'El formato del usuario o correo no es válido.';
       }
       setError(errMsg);
     } finally {
@@ -128,18 +133,20 @@ export default function LoginScreen({ onLogin }) {
         {/* Login Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="form-group">
-            <label htmlFor="login-email" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Mail size={13} style={{ color: 'var(--text-muted)' }} /> Correo Electrónico
+            <label htmlFor="login-username" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <User size={13} style={{ color: 'var(--text-muted)' }} /> Siglas de Controlador / Usuario
             </label>
             <input
-              id="login-email"
-              type="email"
+              id="login-username"
+              type="text"
               className="form-input"
-              placeholder="Ej: admin@aircontrol.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Ej: JZA o admin"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
               required
               disabled={loading}
+              autoCapitalize="none"
+              autoCorrect="off"
             />
           </div>
 

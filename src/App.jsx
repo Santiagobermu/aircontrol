@@ -262,10 +262,15 @@ export default function App() {
     } catch (err) {
       // Registro al vuelo (JIT) en Firebase Auth para controladores existentes con la contraseña por defecto
       if ((err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') && password === 'Skbo12345!') {
-        const matchingCtrl = controllers.find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
+        const matchingCtrl = controllers.find(c => 
+          (c.email && c.email.toLowerCase() === email.toLowerCase()) ||
+          (c.name && `${c.name.toLowerCase()}@aircontrol.com` === email.toLowerCase()) ||
+          (c.id && `${c.id.toLowerCase()}@aircontrol.com` === email.toLowerCase())
+        );
         if (matchingCtrl) {
-          await registerUserInAuth(email, password);
-          await signInWithEmailAndPassword(auth, email, password);
+          const targetEmail = matchingCtrl.email || email;
+          await registerUserInAuth(targetEmail, password);
+          await signInWithEmailAndPassword(auth, targetEmail, password);
           return;
         }
       }
