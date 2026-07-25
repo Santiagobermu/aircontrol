@@ -811,18 +811,28 @@ export default function ControllerPortal({
   const [requestDate, setRequestDate] = useState('');
   const [requestShift, setRequestShift] = useState('Cualquiera');
   const [requestPosition, setRequestPosition] = useState('Cualquiera');
+  const [requestComment, setRequestComment] = useState('');
 
   // Enviar petición especial
   const handleAddRequest = async (e) => {
     e.preventDefault();
     if (!requestDate || !currentController) return;
 
+    const isOpPosition = ['TWR', 'GND', 'DEL', 'FIC', 'CTE', 'SIM'].includes(requestPosition);
+    if (isOpPosition && (!currentController.skills || !currentController.skills.includes(requestPosition))) {
+      alert(`No estás habilitado/certificado en la posición ${requestPosition}. Solo puedes solicitar posiciones en las que estés certificado.`);
+      return;
+    }
+
+    const isExceptionRequest = ['DESCANSO', 'LICN', 'LICR'].includes(requestPosition);
+
     const newReq = {
       id: `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       controllerId: currentController.id,
       date: requestDate,
-      shift: requestShift,
-      position: requestPosition
+      shift: isExceptionRequest ? 'Cualquiera' : requestShift,
+      position: requestPosition,
+      comment: requestComment.trim()
     };
 
     await addRequestDB(newReq);
@@ -832,6 +842,7 @@ export default function ControllerPortal({
     setRequestDate('');
     setRequestShift('Cualquiera');
     setRequestPosition('Cualquiera');
+    setRequestComment('');
   };
 
   // Filtrar mis peticiones especiales
@@ -2186,125 +2197,227 @@ export default function ControllerPortal({
         )}
 
         {/* Tab 4: MIS PETICIONES ESPECIALES */}
-        {activeTab === 'requests' && (
-          <div className="dashboard-grid">
-            
-            {/* Formulario */}
-            <div className="glass-panel" style={{ height: 'fit-content' }}>
-              <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ClipboardList size={20} style={{ color: 'var(--accent-cyan)' }} />
-                <h3 style={{ fontSize: '1.15rem' }}>Enviar Petición Especial</h3>
-              </div>
+        {activeTab === 'requests' && (() => {
+          const isExceptionRequest = ['DESCANSO', 'LICN', 'LICR'].includes(requestPosition);
 
-              <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div className="form-group">
-                  <label htmlFor="req-date">Fecha Solicitada</label>
-                  <input
-                    id="req-date"
-                    type="date"
-                    className="form-input"
-                    value={requestDate}
-                    onChange={(e) => setRequestDate(e.target.value)}
-                    required
-                  />
+          return (
+            <div className="dashboard-grid">
+              
+              {/* Formulario */}
+              <div className="glass-panel" style={{ height: 'fit-content' }}>
+                <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ClipboardList size={20} style={{ color: 'var(--accent-cyan)' }} />
+                  <h3 style={{ fontSize: '1.15rem' }}>Enviar Petición Especial</h3>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="req-shift">Turno Preferente</label>
-                  <select
-                    id="req-shift"
-                    className="form-input"
-                    value={requestShift}
-                    onChange={(e) => setRequestShift(e.target.value)}
-                  >
-                    <option value="Cualquiera">Cualquiera</option>
-                    <option value="M">Mañana (M)</option>
-                    <option value="T">Tarde (T)</option>
-                    <option value="N">Noche (N)</option>
-                    <option value="A">Madrugada (A)</option>
-                  </select>
-                </div>
+                <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {/* Fecha */}
+                  <div className="form-group">
+                    <label htmlFor="req-date" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <CalendarIcon size={14} /> Fecha Requerida
+                    </label>
+                    <input
+                      id="req-date"
+                      type="date"
+                      className="form-input"
+                      value={requestDate}
+                      onChange={(e) => setRequestDate(e.target.value)}
+                      required
+                    />
+                  </div>
 
-                <div className="form-group">
-                  <label htmlFor="req-pos">Posición Solicitada</label>
-                  <select
-                    id="req-pos"
-                    className="form-input"
-                    value={requestPosition}
-                    onChange={(e) => setRequestPosition(e.target.value)}
-                  >
-                    <option value="Cualquiera">Cualquiera</option>
-                    {(currentController.skills || []).map(skill => (
-                      <option key={skill} value={skill}>{getSlotDescription(`${skill}-1`).split(' ')[0]} ({skill})</option>
-                    ))}
-                    {currentController.trainingPreferred && (
-                      <option value="ENT">Entrenamiento (ENT)</option>
-                    )}
-                  </select>
-                </div>
-
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
-                  style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', fontWeight: '700' }}
-                  disabled={!requestDate}
-                >
-                  Registrar Petición
-                </button>
-              </form>
-            </div>
-
-            {/* Listado */}
-            <div className="glass-panel" style={{ height: 'fit-content' }}>
-              <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ClipboardList size={20} style={{ color: 'var(--accent-indigo)' }} />
-                <h3 style={{ fontSize: '1.15rem' }}>Mis Peticiones Registradas</h3>
-              </div>
-
-              {myRequests.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '350px', overflowY: 'auto' }}>
-                  {myRequests.map(r => (
-                    <div 
-                      key={r.id}
-                      style={{
-                        backgroundColor: 'var(--bg-tertiary)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '12px',
-                        padding: '0.85rem 1rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
+                  {/* Posición / Requerimiento */}
+                  <div className="form-group">
+                    <label htmlFor="req-pos" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Shield size={14} /> Posición / Requerimiento
+                    </label>
+                    <select
+                      id="req-pos"
+                      className="form-input"
+                      value={requestPosition}
+                      onChange={(e) => setRequestPosition(e.target.value)}
                     >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                          {r.date}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          Turno: <strong style={{ color: 'var(--accent-cyan)' }}>{r.shift}</strong> · Posición: <strong style={{ color: 'var(--accent-indigo)' }}>{r.position}</strong>
-                        </span>
-                      </div>
+                      <option value="Cualquiera">Cualquier Posición (Flexible)</option>
+                      
+                      {/* Opciones operativas basadas EXCLUSIVAMENTE en las habilitaciones reales del controlador */}
+                      <optgroup label="Posiciones Operativas Habilitadas">
+                        {(currentController.skills || []).map(skill => (
+                          <option key={skill} value={skill}>
+                            {skill === 'CTE' ? 'Encargado de Turno (CTE)' :
+                             skill === 'TWR' ? 'Torre de Control (TWR)' :
+                             skill === 'GND' ? 'Control de Superficie (GND)' :
+                             skill === 'DEL' ? 'Autorizaciones de Plan (DEL)' :
+                             skill === 'FIC' ? 'Información de Vuelo (FIC)' :
+                             skill === 'SIM' ? 'Pseudopiloto (SIM)' : skill}
+                          </option>
+                        ))}
+                        {currentController.trainingPreferred && (
+                          <option value="ENT">Entrenamiento Alumno (ENT)</option>
+                        )}
+                      </optgroup>
 
-                      <button
-                        onClick={() => handleDeleteRequest(r.id)}
-                        className="btn btn-danger-outline btn-icon-only"
-                        style={{ padding: '0.35rem' }}
-                        title="Cancelar Petición"
-                      >
-                        <X size={15} />
-                      </button>
-                    </div>
-                  ))}
+                      {/* Opciones de Ausencia / Bloqueo (Base de Administración) */}
+                      <optgroup label="Descansos, Licencias y Evitados">
+                        <option value="DESCANSO">Día de Descanso (DESCANSO)</option>
+                        <option value="LICR">Licencia Remunerada (LICR)</option>
+                        <option value="LICN">Licencia No Remunerada (LICN)</option>
+                        <option value="AVOID">Evitar Turno Específico (Bloqueo)</option>
+                      </optgroup>
+                    </select>
+                    {['TWR', 'GND', 'DEL', 'FIC', 'CTE', 'SIM'].includes(requestPosition) && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--status-success)', marginTop: '0.2rem' }}>
+                        ✓ Habilitación verificada en tu perfil.
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Turno Preferente */}
+                  <div className="form-group">
+                    <label htmlFor="req-shift" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Clock size={14} /> Turno Preferente
+                    </label>
+                    <select
+                      id="req-shift"
+                      className="form-input"
+                      value={isExceptionRequest ? 'Cualquiera' : requestShift}
+                      onChange={(e) => setRequestShift(e.target.value)}
+                      disabled={isExceptionRequest}
+                      style={isExceptionRequest ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                    >
+                      <option value="Cualquiera">Cualquier Turno (Flexible)</option>
+                      <option value="M">Mañana (M: 06:00 - 12:00)</option>
+                      <option value="T">Tarde (T: 12:00 - 18:00)</option>
+                      <option value="N">Noche (N: 18:00 - 24:00)</option>
+                      <option value="A">Madrugada (A: 00:00 - 06:00)</option>
+                    </select>
+                    {requestPosition === 'AVOID' && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--accent-amber)', marginTop: '0.2rem' }}>
+                        Selecciona el turno específico que deseas evitar ese día.
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Comentarios / Justificación */}
+                  <div className="form-group">
+                    <label htmlFor="req-comment" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <ClipboardList size={14} /> Comentarios / Justificación
+                    </label>
+                    <textarea
+                      id="req-comment"
+                      className="form-input"
+                      rows={2}
+                      placeholder="Escribe una breve razón o comentario (opcional)..."
+                      style={{ resize: 'vertical', minHeight: '60px', padding: '0.5rem 0.75rem', fontFamily: 'inherit' }}
+                      value={requestComment}
+                      onChange={(e) => setRequestComment(e.target.value)}
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem', fontWeight: '700', gap: '0.25rem' }}
+                    disabled={!requestDate}
+                  >
+                    <Plus size={16} /> Registrar Solicitud
+                  </button>
+                </form>
+              </div>
+
+              {/* Listado */}
+              <div className="glass-panel" style={{ height: 'fit-content' }}>
+                <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ClipboardList size={20} style={{ color: 'var(--accent-indigo)' }} />
+                  <h3 style={{ fontSize: '1.15rem' }}>Mis Peticiones Registradas</h3>
                 </div>
-              ) : (
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', margin: '2rem 0' }}>
-                  No tienes peticiones especiales registradas en Eldorado para este periodo.
-                </p>
-              )}
-            </div>
 
-          </div>
-        )}
+                {myRequests.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '450px', overflowY: 'auto' }}>
+                    {myRequests.map(r => {
+                      const isAvoid = r.position === 'AVOID';
+                      const isDescanso = r.position === 'DESCANSO';
+                      const isLicn = r.position === 'LICN';
+                      const isLicr = r.position === 'LICR';
+
+                      return (
+                        <div 
+                          key={r.id}
+                          style={{
+                            backgroundColor: 'var(--bg-tertiary)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '12px',
+                            padding: '0.85rem 1rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '0.75rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                                {r.date}
+                              </span>
+
+                              {/* Shift badge */}
+                              <span style={{
+                                fontSize: '0.7rem',
+                                fontWeight: '800',
+                                padding: '0.15rem 0.4rem',
+                                borderRadius: '4px',
+                                backgroundColor: r.shift === 'M' ? 'rgba(6,182,212,0.1)' : r.shift === 'T' ? 'rgba(245,158,11,0.1)' : r.shift === 'N' ? 'rgba(168,85,247,0.1)' : r.shift === 'A' ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.05)',
+                                color: r.shift === 'M' ? 'var(--accent-cyan)' : r.shift === 'T' ? 'var(--accent-fic)' : r.shift === 'N' ? 'var(--accent-purple)' : r.shift === 'A' ? 'var(--accent-indigo)' : 'var(--text-muted)'
+                              }}>
+                                {r.shift === 'Cualquiera' ? 'CUALQUIER TURNO' : `TURNO ${r.shift}`}
+                              </span>
+
+                              {/* Position / Exception badge */}
+                              {isDescanso && (
+                                <span style={{ color: 'var(--status-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(16, 185, 129, 0.2)' }}>DESCANSO</span>
+                              )}
+                              {isLicr && (
+                                <span style={{ color: 'var(--accent-purple)', backgroundColor: 'rgba(168, 85, 247, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(168, 85, 247, 0.2)' }}>LIC. REMUNERADA (LICR)</span>
+                              )}
+                              {isLicn && (
+                                <span style={{ color: 'var(--accent-indigo)', backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(99, 102, 241, 0.2)' }}>LIC. NO REMUN. (LICN)</span>
+                              )}
+                              {isAvoid && (
+                                <span style={{ color: 'var(--status-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700', border: '1px solid rgba(239, 68, 68, 0.2)' }}>EVITAR TURNO</span>
+                              )}
+                              {!isDescanso && !isLicr && !isLicn && !isAvoid && r.position !== 'Cualquiera' && (
+                                <span className={`skill-chip ${r.position.toLowerCase()}`} style={{ fontSize: '0.65rem', padding: '0.05rem 0.35rem' }}>{r.position}</span>
+                              )}
+                            </div>
+
+                            {r.comment && (
+                              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                "{r.comment}"
+                              </span>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => handleDeleteRequest(r.id)}
+                            className="btn btn-danger-outline btn-icon-only"
+                            style={{ padding: '0.35rem' }}
+                            title="Cancelar Petición"
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', margin: '2rem 0' }}>
+                    No tienes peticiones registradas.
+                  </p>
+                )}
+              </div>
+
+            </div>
+          );
+        })()}
         {/* Tab 5: SEGURIDAD Y CREDENCIALES */}
         {activeTab === 'security' && (
           <div style={{ maxWidth: '480px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
