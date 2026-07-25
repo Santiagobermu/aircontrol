@@ -748,6 +748,24 @@ input:checked + .skill-checkbox-inner .skill-abbr {
   color: var(--accent-mcae);
 }
 
+.skill-chip.sim {
+  background-color: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.25);
+  color: #f472b6;
+}
+
+.skill-chip.ofi {
+  background-color: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+}
+
+.skill-chip.chc {
+  background-color: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.25);
+  color: #f472b6;
+}
+
 .skill-chip.mchec {
   background-color: rgba(236, 72, 153, 0.08);
   border-color: rgba(236, 72, 153, 0.15);

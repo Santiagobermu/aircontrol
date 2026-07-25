@@ -86,8 +86,17 @@ export default function MonthlyGrid({
     if (val === 'LICR') return { exception: 'LICR' };
     if (val === 'LICN') return { exception: 'LICN' };
     if (val === 'MCAE') return { shift: 'M', slotKey: 'CAE-1' };
-    if (val === 'MCHEC') return { shift: 'M', slotKey: 'CHEC-1' };
-    if (val === 'TCHEC') return { shift: 'T', slotKey: 'CHEC-1' };
+    if (val === 'TCAE') return { shift: 'T', slotKey: 'CAE-1' };
+    if (val === 'MOFI') return { shift: 'M', slotKey: 'OFI-1' };
+    if (val === 'TOFI') return { shift: 'T', slotKey: 'OFI-1' };
+    if (val === 'MCHC' || val === 'MCHEC') return { shift: 'M', slotKey: 'CHC-1' };
+    if (val === 'TCHC' || val === 'TCHEC') return { shift: 'T', slotKey: 'CHC-1' };
+    if (val === 'ACHC' || val === 'ACHEC') return { shift: 'A', slotKey: 'CHC-1' };
+    if (val === 'NCHC' || val === 'NCHEC') return { shift: 'N', slotKey: 'CHC-1' };
+    if (val === 'MSIM') return { shift: 'M', slotKey: 'SIM-1' };
+    if (val === 'TSIM') return { shift: 'T', slotKey: 'SIM-1' };
+    if (val === 'ASIM') return { shift: 'A', slotKey: 'SIM-1' };
+    if (val === 'NSIM') return { shift: 'N', slotKey: 'SIM-1' };
     if (val === 'CMED') return { exception: 'CMED' };
     if (val === 'SIND') return { exception: 'SIND' };
     if (val === 'DESCANSO' || val === 'D' || val === 'DESC' || val === 'TROP') return { exception: 'DESCANSO' };
@@ -102,9 +111,11 @@ export default function MonthlyGrid({
     }
     
     const rest = val.substring(1);
-    if (rest === 'ACC') {
-      return { shift, slotKey: 'ACC-1' };
-    }
+    if (rest === 'ACC') return { shift, slotKey: 'ACC-1' };
+    if (rest === 'SIM') return { shift, slotKey: 'SIM-1' };
+    if (rest === 'OFI') return { shift, slotKey: 'OFI-1' };
+    if (rest === 'CHC' || rest === 'CHEC') return { shift, slotKey: 'CHC-1' };
+    if (rest === 'CAE') return { shift, slotKey: 'CAE-1' };
     
     const posLetter = rest[0];
     const detail = rest.substring(1);
@@ -114,23 +125,23 @@ export default function MonthlyGrid({
     
     if (posLetter === 'L') {
       pos = 'TWR';
-      if (detail === 'NT') idx = 1;
-      else if (detail === 'ST') idx = 2;
-      else if (detail === 'PT') idx = 3;
+      if (detail === 'NT') idx = 1;      // LNT -> Torre Norte (TWR-1)
+      else if (detail === 'ST') idx = 2; // LST -> Torre Sur (TWR-2)
+      else if (detail === 'PT') idx = 3; // LPT -> Torre Reserva (TWR-3)
     } else if (posLetter === 'G') {
       pos = 'GND';
-      if (detail === 'NT') idx = 1;
-      else if (detail === 'ST') idx = 2;
-      else if (detail === 'PT') idx = 3;
+      if (detail === 'NT') idx = 1;      // GNT -> Superficie Norte (GND-1)
+      else if (detail === 'ST') idx = 2; // GST -> Superficie Sur (GND-2)
+      else if (detail === 'PT') idx = 3; // GPT -> Superficie Reserva (GND-3)
     } else if (posLetter === 'D') {
       pos = 'DEL';
-      if (detail === 'PT') idx = 1;
-      else if (detail === 'PR') idx = 2;
+      if (detail === 'PT') idx = 1;      // DPT -> Autorizaciones Titular (DEL-1)
+      else if (detail === 'PR') idx = 2; // DPR -> Autorizaciones Reserva (DEL-2)
     } else if (posLetter === 'F') {
       pos = 'FIC';
-      if (detail === 'PT') idx = 1;
-      else if (detail === 'PR') idx = 2;
-      else if (detail === 'PA') idx = 3;
+      if (detail === 'PT') idx = 1;      // FPT -> FIC Titular (FIC-1)
+      else if (detail === 'PR') idx = 2; // FPR -> FIC Reserva (FIC-2)
+      else if (detail === 'PA') idx = 3; // FPA -> FIC Apoyo (FIC-3)
     } else if (rest.startsWith('CTE')) {
       pos = 'CTE';
       idx = 1;

@@ -123,8 +123,10 @@ export const getMonthlyShiftsForController = (controller, year, month, schedule,
     if (!slotKey) return '';
     const pos = slotKey.split('-')[0];
     if (pos === 'ACC') return `${shift || ''}ACC`;
-    if (pos === 'CAE') return 'MCAE';
-    if (pos === 'CHEC') return `${shift || ''}CHEC`;
+    if (pos === 'CAE') return `${shift || 'M'}CAE`;
+    if (pos === 'OFI') return `${shift || 'M'}OFI`;
+    if (pos === 'CHC' || pos === 'CHEC') return `${shift || ''}CHC`;
+    if (pos === 'SIM') return `${shift || ''}SIM`;
     switch (slotKey) {
       case 'TWR-1': return 'LNT';
       case 'TWR-2': return 'LST';
@@ -135,8 +137,8 @@ export const getMonthlyShiftsForController = (controller, year, month, schedule,
       case 'DEL-1': return 'DPT';
       case 'DEL-2': return 'DPR';
       case 'FIC-1': return 'FPT';
-      case 'FIC-2': return 'FPA';
-      case 'FIC-3': return 'FPR';
+      case 'FIC-2': return 'FPR';
+      case 'FIC-3': return 'FPA';
       case 'CTE-1': return 'CTE';
       case 'ENT-1': return 'ENT';
       default: return slotKey.split('-')[0];
@@ -146,10 +148,12 @@ export const getMonthlyShiftsForController = (controller, year, month, schedule,
   const getSlotDescription = (slotKey) => {
     if (!slotKey) return '';
     if (slotKey.startsWith('ENT-')) return 'Entrenamiento Alumno';
-    if (slotKey.startsWith('INS-')) return 'Instrucción';
+    if (slotKey.startsWith('INS-')) return 'Instrucción Operativa';
     const pos = slotKey.split('-')[0];
     if (pos === 'CAE') return 'Capacitación Especial';
-    if (pos === 'CHEC') return 'Chequeo';
+    if (pos === 'OFI') return 'Turno de Oficina';
+    if (pos === 'CHC' || pos === 'CHEC') return 'Chequeo / Evaluación';
+    if (pos === 'SIM') return 'Simulador / Pseudopiloto';
     switch (slotKey) {
       case 'TWR-1': return 'Torre Norte';
       case 'TWR-2': return 'Torre Sur';
@@ -160,8 +164,8 @@ export const getMonthlyShiftsForController = (controller, year, month, schedule,
       case 'DEL-1': return 'Autorizaciones Titular';
       case 'DEL-2': return 'Autorizaciones Reserva';
       case 'FIC-1': return 'FIC Titular';
-      case 'FIC-2': return 'FIC Apoyo';
-      case 'FIC-3': return 'FIC Reserva';
+      case 'FIC-2': return 'FIC Reserva';
+      case 'FIC-3': return 'FIC Apoyo';
       case 'CTE-1': return 'Encargado de Turno';
       default: return slotKey;
     }

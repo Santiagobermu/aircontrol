@@ -29,10 +29,16 @@ export const getSlotAcronym = (slotKey, shift) => {
     return `${shift || ''}ACC`;
   }
   if (pos === 'CAE') {
-    return 'MCAE';
+    return `${shift || 'M'}CAE`;
   }
-  if (pos === 'CHEC') {
-    return `${shift || ''}CHEC`;
+  if (pos === 'OFI') {
+    return `${shift || 'M'}OFI`;
+  }
+  if (pos === 'CHC' || pos === 'CHEC') {
+    return `${shift || ''}CHC`;
+  }
+  if (pos === 'SIM') {
+    return `${shift || ''}SIM`;
   }
   switch (slotKey) {
     case 'TWR-1': return 'LNT';
@@ -44,8 +50,8 @@ export const getSlotAcronym = (slotKey, shift) => {
     case 'DEL-1': return 'DPT';
     case 'DEL-2': return 'DPR';
     case 'FIC-1': return 'FPT';
-    case 'FIC-2': return 'FPA';
-    case 'FIC-3': return 'FPR';
+    case 'FIC-2': return 'FPR';
+    case 'FIC-3': return 'FPA';
     case 'CTE-1': return 'CTE';
     case 'ENT-1': return 'ENT';
     default:
@@ -59,10 +65,12 @@ export const getSlotAcronym = (slotKey, shift) => {
 export const getSlotDescription = (slotKey, shift) => {
   if (!slotKey) return '';
   if (slotKey.startsWith('ENT-')) return 'Entrenamiento Alumno';
-  if (slotKey.startsWith('INS-')) return 'Instrucción';
+  if (slotKey.startsWith('INS-')) return 'Instrucción Operativa';
   const pos = slotKey.split('-')[0];
   if (pos === 'CAE') return 'Capacitación Especial';
-  if (pos === 'CHEC') return 'Chequeo';
+  if (pos === 'OFI') return 'Turno de Oficina';
+  if (pos === 'CHC' || pos === 'CHEC') return 'Chequeo / Evaluación';
+  if (pos === 'SIM') return 'Simulador / Pseudopiloto';
   if (pos === 'ACC') {
     const shiftName =
       shift === 'A' ? 'Madrugada' :
@@ -80,8 +88,8 @@ export const getSlotDescription = (slotKey, shift) => {
     case 'DEL-1': return 'Autorizaciones Titular';
     case 'DEL-2': return 'Autorizaciones Reserva';
     case 'FIC-1': return 'FIC Titular';
-    case 'FIC-2': return 'FIC Apoyo';
-    case 'FIC-3': return 'FIC Reserva';
+    case 'FIC-2': return 'FIC Reserva';
+    case 'FIC-3': return 'FIC Apoyo';
     case 'CTE-1': return 'Encargado de Turno';
     default: {
       const parts = slotKey.split('-');
@@ -297,8 +305,10 @@ export const adjustDynamicSlots = (shiftSchedule, prefix, shift) => {
   // Determinar si debemos agregar el primer slot vacío
   const shouldHaveAtLeastOne = (prefix === 'ENT') ||
     (prefix === 'INS' && (shift === 'M' || shift === 'T')) ||
-    (prefix === 'CAE' && shift === 'M') ||
-    (prefix === 'CHEC' && (shift === 'M' || shift === 'T'));
+    (prefix === 'CAE' && (shift === 'M' || shift === 'T')) ||
+    (prefix === 'OFI' && (shift === 'M' || shift === 'T')) ||
+    ((prefix === 'CHC' || prefix === 'CHEC') && (shift === 'M' || shift === 'T')) ||
+    (prefix === 'SIM');
 
   if (assignedKeys.length > 0 || shouldHaveAtLeastOne) {
     newShiftSchedule[`${prefix}-${assignedKeys.length + 1}`] = null;
@@ -359,14 +369,14 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
     return { isValid: false, error: `La posición de Instrucción (INS) solo se permite en jornadas de Mañana (M) o Tarde (T).` };
   }
 
-  // Validar que la posición CAE solo se programe en Mañana (M)
-  if (position === 'CAE' && targetShift !== 'M') {
-    return { isValid: false, error: `La posición de Capacitación Especial (CAE) solo se permite en la jornada de Mañana (M).` };
+  // Validar que la posición CAE solo se programe en Mañana (M) o Tarde (T)
+  if (position === 'CAE' && targetShift !== 'M' && targetShift !== 'T') {
+    return { isValid: false, error: `La posición de Capacitación Especial (CAE) solo se permite en jornadas de Mañana (M) o Tarde (T).` };
   }
 
-  // Validar que la posición CHEC solo se programe en Mañana (M) o Tarde (T)
-  if (position === 'CHEC' && targetShift !== 'M' && targetShift !== 'T') {
-    return { isValid: false, error: `La posición de Chequeo (CHEC) solo se permite en las jornadas de Mañana (M) o Tarde (T).` };
+  // Validar que la posición OFI solo se programe en Mañana (M) o Tarde (T)
+  if (position === 'OFI' && targetShift !== 'M' && targetShift !== 'T') {
+    return { isValid: false, error: `Los turnos de Oficina (OFI) solo se permiten en jornadas de Mañana (MOFI) o Tarde (TOFI).` };
   }
 
   // 1. Validar Habilidad / Certificación de la Posición
@@ -374,8 +384,12 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
     if (!controller.trainingPreferred) {
       return { isValid: false, error: `${controller.name} no está seleccionado para entrenamiento (no es Alumno).` };
     }
-  } else if (position === 'INS' || position === 'CAE' || position === 'CHEC') {
+  } else if (position === 'INS' || position === 'CAE' || position === 'CHC' || position === 'CHEC' || position === 'OFI') {
     // Cualquier controlador puede recibir la posición, por lo tanto no hay validación
+  } else if (position === 'SIM') {
+    if (!controller.skills || (!controller.skills.includes('SIM') && !controller.skills.includes('PSEUDOPILOTO') && !controller.skills.includes('PSEUDO'))) {
+      return { isValid: false, error: `${controller.name} no tiene la certificación/rol de Pseudopiloto (SIM).` };
+    }
   } else if (!controller.skills || !controller.skills.includes(position)) {
     return { isValid: false, error: `${controller.name} no está certificado para la posición ${position}.` };
   }

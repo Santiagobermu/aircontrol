@@ -53,8 +53,12 @@ def has_certification(controller, position):
     if pos_prefix == 'ENT':
         return controller.get('trainingPreferred', False)
     
-    if pos_prefix in ['INS', 'CAE', 'CHEC']:
+    if pos_prefix in ['INS', 'CAE', 'CHC', 'CHEC', 'OFI']:
         return True  # Any controller can be assigned to these
+    
+    if pos_prefix == 'SIM':
+        skills = controller.get('skills', [])
+        return 'SIM' in skills or 'PSEUDOPILOTO' in skills or 'PSEUDO' in skills
     
     skills = controller.get('skills', [])
     return pos_prefix in skills

@@ -25,11 +25,12 @@ export default function ControllerList({ controllers, onEditController, onDelete
 
   const getSkillLabel = (skill) => {
     switch (skill) {
-      case 'CTE': return 'Centro';
+      case 'CTE': return 'Centro / Encargado';
       case 'TWR': return 'Torre';
       case 'GND': return 'Superficie';
       case 'DEL': return 'Autorizaciones';
       case 'FIC': return 'Información de Vuelo';
+      case 'SIM': return 'Pseudopiloto';
       default: return skill;
     }
   };
@@ -68,7 +69,7 @@ export default function ControllerList({ controllers, onEditController, onDelete
         </div>
 
         <div className="filter-group">
-          {['ALL', 'CTE', 'TWR', 'GND', 'DEL', 'FIC'].map((filter) => (
+          {['ALL', 'CTE', 'TWR', 'GND', 'DEL', 'FIC', 'SIM'].map((filter) => (
             <button
               key={filter}
               onClick={() => handleFilterClick(filter)}

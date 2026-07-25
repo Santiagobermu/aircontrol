@@ -84,7 +84,8 @@ export default function ControllerForm({ onAddController, editingController, onU
     { code: 'TWR', name: 'Torre (TWR)', description: 'Control de Pistas' },
     { code: 'GND', name: 'Superficie (GND)', description: 'Calles de Rodaje' },
     { code: 'DEL', name: 'Autorizaciones (DEL)', description: 'Planes de Vuelo' },
-    { code: 'FIC', name: 'Información de Vuelo (FIC)', description: 'Servicio de Información de Vuelo' }
+    { code: 'FIC', name: 'Información de Vuelo (FIC)', description: 'Servicio de Información de Vuelo' },
+    { code: 'SIM', name: 'Pseudopiloto (SIM)', description: 'Operador de Simulador' }
   ];
 
   if (userRole === 'supervisor') {
