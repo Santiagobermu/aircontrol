@@ -21,6 +21,7 @@ import {
   Trash2,
   Radio,
   Bell,
+  Shield,
   ShieldCheck
 } from 'lucide-react';
 import { 
