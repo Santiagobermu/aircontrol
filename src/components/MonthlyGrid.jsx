@@ -525,7 +525,7 @@ export default function MonthlyGrid({
           });
         }
       } else {
-        const { shift, slotKey } = parsed;
+        const { shift, slotKey: originalSlotKey } = parsed;
         
         if (!scheduleUpdates[dateStr]) {
           scheduleUpdates[dateStr] = schedule[dateStr] ? JSON.parse(JSON.stringify(schedule[dateStr])) : { A: {}, M: {}, T: {}, N: {} };
@@ -534,7 +534,24 @@ export default function MonthlyGrid({
         const daySched = scheduleUpdates[dateStr];
         if (!daySched[shift]) daySched[shift] = {};
         
-        daySched[shift][slotKey] = ctrlId;
+        const basePos = originalSlotKey.split('-')[0];
+        let targetSlotKey = originalSlotKey;
+
+        if (['ENT', 'INS', 'SIM', 'OFI', 'CAE', 'CHC', 'CHEC', 'ACC'].includes(basePos)) {
+          let idx = 1;
+          while (daySched[shift][`${basePos}-${idx}`] && daySched[shift][`${basePos}-${idx}`] !== ctrlId) {
+            idx++;
+          }
+          targetSlotKey = `${basePos}-${idx}`;
+        } else {
+          let idx = parseInt(originalSlotKey.split('-')[1] || '1', 10);
+          while (daySched[shift][`${basePos}-${idx}`] && daySched[shift][`${basePos}-${idx}`] !== ctrlId) {
+            idx++;
+          }
+          targetSlotKey = `${basePos}-${idx}`;
+        }
+
+        daySched[shift][targetSlotKey] = ctrlId;
       }
     });
     
