@@ -127,11 +127,11 @@ export default function MonthlyGrid({
     if (val === 'NCHC' || val === 'NCHEC') return { shift: 'N', slotKey: 'CHC-1' };
     if (val === 'ACHC' || val === 'ACHEC') return { shift: 'A', slotKey: 'CHC-1' };
 
-    // Mapeo directo de códigos compuestas de Torre del Excel
-    if (val === 'MTNT' || val === 'MTNR' || val === 'TNTR' || val === 'TTNR' || val === 'TTNA' || val === 'MTNA') return { shift: val[0], slotKey: 'TWR-1' };
-    if (val === 'MTST' || val === 'MTSA' || val === 'TTST' || val === 'TTSR' || val === 'NTST' || val === 'MTSR') return { shift: val[0], slotKey: 'TWR-2' };
-    if (val === 'NTNR' || val === 'NTNT') return { shift: 'N', slotKey: 'TWR-1' };
-    if (val === 'TUWA' || val === 'NUWA') return { shift: val[0], slotKey: 'TWR-3' };
+    // Mapeo directo de posiciones/terminales de Centro de Control (ACC) del Excel
+    if (['MTNT', 'MTNR', 'TNTR', 'TTNR', 'TTNA', 'MTNA', 'MTST', 'MTSA', 'TTST', 'TTSR', 'NTST', 'MTSR', 'NTNR', 'NTNT', 'TUWA', 'NUWA'].includes(val)) {
+      const shift = ['M', 'T', 'N', 'A'].includes(val[0]) ? val[0] : 'M';
+      return { shift, slotKey: 'ACC-1' };
+    }
 
     const shift = val[0];
     if (!['M', 'T', 'N', 'A'].includes(shift)) {
