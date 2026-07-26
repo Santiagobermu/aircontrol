@@ -82,29 +82,57 @@ export default function MonthlyGrid({
   const parseCellToAssignment = (cellValue) => {
     if (!cellValue) return null;
     const val = cellValue.trim().toUpperCase();
+    if (val === '<' || val === 'ORGANIZACION' || val === 'CTL') return null;
     
+    // Excepciones y Descansos
     if (val === 'LICR') return { exception: 'LICR' };
     if (val === 'LICN') return { exception: 'LICN' };
-    if (val === 'MCAE') return { shift: 'M', slotKey: 'CAE-1' };
-    if (val === 'TCAE') return { shift: 'T', slotKey: 'CAE-1' };
-    if (val === 'MOFI') return { shift: 'M', slotKey: 'OFI-1' };
-    if (val === 'TOFI') return { shift: 'T', slotKey: 'OFI-1' };
-    if (val === 'MCHC' || val === 'MCHEC') return { shift: 'M', slotKey: 'CHC-1' };
-    if (val === 'TCHC' || val === 'TCHEC') return { shift: 'T', slotKey: 'CHC-1' };
-    if (val === 'ACHC' || val === 'ACHEC') return { shift: 'A', slotKey: 'CHC-1' };
-    if (val === 'NCHC' || val === 'NCHEC') return { shift: 'N', slotKey: 'CHC-1' };
-    if (val === 'MSIM') return { shift: 'M', slotKey: 'SIM-1' };
-    if (val === 'TSIM') return { shift: 'T', slotKey: 'SIM-1' };
-    if (val === 'ASIM') return { shift: 'A', slotKey: 'SIM-1' };
-    if (val === 'NSIM') return { shift: 'N', slotKey: 'SIM-1' };
     if (val === 'CMED') return { exception: 'CMED' };
     if (val === 'SIND') return { exception: 'SIND' };
-    if (val === 'DESCANSO' || val === 'D' || val === 'DESC' || val === 'TROP') return { exception: 'DESCANSO' };
+    if (val === 'DESCANSO' || val === 'D' || val === 'DESC' || val === 'TROP' || val === 'LIBR') return { exception: 'DESCANSO' };
     if (val === 'VACACIONES' || val === 'V' || val === 'VAC' || val === 'VACA') return { exception: 'VACACIONES' };
     if (val === 'CAPACITACION' || val === 'CAP' || val === 'CAPA') return { exception: 'CAPACITACION' };
-    if (val === 'NO_OPERATIVO' || val === 'N/O') return { exception: 'NO_OPERATIVO' };
+    if (val === 'NO_OPERATIVO' || val === 'N/O' || val === 'NOOP') return { exception: 'NO_OPERATIVO' };
     if (val === 'OPERATIVO' || val === '-' || val === '') return { exception: 'OPERATIVO' };
-    
+
+    // Entrenamiento (ENT)
+    if (val === 'MENT' || val === 'MENT-1') return { shift: 'M', slotKey: 'ENT-1' };
+    if (val === 'TENT' || val === 'TENT-1') return { shift: 'T', slotKey: 'ENT-1' };
+    if (val === 'NENT' || val === 'NENT-1') return { shift: 'N', slotKey: 'ENT-1' };
+    if (val === 'AENT' || val === 'AENT-1') return { shift: 'A', slotKey: 'ENT-1' };
+
+    // Instrucción Operativa (INS)
+    if (val === 'MINS' || val === 'MINS-1') return { shift: 'M', slotKey: 'INS-1' };
+    if (val === 'TINS' || val === 'TINS-1') return { shift: 'T', slotKey: 'INS-1' };
+    if (val === 'NINS' || val === 'NINS-1') return { shift: 'N', slotKey: 'INS-1' };
+    if (val === 'AINS' || val === 'AINS-1') return { shift: 'A', slotKey: 'INS-1' };
+
+    // Simulador (SIM / Pseudopiloto)
+    if (val === 'MSIM' || val === 'MISM' || val === 'MSIM-1') return { shift: 'M', slotKey: 'SIM-1' };
+    if (val === 'TSIM' || val === 'TSIM-1') return { shift: 'T', slotKey: 'SIM-1' };
+    if (val === 'NSIM' || val === 'NSIM-1') return { shift: 'N', slotKey: 'SIM-1' };
+    if (val === 'ASIM' || val === 'ASIM-1') return { shift: 'A', slotKey: 'SIM-1' };
+
+    // Oficina (OFI)
+    if (val === 'MOFI' || val === 'MOFI-1') return { shift: 'M', slotKey: 'OFI-1' };
+    if (val === 'TOFI' || val === 'TOFI-1') return { shift: 'T', slotKey: 'OFI-1' };
+
+    // Capacitación Especial (CAE)
+    if (val === 'MCAE' || val === 'MCAE-1') return { shift: 'M', slotKey: 'CAE-1' };
+    if (val === 'TCAE' || val === 'TCAE-1') return { shift: 'T', slotKey: 'CAE-1' };
+
+    // Chequeo (CHC / CHEC)
+    if (val === 'MCHC' || val === 'MCHEC') return { shift: 'M', slotKey: 'CHC-1' };
+    if (val === 'TCHC' || val === 'TCHEC') return { shift: 'T', slotKey: 'CHC-1' };
+    if (val === 'NCHC' || val === 'NCHEC') return { shift: 'N', slotKey: 'CHC-1' };
+    if (val === 'ACHC' || val === 'ACHEC') return { shift: 'A', slotKey: 'CHC-1' };
+
+    // Mapeo directo de códigos compuestas de Torre del Excel
+    if (val === 'MTNT' || val === 'MTNR' || val === 'TNTR' || val === 'TTNR' || val === 'TTNA' || val === 'MTNA') return { shift: val[0], slotKey: 'TWR-1' };
+    if (val === 'MTST' || val === 'MTSA' || val === 'TTST' || val === 'TTSR' || val === 'NTST' || val === 'MTSR') return { shift: val[0], slotKey: 'TWR-2' };
+    if (val === 'NTNR' || val === 'NTNT') return { shift: 'N', slotKey: 'TWR-1' };
+    if (val === 'TUWA' || val === 'NUWA') return { shift: val[0], slotKey: 'TWR-3' };
+
     const shift = val[0];
     if (!['M', 'T', 'N', 'A'].includes(shift)) {
       return null;
@@ -116,7 +144,9 @@ export default function MonthlyGrid({
     if (rest === 'OFI') return { shift, slotKey: 'OFI-1' };
     if (rest === 'CHC' || rest === 'CHEC') return { shift, slotKey: 'CHC-1' };
     if (rest === 'CAE') return { shift, slotKey: 'CAE-1' };
-    
+    if (rest === 'ENT') return { shift, slotKey: 'ENT-1' };
+    if (rest === 'INS') return { shift, slotKey: 'INS-1' };
+
     const posLetter = rest[0];
     const detail = rest.substring(1);
     
@@ -181,22 +211,22 @@ export default function MonthlyGrid({
       const position = slotKey.split('-')[0];
       
       const ctrl = controllers.find(c => c.id === ctrlId);
+      const isOpenPosition = ['ENT', 'INS', 'CAE', 'OFI', 'CHC', 'CHEC', 'ACC'].includes(position);
       
-      if (position === 'ENT' && !ctrl.trainingPreferred) {
-        warnings.push({
-          type: 'warning',
-          msg: `Día ${dayNum} · ${ctrlName}: Programado en ENT pero no es Alumno/Trainee.`
-        });
-      } else if (position !== 'ENT' && position !== 'INS' && position !== 'ACC' && (!ctrl.skills || !ctrl.skills.includes(position))) {
-        warnings.push({
-          type: 'warning',
-          msg: `Día ${dayNum} · ${ctrlName}: Programado en ${position} (${cellVal}) pero no está certificado.`
-        });
-      } else if (position === 'ACC' && (!ctrl.skills || !ctrl.skills.includes('ACC'))) {
-        warnings.push({
-          type: 'warning',
-          msg: `Día ${dayNum} · ${ctrlName}: Programado en ACC (${cellVal}) pero no está certificado.`
-        });
+      if (position === 'SIM') {
+        if (ctrl && ctrl.skills && !ctrl.skills.includes('SIM') && !ctrl.skills.includes('PSEUDOPILOTO') && !ctrl.skills.includes('PSEUDO')) {
+          warnings.push({
+            type: 'warning',
+            msg: `Día ${dayNum} · ${ctrlName} (${cellVal}): Programado en Simulador pero no tiene la habilitación de Pseudopiloto.`
+          });
+        }
+      } else if (!isOpenPosition) {
+        if (ctrl && ctrl.skills && !ctrl.skills.includes(position)) {
+          warnings.push({
+            type: 'warning',
+            msg: `Día ${dayNum} · ${ctrlName} (${cellVal}): Programado en ${position} pero no está certificado en su perfil.`
+          });
+        }
       }
       
       const validation = validateAssignment(

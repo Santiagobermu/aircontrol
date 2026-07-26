@@ -381,16 +381,16 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
 
   // 1. Validar Habilidad / Certificación de la Posición
   if (position === 'ENT') {
-    if (!controller.trainingPreferred) {
+    if (!isManual && !controller.trainingPreferred) {
       return { isValid: false, error: `${controller.name} no está seleccionado para entrenamiento (no es Alumno).` };
     }
-  } else if (position === 'INS' || position === 'CAE' || position === 'CHC' || position === 'CHEC' || position === 'OFI') {
+  } else if (position === 'INS' || position === 'CAE' || position === 'CHC' || position === 'CHEC' || position === 'OFI' || position === 'ACC') {
     // Cualquier controlador puede recibir la posición, por lo tanto no hay validación
   } else if (position === 'SIM') {
-    if (!controller.skills || (!controller.skills.includes('SIM') && !controller.skills.includes('PSEUDOPILOTO') && !controller.skills.includes('PSEUDO'))) {
+    if (!isManual && (!controller.skills || (!controller.skills.includes('SIM') && !controller.skills.includes('PSEUDOPILOTO') && !controller.skills.includes('PSEUDO')))) {
       return { isValid: false, error: `${controller.name} no tiene la certificación/rol de Pseudopiloto (SIM).` };
     }
-  } else if (!controller.skills || !controller.skills.includes(position)) {
+  } else if (!isManual && (!controller.skills || !controller.skills.includes(position))) {
     return { isValid: false, error: `${controller.name} no está certificado para la posición ${position}.` };
   }
 
