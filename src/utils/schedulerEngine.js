@@ -384,8 +384,12 @@ export const validateAssignment = (controllerId, dateStr, targetShift, targetSlo
     if (!isManual && !controller.trainingPreferred) {
       return { isValid: false, error: `${controller.name} no está seleccionado para entrenamiento (no es Alumno).` };
     }
-  } else if (position === 'INS' || position === 'CAE' || position === 'CHC' || position === 'CHEC' || position === 'OFI' || position === 'ACC') {
-    // Cualquier controlador puede recibir la posición, por lo tanto no hay validación
+  } else if (position === 'INS' || position === 'CAE' || position === 'CHC' || position === 'CHEC' || position === 'OFI') {
+    // Cualquier controlador puede recibir estas posiciones
+  } else if (position === 'ACC') {
+    if (!isManual && (!controller.skills || !controller.skills.includes('ACC'))) {
+      return { isValid: false, error: `${controller.name} no está certificado para Centro de Control (ACC).` };
+    }
   } else if (position === 'SIM') {
     if (!isManual && (!controller.skills || (!controller.skills.includes('SIM') && !controller.skills.includes('PSEUDOPILOTO') && !controller.skills.includes('PSEUDO')))) {
       return { isValid: false, error: `${controller.name} no tiene la certificación/rol de Pseudopiloto (SIM).` };

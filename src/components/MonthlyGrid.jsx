@@ -648,10 +648,46 @@ export default function MonthlyGrid({
 
   const getVacantAndValidSlotsForCell = (ctrlId, dayStr) => {
     const list = [];
+    const ctrl = controllers.find(c => c.id === ctrlId);
+    if (!ctrl) return list;
+
+    // Orden estricto de posiciones según requerimiento
+    const POS_ORDER = ['CTE', 'TWR', 'GND', 'DEL', 'FIC', 'ACC', 'SIM', 'OFI', 'CAE', 'CHC', 'ENT', 'INS'];
+
+    // Candidatos estándar por posición
+    const CANDIDATE_POSITIONS = [
+      'CTE-1',
+      'TWR-1', 'TWR-2', 'TWR-3',
+      'GND-1', 'GND-2', 'GND-3',
+      'DEL-1', 'DEL-2',
+      'FIC-1', 'FIC-2', 'FIC-3',
+      'ACC-1',
+      'SIM-1',
+      'OFI-1',
+      'CAE-1',
+      'CHC-1',
+      'ENT-1',
+      'INS-1'
+    ];
+
     SHIFTS.forEach(shift => {
-      const slots = schedule[dayStr]?.[shift] || {};
-      Object.keys(slots).forEach(slotKey => {
-        if (slots[slotKey] === null) {
+      const dayShiftSlots = schedule[dayStr]?.[shift] || {};
+      const availableKeys = new Set([...CANDIDATE_POSITIONS, ...Object.keys(dayShiftSlots)]);
+
+      const sortedKeys = Array.from(availableKeys).sort((a, b) => {
+        const posA = a.split('-')[0];
+        const posB = b.split('-')[0];
+        const idxA = POS_ORDER.indexOf(posA);
+        const idxB = POS_ORDER.indexOf(posB);
+        if (idxA !== idxB) {
+          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+        }
+        return a.localeCompare(b);
+      });
+
+      sortedKeys.forEach(slotKey => {
+        const currentUser = dayShiftSlots[slotKey];
+        if (currentUser === null || currentUser === undefined) {
           const val = validateAssignment(ctrlId, dayStr, shift, slotKey, schedule, controllers, exceptions, true);
           if (val.isValid) {
             list.push({ shift, slotKey });
@@ -659,6 +695,7 @@ export default function MonthlyGrid({
         }
       });
     });
+
     return list;
   };
 
