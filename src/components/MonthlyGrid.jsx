@@ -28,11 +28,13 @@ export default function MonthlyGrid({
   onUpdateException,
   onBulkImport,
   readOnly = false,
-  userRole
+  userRole,
+  initialYear,
+  initialMonth
 }) {
   const isGridReadOnly = readOnly || userRole === 'supervisor';
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(4); // 4 = Mayo (0-indexed en JS Date)
+  const [currentYear, setCurrentYear] = useState(() => initialYear ?? new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(() => initialMonth ?? new Date().getMonth());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLicenseFilter, setSelectedLicenseFilter] = useState('ALL');
   const [hoveredCell, setHoveredCell] = useState(null); // { ctrlId, dateStr, details }
@@ -778,10 +780,10 @@ export default function MonthlyGrid({
   const getCellData = (ctrlId, dateStr) => {
     const dayExc = exceptions[ctrlId]?.[dateStr] || 'OPERATIVO';
     
-    if (dayExc === 'VACACIONES') return { type: 'VACACIONES', label: 'V', color: 'var(--status-warning)' };
-    if (dayExc === 'CAPACITACION') return { type: 'CAPACITACION', label: 'C', color: 'var(--text-muted)' };
+    if (dayExc === 'VACACIONES') return { type: 'VACACIONES', label: 'V', color: 'var(--status-warning)', details: 'Vacaciones' };
+    if (dayExc === 'CAPACITACION') return { type: 'CAPACITACION', label: 'C', color: 'var(--text-muted)', details: 'Capacitación' };
     if (dayExc === 'NO_OPERATIVO') return { type: 'NO_OPERATIVO', label: 'N/O', color: 'var(--status-danger)', details: 'Inhabilitado como NO OPERATIVO' };
-    if (dayExc === 'DESCANSO') return { type: 'DESCANSO', label: 'D', color: 'rgba(255, 255, 255, 0.05)' };
+    if (dayExc === 'DESCANSO') return { type: 'DESCANSO', label: 'D', color: 'rgba(255, 255, 255, 0.05)', details: 'Día de descanso' };
     if (dayExc === 'LICR') return { type: 'LICR', label: 'LR', color: 'var(--accent-purple)', details: 'Licencia Remunerada' };
     if (dayExc === 'LICN') return { type: 'LICN', label: 'LN', color: 'var(--accent-fic)', details: 'Licencia No Remunerada' };
     if (dayExc === 'CMED') return { type: 'CMED', label: 'MED', color: 'var(--accent-cmed)', details: 'Chequeo Médico' };
@@ -802,28 +804,34 @@ export default function MonthlyGrid({
     });
 
     if (activeShifts.length === 0) {
-      return { type: 'LIBRE', label: '-', color: 'transparent' };
+      return { type: 'LIBRE', label: '-', color: 'transparent', details: 'Día libre / Sin turno asignado' };
     }
 
     // Si tiene entrenamiento
     const hasTraining = assignedSlots.some(s => s.slotKey.startsWith('ENT'));
     if (hasTraining && activeShifts.length === 1) {
+      const s = assignedSlots[0];
+      const acronym = getSlotAcronym(s.slotKey, s.shift);
+      const desc = getSlotDescription(s.slotKey, s.shift);
       return { 
         type: 'ENTRENAMIENTO', 
         label: 'E', 
         color: 'var(--accent-indigo)',
-        details: `Entrenamiento hoy en turno ${activeShifts[0]}`
+        details: `Entrenamiento hoy en turno ${s.shift} (Posición: ${acronym} - ${desc})`
       };
     }
 
     // Si tiene instrucción (INS)
     const hasInstruction = assignedSlots.some(s => s.slotKey.startsWith('INS'));
     if (hasInstruction && activeShifts.length === 1) {
+      const s = assignedSlots[0];
+      const acronym = getSlotAcronym(s.slotKey, s.shift);
+      const desc = getSlotDescription(s.slotKey, s.shift);
       return { 
         type: 'INSTRUCCION', 
         label: 'I', 
         color: 'var(--accent-ins)',
-        details: `Instrucción hoy en turno ${activeShifts[0]}`
+        details: `Instrucción hoy en turno ${s.shift} (Posición: ${acronym} - ${desc})`
       };
     }
 
@@ -836,19 +844,25 @@ export default function MonthlyGrid({
       if (hasTraining) label += 'e';
       if (hasInstruction) label += 'i';
       
-      const slotsDesc = assignedSlots.map(s => `${s.shift}: ${s.slotKey.split('-')[0]}`).join(', ');
+      const slotsDesc = assignedSlots.map(s => {
+        const acronym = getSlotAcronym(s.slotKey, s.shift);
+        const desc = getSlotDescription(s.slotKey, s.shift);
+        return `${s.shift}: ${acronym} (${desc})`;
+      }).join(' | ');
 
       return { 
         type: 'DOBLE', 
         label, 
         color: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo))',
-        details: `Turno Doble (${slotsDesc})`
+        details: `Turno Doble [${slotsDesc}]`
       };
     }
 
     // Turno Único Operativo
-    const shift = activeShifts[0];
-    const slot = assignedSlots[0].slotKey.split('-')[0];
+    const s = assignedSlots[0];
+    const shift = s.shift;
+    const acronym = getSlotAcronym(s.slotKey, shift);
+    const desc = getSlotDescription(s.slotKey, shift);
     let color = 'var(--text-muted)';
     if (shift === 'A') color = 'var(--accent-cyan)';
     if (shift === 'M') color = 'var(--accent-indigo)';
@@ -859,7 +873,7 @@ export default function MonthlyGrid({
       type: 'OPERATIVO', 
       label: shift, 
       color,
-      details: `Jornada única en ${shift} (Posición: ${slot})`
+      details: `Jornada única en ${shift} (Posición: ${acronym} - ${desc})`
     };
   };
 
@@ -1166,7 +1180,7 @@ export default function MonthlyGrid({
                           })}
                           onMouseLeave={() => setHoveredCell(null)}
                           onClick={isGridReadOnly ? undefined : () => handleCellClick(ctrl, dayStr)}
-                          title={isGridReadOnly ? undefined : "Haga clic para gestionar turnos de este día"}
+                          title={cell.details ? `${ctrl.name} (${formatCalendarDayName(dayStr)}): ${cell.details}` : (isGridReadOnly ? undefined : "Haga clic para gestionar turnos de este día")}
                           style={{
                             padding: '0.4rem 0.15rem',
                             textAlign: 'center',

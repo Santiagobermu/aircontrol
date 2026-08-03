@@ -45,6 +45,13 @@
   --glass-bg: rgba(11, 15, 25, 0.65);
   --glass-border: rgba(255, 255, 255, 0.06);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+  /* Degradados dinámicos de marcas y títulos */
+  --title-gradient: linear-gradient(to right, #ffffff, #cbd5e1);
+  --brand-gradient: linear-gradient(135deg, #ffffff, #9ca3af);
+  --btn-secondary-hover-bg: rgba(255, 255, 255, 0.08);
+  --bg-radial-1: hsla(239, 84%, 67%, 0.08);
+  --bg-radial-2: hsla(188, 86%, 53%, 0.06);
   
   /* Fuentes */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -55,6 +62,49 @@
   --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   
   color-scheme: dark;
+}
+
+[data-theme="light"] {
+  /* Paleta de Colores Light Mode */
+  --bg-primary: hsl(215, 25%, 96%);      /* Fondo Claro Operativo */
+  --bg-secondary: hsl(0, 0%, 100%);      /* Tarjetas y Paneles Blancos */
+  --bg-tertiary: hsl(214, 25%, 92%);     /* Inputs / Bordes hover */
+  
+  --color-border: hsl(214, 20%, 84%);
+  --color-border-glow: hsla(188, 86%, 40%, 0.25);
+  
+  --accent-cyan: hsl(188, 95%, 36%);
+  --accent-indigo: hsl(239, 75%, 52%);
+  --accent-emerald: hsl(160, 84%, 30%);
+  --accent-purple: hsl(271, 75%, 50%);
+  --accent-fic: hsl(35, 92%, 40%);
+  --accent-ins: hsl(330, 80%, 46%);
+  --accent-acc: hsl(200, 95%, 36%);
+  --accent-mcae: hsl(280, 75%, 48%);
+  --accent-mchec: hsl(340, 75%, 48%);
+  --accent-cmed: hsl(15, 90%, 42%);
+  --accent-sind: hsl(120, 70%, 32%);
+  
+  --status-success: hsl(160, 84%, 30%);
+  --status-warning: hsl(35, 92%, 40%);
+  --status-danger: hsl(343, 85%, 46%);
+  --status-info: hsl(200, 95%, 36%);
+  
+  --text-primary: hsl(222, 47%, 12%);
+  --text-secondary: hsl(215, 25%, 32%);
+  --text-muted: hsl(215, 16%, 48%);
+  
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+
+  --title-gradient: linear-gradient(to right, #0f172a, #334155);
+  --brand-gradient: linear-gradient(135deg, #0f172a, #475569);
+  --btn-secondary-hover-bg: rgba(0, 0, 0, 0.05);
+  --bg-radial-1: hsla(239, 84%, 67%, 0.1);
+  --bg-radial-2: hsla(188, 86%, 53%, 0.08);
+
+  color-scheme: light;
 }
 
 /* Reset de estilos */
@@ -68,13 +118,14 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
   background-image: 
-    radial-gradient(at 0% 0%, hsla(239, 84%, 67%, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(188, 86%, 53%, 0.06) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, var(--bg-radial-1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, var(--bg-radial-2) 0px, transparent 50%);
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color var(--transition-smooth), color var(--transition-smooth);
 }
 
 /* Tipografía */
@@ -153,7 +204,7 @@ h1, h2, h3, h4, h5, h6 {
 .brand h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffffff, #9ca3af);
+  background: var(--brand-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -226,7 +277,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 2.2rem;
   font-weight: 800;
   margin-bottom: 0.25rem;
-  background: linear-gradient(to right, #ffffff, #cbd5e1);
+  background: var(--title-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -850,7 +901,7 @@ input:checked + .skill-checkbox-inner .skill-abbr {
   .mobile-header-brand h2 {
     font-size: 1.2rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #ffffff, #cbd5e1);
+    background: var(--brand-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }

@@ -1,146 +1,251 @@
-import requests
 import re
 import datetime
-from bs4 import BeautifulSoup
-from pypdf import PdfReader
+from curl_cffi import requests
 from firebase_admin import firestore
 
-URL_AEROCIVIL_NOTAMS = "https://www.aerocivil.gov.co/publicaciones/3708/listas-de-verificacion-y-listas-de-notam-validos/"
+FAA_SEARCH_URL = "https://notams.aim.faa.gov/notamSearch/search"
 
-def fetch_charlie2_pdf_url():
-    """
-    Scrapes the Aerocivil webpage to find the current download link for Charlie2.pdf.
-    """
-    res = requests.get(URL_AEROCIVIL_NOTAMS, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
-    if res.status_code != 200:
-        raise Exception(f"Failed to fetch Aerocivil page. Status code: {res.status_code}")
-    
-    soup = BeautifulSoup(res.text, 'html.parser')
-    for a in soup.find_all('a', href=True):
-        strong = a.find('strong')
-        text = strong.text if strong else a.text
-        if "Charlie2.pdf" in text:
-            link = a['href']
-            # Convert to absolute URL if needed
-            if not link.startswith("http"):
-                link = "https://www.aerocivil.gov.co" + link
-            return link
-            
-    raise Exception("Charlie2.pdf link not found on Aerocivil page.")
+# Location designators groups
+COLOMBIA_ICAOS = [
+    'SKBO', 'SKED', 'SKEC', 'SKCL', 'SKRG', 'SKPE', 'SKCG', 'SKBA',
+    'SKSM', 'SKUC', 'SKLT', 'SKNV', 'SKAR', 'SKFL', 'SKGO', 'SKIB',
+    'SKIP', 'SKJC', 'SKJU', 'SKLS', 'SKMD', 'SKMR', 'SKMZ', 'SKOC',
+    'SKOT', 'SKPZ', 'SKQU', 'SKSJ', 'SKSP', 'SKST', 'SKTM', 'SKTP',
+    'SKUI', 'SKVP', 'SKVV'
+]
 
-def parse_notams_from_pdf(pdf_url):
+NEIGHBOR_FIRS = ['SKEC', 'SPIM', 'SEFG', 'SVZM', 'SBMN', 'SBCW', 'MKJK']
+
+
+def parse_faa_date(date_str):
+    if not date_str:
+        return ''
+    date_str = date_str.strip()
+    if 'PERM' in date_str.upper():
+        return 'PERM'
+    # Try MM/DD/YYYY HHMM format from FAA (e.g. "08/11/2016 0000")
+    m = re.match(r'^(\d{2})/(\d{2})/(\d{4})\s+(\d{2})(\d{2})', date_str)
+    if m:
+        mm, dd, yyyy, hh, min_ = m.groups()
+        try:
+            dt = datetime.datetime(int(yyyy), int(mm), int(dd), int(hh), int(min_), tzinfo=datetime.timezone.utc)
+            return dt.isoformat()
+        except ValueError:
+            pass
+    return date_str
+
+
+def categorize_notam(desc, Q_code='', scope='SKBO'):
+    d = desc.upper()
+    if 'ASHTAM' in d or 'VOLCANO' in d or 'VOLCANIC' in d or 'CENIZA' in d or 'ERUPTION' in d or 'QWA' in Q_code or 'QWV' in Q_code:
+        return 'ASHTAM'
+    if 'AD CLSD' in d or 'AERODROME CLOSED' in d or 'AD CLOSED' in d or 'PISTA CERRADA' in d:
+        return 'AD_CLSD'
+    if 'FLOW' in d or 'ATFM' in d or 'REGULATION' in d or 'SLOT' in d or 'CAPACITY' in d or 'RATE' in d:
+        return 'FLOW'
+    if 'RWY' in d or 'RUNWAY' in d or 'PISTA' in d or 'QMR' in Q_code:
+        return 'RWY'
+    if 'TWY' in d or 'TXY' in d or 'TAXIWAY' in d or 'RODAJE' in d or 'QMX' in Q_code:
+        return 'TXY'
+    if 'SID' in d or 'STAR' in d or 'APP' in d or 'APPROACH' in d or 'PROC' in d or 'QPI' in Q_code or 'QPA' in Q_code:
+        return 'SID_STAR_APP'
+    if 'ILS' in d or 'ALS' in d or 'VOR' in d or 'DME' in d or 'GP' in d or 'LLZ' in d or 'ATIS' in d or 'NDB' in d or 'FREQ' in d or 'FRECUENCIA' in d or 'QIC' in Q_code or 'QNV' in Q_code:
+        return 'NAV_AIDS'
+    if 'LVP' in d or 'LOW VISIBILITY' in d or 'VISIBILIDAD' in d:
+        return 'LVP'
+    return 'MISC'
+
+
+def determine_severity(desc):
+    d = desc.upper()
+    if 'ASHTAM' in d or 'VOLCANO' in d or 'VOLCANIC' in d or 'ERUPTION' in d:
+        return 'CRITICAL'
+    if 'CLSD' in d or 'CLOSED' in d or 'CIERRE' in d or 'UNSERVICEABLE' in d or 'U/S' in d or 'PROHIBITED' in d or 'CANCEL' in d:
+        return 'CRITICAL'
+    if 'WIP' in d or 'LIMIT' in d or 'LTD' in d or 'MAINT' in d or 'OBST' in d or 'AVBL' in d or 'CHG' in d or 'DUE TO' in d:
+        return 'WARNING'
+    return 'INFO'
+
+
+def fetch_faa_notams_by_designator(designator):
     """
-    Downloads the PDF from the given URL and parses all active NOTAMs belonging to SKBO.
+    Fetches all active NOTAMs for a single location designator using curl_cffi with Chrome TLS impersonation.
     """
-    res = requests.get(pdf_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
-    if res.status_code != 200:
-        raise Exception(f"Failed to download PDF from {pdf_url}. Status code: {res.status_code}")
+    headers = {
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Origin': 'https://notams.aim.faa.gov',
+        'Referer': 'https://notams.aim.faa.gov/notamSearch/nsapp.html',
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+    all_notams = []
+    offset = 0
+    while True:
+        data = {
+            'searchType': 0,
+            'designatorsForLocation': designator,
+            'offset': offset
+        }
+        try:
+            r = requests.post(FAA_SEARCH_URL, data=data, headers=headers, impersonate='chrome', timeout=15)
+            if r.status_code != 200:
+                break
+            res = r.json()
+            items = res.get('notamList', [])
+            if not items:
+                break
+            all_notams.extend(items)
+            total = res.get('totalNotamCount', 0)
+            offset += len(items)
+            if offset >= total or len(items) == 0:
+                break
+        except Exception as e:
+            print(f"Error fetching NOTAMs for {designator}: {e}")
+            break
+    return all_notams
+
+
+def normalize_faa_notam(item, default_scope='SKBO'):
+    """
+    Normalizes raw FAA NOTAM JSON object into AirControl structured NOTAM schema.
+    """
+    notam_id = item.get('notamNumber') or item.get('id') or 'UNKNOWN'
+    location = item.get('facilityDesignator') or item.get('icaoId') or 'SKBO'
+    airport_name = item.get('airportName') or location
     
-    # Save temporarily or read directly from bytes
-    import io
-    pdf_file = io.BytesIO(res.content)
-    reader = PdfReader(pdf_file)
+    icao_msg = item.get('icaoMessage') or ''
+    trad_msg = item.get('traditionalMessageFrom4thWord') or item.get('traditionalMessage') or item.get('plainLanguageMessage') or ''
     
-    notams = []
-    current_notam = None
-    
-    # Regex to identify NOTAM header (e.g. "   C 5572/   25            BOGOTÁ, D.C./BOGOTA - EL DORADO LUIS CARLOS (SKBO)")
-    header_re = re.compile(r'^\s*([A-Z])\s+(\d{4})\/\s+(\d{2})\s+(.+)$')
-    
-    # Regex to identify date line (e.g. "                           2601220000  PERM  ,")
-    # Starts with spaces, then a 10-digit number (YYMMDDHHMM)
-    date_re = re.compile(r'^\s*(\d{10})\s+(PERM|\d{10}|\/)\s*(.*)$')
-    
-    for page in reader.pages:
-        text = page.extract_text(extraction_mode="layout")
-        lines = text.split('\n')
+    full_text = (icao_msg + "\n" + trad_msg).strip() if icao_msg else trad_msg.strip()
+    if not full_text:
+        full_text = item.get('text') or item.get('description') or 'No description text'
         
-        for line in lines:
-            if not line.strip():
-                continue
-                
-            header_match = header_re.match(line)
-            if header_match:
-                # Save previous NOTAM if it is for SKBO
-                if current_notam and "SKBO" in current_notam["airport"]:
-                    notams.append(current_notam)
-                
-                series = header_match.group(1)
-                number = header_match.group(2)
-                year = header_match.group(3)
-                airport = header_match.group(4).strip()
-                
-                current_notam = {
-                    "id": f"{series}{number}/{year}",
-                    "airport": airport,
-                    "dates_raw": "",
-                    "start_date": "",
-                    "end_date": "",
-                    "schedule": "",
-                    "description_lines": [],
-                    "replace_info": ""
-                }
-                continue
-                
-            if current_notam:
-                stripped_line = line.strip()
-                
-                # Check for replacements line
-                if "RPLC" in line:
-                    current_notam["replace_info"] = stripped_line
-                    continue
-                    
-                # Check for date line (only if we haven't set start_date yet)
-                date_match = date_re.match(line)
-                if date_match and not current_notam["start_date"]:
-                    current_notam["dates_raw"] = stripped_line
-                    current_notam["start_date"] = date_match.group(1)
-                    current_notam["end_date"] = date_match.group(2)
-                    extra = date_match.group(3).strip()
-                    if extra and extra != ",":
-                        current_notam["schedule"] = extra.replace(",", "").strip()
-                    continue
-                
-                # Skip header/footer noise
-                if "pag. " in line or "DIRECCION DE INFORMATICA" in line:
-                    continue
-                    
-                # Accumulate description text
-                current_notam["description_lines"].append(stripped_line)
-                
-    # Save the last NOTAM if applicable
-    if current_notam and "SKBO" in current_notam["airport"]:
-        notams.append(current_notam)
+    start_date_raw = item.get('startDate') or ''
+    end_date_raw = item.get('endDate') or ''
+    issue_date_raw = item.get('issueDate') or ''
+    
+    start_iso = parse_faa_date(start_date_raw)
+    end_iso = parse_faa_date(end_date_raw)
+    issue_iso = parse_faa_date(issue_date_raw)
+    
+    dates_raw = f"{start_date_raw} - {end_date_raw}".strip(" -")
+    
+    schedule = ''
+    # Check for D) field schedule in ICAO message
+    sched_match = re.search(r'\bD\)\s*([^\n]+)', icao_msg)
+    if sched_match:
+        schedule = sched_match.group(1).strip()
         
-    # Clean descriptions
-    for n in notams:
-        desc = " ".join(n["description_lines"])
-        desc = re.sub(r'\s+', ' ', desc)
-        desc = desc.strip(" ,")
-        n["description"] = desc
-        del n["description_lines"]
-        
-    return notams
+    category = categorize_notam(full_text, scope=default_scope)
+    severity = determine_severity(full_text)
+    
+    return {
+        "id": notam_id,
+        "airport": location,
+        "airportName": airport_name,
+        "dates_raw": dates_raw,
+        "start_date": start_iso,
+        "end_date": end_iso,
+        "issue_date": issue_iso,
+        "schedule": schedule,
+        "description": full_text,
+        "category": category,
+        "severity": severity,
+        "scope": default_scope,
+        "source": "FAA_NOTAM_SEARCH"
+    }
+
 
 def sync_skbo_notams():
     """
-    Performs full scraping, downloading, parsing, and sets settings/notams_skbo in Firestore.
+    Fetches NOTAMs for:
+    1. SKBO (Eldorado)
+    2. Colombia AD CLSD (Airport closures in Colombia)
+    3. FLOW in Neighbor FIRs (SKEC, SPIM, SEFG, SVZM, SBMN/SBCW, MKJK)
+    Stores the unified dataset in settings/notams_skbo.
     """
-    pdf_url = fetch_charlie2_pdf_url()
-    notams = parse_notams_from_pdf(pdf_url)
+    # 1. SKBO NOTAMs
+    skbo_raw = fetch_faa_notams_by_designator('SKBO')
+    skbo_notams = [normalize_faa_notam(item, default_scope='SKBO') for item in skbo_raw]
     
-    db = firestore.client()
-    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    # 2. Colombia AD CLSD & ASHTAM NOTAMs
+    colombia_ad_clsd = []
+    colombia_ashtams = []
+    seen_ids = set(n['id'] for n in skbo_notams)
     
-    db.collection('settings').document('notams_skbo').set({
-        'notams': notams,
-        'lastUpdated': now_iso,
-        'pdfUrl': pdf_url
-    })
+    for icao in COLOMBIA_ICAOS:
+        raw_items = fetch_faa_notams_by_designator(icao)
+        for item in raw_items:
+            nid = item.get('notamNumber') or item.get('id')
+            if not nid:
+                continue
+            norm = normalize_faa_notam(item, default_scope='AD_CLSD_COLOMBIA')
+            desc_upper = norm['description'].upper()
+            
+            # Check for ASHTAM / Volcanic Activity
+            if 'ASHTAM' in desc_upper or 'VOLCANO' in desc_upper or 'VOLCANIC' in desc_upper or 'ERUPTION' in desc_upper or 'VA CLD' in desc_upper or 'CENIZA' in desc_upper:
+                norm_ash = dict(norm)
+                norm_ash['scope'] = 'ASHTAM_COLOMBIA'
+                norm_ash['category'] = 'ASHTAM'
+                norm_ash['severity'] = 'CRITICAL'
+                colombia_ashtams.append(norm_ash)
+                
+            if icao != 'SKBO' and nid not in seen_ids:
+                if 'AD CLSD' in desc_upper or 'AERODROME CLOSED' in desc_upper or 'AD CLOSED' in desc_upper or 'PISTA CERRADA' in desc_upper or 'RWY CLSD' in desc_upper:
+                    norm['category'] = 'AD_CLSD'
+                    norm['severity'] = 'CRITICAL'
+                    colombia_ad_clsd.append(norm)
+                    seen_ids.add(nid)
+                
+    # 3. FLOW NOTAMs in Neighbor FIRs
+    neighbor_flow_notams = []
+    for fir in NEIGHBOR_FIRS:
+        raw_items = fetch_faa_notams_by_designator(fir)
+        for item in raw_items:
+            nid = item.get('notamNumber') or item.get('id')
+            if not nid or nid in seen_ids:
+                continue
+            norm = normalize_faa_notam(item, default_scope='FLOW_NEIGHBOR_FIRS')
+            desc_upper = norm['description'].upper()
+            if 'FLOW' in desc_upper or 'ATFM' in desc_upper or 'REGULATION' in desc_upper or 'RESTRICTION' in desc_upper or 'SLOT' in desc_upper or 'CAPACITY' in desc_upper or 'RATE' in desc_upper:
+                norm['category'] = 'FLOW'
+                neighbor_flow_notams.append(norm)
+                seen_ids.add(nid)
+                
+    # Persist in Firestore settings/notams_skbo
+    try:
+        from firebase_admin import _apps, initialize_app
+        if not _apps:
+            initialize_app()
+        db = firestore.client()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        doc_data = {
+            'notams': skbo_notams,
+            'adClosedNotams': colombia_ad_clsd,
+            'flowNotams': neighbor_flow_notams,
+            'ashtamNotams': colombia_ashtams,
+            'lastUpdated': now_iso,
+            'pdfUrl': 'https://notams.aim.faa.gov/notamSearch/nsapp.html#/',
+            'source': 'FAA_NOTAM_SEARCH'
+        }
+        
+        db.collection('settings').document('notams_skbo').set(doc_data)
+    except Exception as e:
+        print(f"Firestore update skipped (local environment without GCP credentials): {e}")
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     
     return {
         "success": True,
-        "count": len(notams),
+        "count": len(skbo_notams),
+        "countAdClosed": len(colombia_ad_clsd),
+        "countFlow": len(neighbor_flow_notams),
+        "countAshtam": len(colombia_ashtams),
         "lastUpdated": now_iso,
-        "pdfUrl": pdf_url
+        "source": "FAA_NOTAM_SEARCH"
     }
+
+if __name__ == "__main__":
+    print("Testing sync_skbo_notams()...")
+    res = sync_skbo_notams()
+    print("Sync result:", res)

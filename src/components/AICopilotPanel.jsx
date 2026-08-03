@@ -559,7 +559,7 @@ export default function AICopilotPanel({
 
         {/* Panel Consola de Streaming */}
         {aiThinkingLogs.length > 0 && (
-          <div className="glass-panel" style={{ height: 'fit-content', backgroundColor: '#090d16' }}>
+          <div className="glass-panel" style={{ height: 'fit-content', backgroundColor: 'var(--bg-secondary)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
               <Terminal size={16} style={{ color: 'var(--status-success)' }} />
               <span style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--status-success)' }}>

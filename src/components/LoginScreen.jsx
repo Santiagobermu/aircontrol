@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PlaneTakeoff, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 export default function LoginScreen({ onLogin }) {
   const [userInput, setUserInput] = useState('');
@@ -53,6 +54,9 @@ export default function LoginScreen({ onLogin }) {
       position: 'relative',
       overflow: 'hidden'
     }}>
+      
+      {/* Selector de Tema Flotante */}
+      <ThemeToggle style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 20 }} />
       
       {/* Radar grid effect in background */}
       <div style={{

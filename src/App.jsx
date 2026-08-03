@@ -38,6 +38,7 @@ import TradePanel from './components/TradePanel';
 import LoginScreen from './components/LoginScreen';
 import ControllerPortal from './components/ControllerPortal';
 import AICopilotPanel from './components/AICopilotPanel';
+import ThemeToggle from './components/ThemeToggle';
 
 // Firebase & Firestore Sync
 import { db, auth } from './utils/firebase';
@@ -81,6 +82,10 @@ export default function App() {
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setIsMobileMenuOpen(false);
+    if (tab === 'monthly') {
+      setCurrentMonth(new Date().getMonth());
+      setCurrentYear(new Date().getFullYear());
+    }
   };
   
   // Calcular fecha actual de Eldorado
@@ -922,13 +927,16 @@ export default function App() {
           </div>
           <h2>AirControl</h2>
         </div>
-        <button 
-          className="mobile-menu-toggle" 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Abrir menú"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <ThemeToggle style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }} />
+          <button 
+            className="mobile-menu-toggle" 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Abrir menú"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </header>
 
       {/* Banner de Notificación */}
@@ -1125,6 +1133,8 @@ export default function App() {
               <span>ElDorado SKBO</span>
             </div>
             
+            <ThemeToggle />
+
             <button 
               onClick={() => setIsChangePasswordModalOpen(true)}
               className="btn btn-secondary"
@@ -1357,6 +1367,8 @@ export default function App() {
             onUpdateException={handleUpdateException}
             onBulkImport={handleBulkImport}
             userRole={userRole}
+            initialYear={currentYear}
+            initialMonth={currentMonth}
           />
         )}
 

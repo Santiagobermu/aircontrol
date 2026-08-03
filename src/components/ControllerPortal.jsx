@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import ThemeToggle from './ThemeToggle';
 import { 
   Calendar as CalendarIcon, 
   Activity, 
@@ -22,7 +23,9 @@ import {
   Radio,
   Bell,
   Shield,
-  ShieldCheck
+  ShieldCheck,
+  Edit2,
+  MessageSquare
 } from 'lucide-react';
 import { 
   getSlotAcronym, 
@@ -85,16 +88,52 @@ export default function ControllerPortal({
 
   // Estados y Funcionalidades para NOTAMs y Alertas
   const [syncingNotams, setSyncingNotams] = useState(false);
+  const [activeNotamScopeTab, setActiveNotamScopeTab] = useState('skbo'); // 'skbo' | 'ad_clsd' | 'flow'
   const [activeNotamSubTab, setActiveNotamSubTab] = useState('today');
   const [notamSearchQuery, setNotamSearchQuery] = useState('');
   const [selectedNotamCategory, setSelectedNotamCategory] = useState('ALL');
   
   const [isAddingAlert, setIsAddingAlert] = useState(false);
   const [newAlertContent, setNewAlertContent] = useState('');
+  const [newAlertExpiresAt, setNewAlertExpiresAt] = useState('');
+
+  // Filtrar alertas vigentes en tiempo real y eliminar de Firestore si ya expiraron
+  const validManualAlerts = useMemo(() => {
+    const now = new Date();
+    return (manualAlerts || []).filter(alertItem => {
+      if (!alertItem.expiresAt) return true;
+      const expDate = new Date(alertItem.expiresAt);
+      if (expDate <= now) {
+        deleteManualAlertDB(alertItem.id).catch(console.error);
+        return false;
+      }
+      return true;
+    });
+  }, [manualAlerts]);
+
+  // Verificar periódicamente cada 10s para borrar notas que hayan cumplido su deadline
+  useEffect(() => {
+    if (!manualAlerts || manualAlerts.length === 0) return;
+    const checkExpired = () => {
+      const now = new Date();
+      manualAlerts.forEach(alertItem => {
+        if (alertItem.expiresAt && new Date(alertItem.expiresAt) <= now) {
+          deleteManualAlertDB(alertItem.id).catch(console.error);
+        }
+      });
+    };
+    checkExpired();
+    const interval = setInterval(checkExpired, 10000);
+    return () => clearInterval(interval);
+  }, [manualAlerts]);
 
   const parseNotamDate = (dateStr) => {
     if (!dateStr || dateStr === 'PERM' || dateStr === '/') return null;
     try {
+      if (dateStr.includes('-') || dateStr.includes('T')) {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : d;
+      }
       const yy = parseInt('20' + dateStr.substring(0, 2));
       const mm = parseInt(dateStr.substring(2, 4)) - 1;
       const dd = parseInt(dateStr.substring(4, 6));
@@ -192,10 +231,12 @@ export default function ControllerPortal({
     try {
       await addManualAlertDB({
         content: newAlertContent.trim(),
+        expiresAt: newAlertExpiresAt ? new Date(newAlertExpiresAt).toISOString() : null,
         createdBy: currentController?.name || 'Supervisor',
         createdByEmail: userEmail
       });
       setNewAlertContent('');
+      setNewAlertExpiresAt('');
       setIsAddingAlert(false);
     } catch (err) {
       console.error(err);
@@ -256,6 +297,10 @@ export default function ControllerPortal({
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setIsMobileMenuOpen(false);
+    if (tab === 'monthlyGrid') {
+      setCurrentMonth(new Date().getMonth());
+      setCurrentYear(new Date().getFullYear());
+    }
   };
 
   // 1. Identificar a qué controlador corresponde este correo
@@ -432,6 +477,112 @@ export default function ControllerPortal({
     if (!daySched) return null;
     return daySched;
   }, [schedule, todayStr]);
+
+  // Identificar si el usuario actual es Encargado de turno (CTE / supervisor / admin)
+  const isEncargadoDeTurno = useMemo(() => {
+    if (userRole === 'admin') return true;
+    if (!currentController) return false;
+    if (currentController.isSupervisor || currentController.isAdmin) return true;
+    if (currentController.skills && currentController.skills.includes('CTE')) return true;
+
+    if (todaySchedule) {
+      for (const shift of SHIFTS) {
+        const slots = todaySchedule[shift] || {};
+        for (const key of Object.keys(slots)) {
+          if (key.startsWith('CTE-') && slots[key] === currentController.id) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }, [userRole, currentController, todaySchedule]);
+
+  // Estado del modal de cambio diario de posición (Radar)
+  const [radarChangeModal, setRadarChangeModal] = useState({
+    isOpen: false,
+    shift: null,
+    slotKey: null,
+    currentCtrlId: null,
+    newCtrlId: '',
+    comment: ''
+  });
+
+  // Orden de jerarquía de posiciones para el Radar: Encargado -> Torres -> Superficie -> Autorizaciones -> FIC -> Otros
+  const getPositionOrder = (slotKey) => {
+    const prefix = (slotKey || '').split('-')[0].toUpperCase();
+    switch (prefix) {
+      case 'CTE': return 1; // Encargado
+      case 'TWR': return 2; // Torres
+      case 'GND': return 3; // Superficie
+      case 'DEL': return 4; // Autorizaciones
+      case 'FIC': return 5; // FIC
+      case 'ACC': return 6;
+      case 'SIM': return 7;
+      case 'OFI': return 8;
+      case 'CAE': return 9;
+      case 'CHC':
+      case 'CHEC': return 10;
+      case 'ENT': return 11;
+      case 'INS': return 12;
+      default: return 99;
+    }
+  };
+
+  // Guardar cambio diario de posición y comentario (control de último momento por Encargado de turno)
+  const handleSaveRadarChange = async () => {
+    const { shift, slotKey, newCtrlId, comment } = radarChangeModal;
+    if (!shift || !slotKey) return;
+    
+    const dateStr = todayStr;
+    const updatedDaySched = schedule[dateStr] 
+      ? JSON.parse(JSON.stringify(schedule[dateStr])) 
+      : createEmptyDaySchedule(dateStr);
+
+    if (!updatedDaySched[shift]) {
+      updatedDaySched[shift] = {};
+    }
+    
+    const oldCtrlId = updatedDaySched[shift][slotKey];
+    updatedDaySched[shift][slotKey] = newCtrlId || null;
+
+    // Guardar / actualizar comentario del cambio diario
+    if (!updatedDaySched._dailyComments) {
+      updatedDaySched._dailyComments = {};
+    }
+    const commentKey = `${shift}|${slotKey}`;
+    if (comment && comment.trim()) {
+      updatedDaySched._dailyComments[commentKey] = {
+        text: comment.trim(),
+        by: currentController?.name || 'Encargado',
+        at: new Date().toISOString()
+      };
+    } else {
+      delete updatedDaySched._dailyComments[commentKey];
+    }
+
+    try {
+      await saveScheduleDayDB(dateStr, updatedDaySched);
+      
+      const parts = dateStr.split('-');
+      const yr = parseInt(parts[0], 10);
+      const mo = parseInt(parts[1], 10) - 1;
+      if (oldCtrlId) {
+        await triggerCalendarSyncIfEnabled(oldCtrlId, controllers, yr, mo, { ...schedule, [dateStr]: updatedDaySched }, exceptions);
+      }
+      if (newCtrlId && newCtrlId !== oldCtrlId) {
+        await triggerCalendarSyncIfEnabled(newCtrlId, controllers, yr, mo, { ...schedule, [dateStr]: updatedDaySched }, exceptions);
+      }
+
+      const newCtrlName = controllers.find(c => c.id === newCtrlId)?.name || 'Vacante';
+      const acronym = getSlotAcronym(slotKey);
+      alert(`Cambio diario registrado: ${newCtrlName} asignado a ${acronym} en el turno ${shift}.`);
+      setRadarChangeModal({ isOpen: false, shift: null, slotKey: null, currentCtrlId: null, newCtrlId: '', comment: '' });
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar el cambio diario de posición: ' + err.message);
+    }
+  };
 
   // ==================== TRADES / CAMBIOS DE TURNO ====================
   const [tradeDate, setTradeDate] = useState('');
@@ -898,13 +1049,16 @@ export default function ControllerPortal({
           </div>
           <h2>AirControl</h2>
         </div>
-        <button 
-          className="mobile-menu-toggle" 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Abrir menú"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <ThemeToggle style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }} />
+          <button 
+            className="mobile-menu-toggle" 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Abrir menú"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </header>
 
       {/* Overlay del menú móvil */}
@@ -1088,20 +1242,23 @@ export default function ControllerPortal({
             )}
           </div>
           
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--color-border)',
-            padding: '0.5rem 1rem',
-            borderRadius: '12px',
-            fontFamily: 'var(--font-heading)',
-            fontSize: '0.9rem',
-            fontWeight: '600'
-          }}>
-            <UserCheck size={16} style={{ color: 'var(--accent-cyan)' }} />
-            <span>Portal del Controlador</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--color-border)',
+              padding: '0.5rem 1rem',
+              borderRadius: '12px',
+              fontFamily: 'var(--font-heading)',
+              fontSize: '0.9rem',
+              fontWeight: '600'
+            }}>
+              <UserCheck size={16} style={{ color: 'var(--accent-cyan)' }} />
+              <span>Portal del Controlador</span>
+            </div>
+            <ThemeToggle />
           </div>
         </header>
 
@@ -1326,6 +1483,8 @@ export default function ControllerPortal({
                 exceptions={exceptions}
                 publishState={publishState}
                 readOnly={true}
+                initialYear={currentYear}
+                initialMonth={currentMonth}
               />
             ) : (
               <div style={{
@@ -1409,11 +1568,37 @@ export default function ControllerPortal({
                   </h2>
                 </div>
 
+                {isEncargadoDeTurno && (
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--accent-cyan)',
+                    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                    border: '1px solid rgba(6, 182, 212, 0.2)',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '8px',
+                    marginBottom: '1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontWeight: '600'
+                  }}>
+                    <Edit2 size={14} style={{ flexShrink: 0 }} />
+                    <span>Control Diario Encargado: Haz clic en cualquier casilla para cambiar el controlador en tiempo real si hubo un cambio de último momento.</span>
+                  </div>
+                )}
+
                 {todaySchedule ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {SHIFTS.map(shift => {
                       const slots = todaySchedule[shift] || {};
                       const activeAssignments = Object.keys(slots).filter(k => slots[k] !== null);
+                      
+                      const sortedAssignments = [...activeAssignments].sort((a, b) => {
+                        const orderA = getPositionOrder(a);
+                        const orderB = getPositionOrder(b);
+                        if (orderA !== orderB) return orderA - orderB;
+                        return a.localeCompare(b, undefined, { numeric: true });
+                      });
                       
                       return (
                         <div 
@@ -1429,41 +1614,87 @@ export default function ControllerPortal({
                             <Clock size={16} /> Turno {shift === 'A' ? 'Madrugada (A)' : shift === 'M' ? 'Mañana (M)' : shift === 'T' ? 'Tarde (T)' : 'Noche (N)'}
                           </h4>
 
-                          {activeAssignments.length > 0 ? (
+                          {sortedAssignments.length > 0 ? (
                             <div className="radar-positions-grid">
-                              {activeAssignments.map(slotKey => {
+                              {sortedAssignments.map(slotKey => {
                                 const ctrlId = slots[slotKey];
                                 const ctrl = controllers.find(c => c.id === ctrlId);
                                 const acronym = getSlotAcronym(slotKey);
                                 const desc = getSlotDescription(slotKey);
                                 const isMe = ctrl && currentController && ctrlId === currentController.id;
                                 
+                                const rawComment = todaySchedule?._dailyComments?.[`${shift}|${slotKey}`];
+                                const commentText = typeof rawComment === 'string' ? rawComment : rawComment?.text;
+                                const commentAuthor = typeof rawComment === 'object' ? rawComment?.by : null;
+
                                 return (
                                   <div 
                                     key={slotKey}
+                                    onClick={() => {
+                                      if (isEncargadoDeTurno) {
+                                        setRadarChangeModal({
+                                          isOpen: true,
+                                          shift,
+                                          slotKey,
+                                          currentCtrlId: ctrlId,
+                                          newCtrlId: ctrlId || '',
+                                          comment: commentText || ''
+                                        });
+                                      }
+                                    }}
+                                    title={isEncargadoDeTurno ? "Haz clic para cambiar controlador o agregar comentario (Control Diario)" : undefined}
                                     style={{
                                       backgroundColor: isMe ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-secondary)',
                                       border: isMe ? '1px solid var(--accent-cyan)' : '1px solid var(--color-border)',
                                       borderRadius: '10px',
-                                      padding: '0.75rem'
+                                      padding: '0.75rem',
+                                      cursor: isEncargadoDeTurno ? 'pointer' : 'default',
+                                      transition: 'all 0.2s',
+                                      position: 'relative'
                                     }}
                                   >
-                                    <span style={{
-                                      fontSize: '0.65rem',
-                                      backgroundColor: isMe ? 'var(--accent-cyan)' : 'var(--bg-tertiary)',
-                                      color: isMe ? 'black' : 'var(--text-secondary)',
-                                      padding: '0.15rem 0.4rem',
-                                      borderRadius: '4px',
-                                      fontWeight: '800'
-                                    }}>
-                                      {acronym}
-                                    </span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{
+                                        fontSize: '0.65rem',
+                                        backgroundColor: isMe ? 'var(--accent-cyan)' : 'var(--bg-tertiary)',
+                                        color: isMe ? 'black' : 'var(--text-secondary)',
+                                        padding: '0.15rem 0.4rem',
+                                        borderRadius: '4px',
+                                        fontWeight: '800'
+                                      }}>
+                                        {acronym}
+                                      </span>
+                                      {isEncargadoDeTurno && (
+                                        <Edit2 size={12} style={{ color: 'var(--accent-cyan)', opacity: 0.8 }} />
+                                      )}
+                                    </div>
                                     <div style={{ fontSize: '0.9rem', fontWeight: '700', marginTop: '0.4rem', color: 'var(--text-primary)' }}>
                                       {ctrl?.name || 'Controlador'} {isMe && '(Tú)'}
                                     </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                                       {desc}
                                     </div>
+                                    {commentText && (
+                                      <div style={{
+                                        fontSize: '0.68rem',
+                                        color: 'var(--accent-cyan)',
+                                        backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                                        border: '1px solid rgba(6, 182, 212, 0.2)',
+                                        padding: '0.2rem 0.4rem',
+                                        borderRadius: '4px',
+                                        marginTop: '0.35rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.3rem',
+                                        fontStyle: 'italic',
+                                        lineHeight: '1.2'
+                                      }} title={commentAuthor ? `Comentario de ${commentAuthor}` : 'Comentario del cambio'}>
+                                        <MessageSquare size={11} style={{ flexShrink: 0 }} />
+                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          "{commentText}"
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -1500,7 +1731,7 @@ export default function ControllerPortal({
                       <Bell size={18} style={{ color: 'var(--status-warning)' }} />
                       <span>Alertas de la Torre (Locales)</span>
                     </h3>
-                    {(userRole === 'admin' || currentController?.isSupervisor) && (
+                    {(userRole === 'admin' || isEncargadoDeTurno) && (
                       <button 
                         onClick={() => setIsAddingAlert(!isAddingAlert)} 
                         className="btn"
@@ -1529,7 +1760,22 @@ export default function ControllerPortal({
                         value={newAlertContent}
                         onChange={(e) => setNewAlertContent(e.target.value)}
                       />
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      
+                      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <label style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <Clock size={12} style={{ color: 'var(--accent-cyan)' }} />
+                          <span>Válida hasta (Fecha y hora límite - opcional):</span>
+                        </label>
+                        <input
+                          type="datetime-local"
+                          className="form-input"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.5rem', color: 'white', backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', border: '1px solid var(--color-border)', width: '100%' }}
+                          value={newAlertExpiresAt}
+                          onChange={(e) => setNewAlertExpiresAt(e.target.value)}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.75rem' }}>
                         <button 
                           onClick={handleCreateAlert} 
                           className="btn btn-primary"
@@ -1541,9 +1787,9 @@ export default function ControllerPortal({
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '200px', overflowY: 'auto' }}>
-                    {manualAlerts.length > 0 ? (
-                      manualAlerts.map(alertItem => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '220px', overflowY: 'auto' }}>
+                    {validManualAlerts.length > 0 ? (
+                      validManualAlerts.map(alertItem => (
                         <div 
                           key={alertItem.id} 
                           style={{
@@ -1554,7 +1800,7 @@ export default function ControllerPortal({
                             position: 'relative'
                           }}
                         >
-                          {(userRole === 'admin' || currentController?.isSupervisor) && (
+                          {(userRole === 'admin' || isEncargadoDeTurno) && (
                             <button
                               onClick={() => handleDeleteAlert(alertItem.id)}
                               style={{
@@ -1575,6 +1821,26 @@ export default function ControllerPortal({
                           <p style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-primary)', paddingRight: '1.5rem', lineHeight: '1.4' }}>
                             {alertItem.content}
                           </p>
+                          
+                          {alertItem.expiresAt && (
+                            <div style={{
+                              fontSize: '0.68rem',
+                              color: 'var(--status-warning)',
+                              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                              border: '1px solid rgba(245, 158, 11, 0.2)',
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: '4px',
+                              marginTop: '0.4rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              fontWeight: '600'
+                            }}>
+                              <Clock size={11} />
+                              <span>Vence: {new Date(alertItem.expiresAt).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          )}
+
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                             <span>Por: {alertItem.createdBy}</span>
                             <span>{new Date(alertItem.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -1589,12 +1855,12 @@ export default function ControllerPortal({
                   </div>
                 </div>
 
-                {/* Bloque 2: NOTAMs Oficiales Aerocivil */}
+                {/* Bloque 2: NOTAMs Oficiales (FAA Search API) */}
                 <div className="glass-panel" style={{ padding: '1.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
                     <h3 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700' }}>
                       <Radio size={18} style={{ color: 'var(--accent-cyan)' }} />
-                      <span>NOTAMs Eldorado (SKBO)</span>
+                      <span>NOTAMs Oficiales (FAA Search)</span>
                     </h3>
                     
                     {(userRole === 'admin' || currentController?.isSupervisor) && (
@@ -1622,52 +1888,139 @@ export default function ControllerPortal({
                     )}
                   </div>
 
-                  {/* Sub-tabs y Buscador */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                      <button
-                        onClick={() => setActiveNotamSubTab('today')}
-                        style={{
-                          flex: 1,
-                          padding: '0.3rem',
-                          fontSize: '0.75rem',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontWeight: '700',
-                          backgroundColor: activeNotamSubTab === 'today' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                          color: activeNotamSubTab === 'today' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
-                        }}
-                      >
-                        Vigentes Hoy ({notamsData.notams?.filter(isNotamActiveToday).length || 0})
-                      </button>
-                      <button
-                        onClick={() => setActiveNotamSubTab('tomorrow')}
-                        style={{
-                          flex: 1,
-                          padding: '0.3rem',
-                          fontSize: '0.75rem',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontWeight: '700',
-                          backgroundColor: activeNotamSubTab === 'tomorrow' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                          color: activeNotamSubTab === 'tomorrow' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
-                        }}
-                      >
-                        Mañana (05-11 UTC) ({notamsData.notams?.filter(isNotamActiveTomorrowEarly).length || 0})
-                      </button>
-                    </div>
-
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Filtrar por texto (ej. RWY, TWY)..."
-                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem', color: 'white', backgroundColor: 'var(--bg-tertiary)' }}
-                      value={notamSearchQuery}
-                      onChange={(e) => setNotamSearchQuery(e.target.value)}
-                    />
+                  {/* Pestañas de Ámbito Principal (SKBO / Cierres Colombia / FLOW FIRs / ASHTAMs) */}
+                  <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => { setActiveNotamScopeTab('skbo'); setSelectedNotamCategory('ALL'); }}
+                      style={{
+                        flex: 1,
+                        minWidth: '70px',
+                        padding: '0.35rem 0.2rem',
+                        fontSize: '0.7rem',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        backgroundColor: activeNotamScopeTab === 'skbo' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                        color: activeNotamScopeTab === 'skbo' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
+                      }}
+                    >
+                      📌 SKBO ({notamsData.notams?.length || 0})
+                    </button>
+                    <button
+                      onClick={() => { setActiveNotamScopeTab('ad_clsd'); setSelectedNotamCategory('ALL'); }}
+                      style={{
+                        flex: 1,
+                        minWidth: '80px',
+                        padding: '0.35rem 0.2rem',
+                        fontSize: '0.7rem',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        backgroundColor: activeNotamScopeTab === 'ad_clsd' ? 'rgba(244, 63, 94, 0.15)' : 'transparent',
+                        color: activeNotamScopeTab === 'ad_clsd' ? 'var(--status-danger)' : 'var(--text-secondary)'
+                      }}
+                    >
+                      🚫 Cierres Col ({notamsData.adClosedNotams?.length || 0})
+                    </button>
+                    <button
+                      onClick={() => { setActiveNotamScopeTab('flow'); setSelectedNotamCategory('ALL'); }}
+                      style={{
+                        flex: 1,
+                        minWidth: '80px',
+                        padding: '0.35rem 0.2rem',
+                        fontSize: '0.7rem',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        backgroundColor: activeNotamScopeTab === 'flow' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                        color: activeNotamScopeTab === 'flow' ? 'var(--status-warning)' : 'var(--text-secondary)'
+                      }}
+                    >
+                      ✈️ Flujo FIRs ({notamsData.flowNotams?.length || 0})
+                    </button>
+                    <button
+                      onClick={() => { setActiveNotamScopeTab('ashtam'); setSelectedNotamCategory('ALL'); }}
+                      style={{
+                        flex: 1,
+                        minWidth: '85px',
+                        padding: '0.35rem 0.2rem',
+                        fontSize: '0.7rem',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        backgroundColor: activeNotamScopeTab === 'ashtam' ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
+                        color: activeNotamScopeTab === 'ashtam' ? '#ec4899' : 'var(--text-secondary)'
+                      }}
+                    >
+                      🌋 ASHTAMs ({notamsData.ashtamNotams?.length || 0})
+                    </button>
                   </div>
+
+                  {/* Sub-tabs Temporales y Buscador */}
+                  {(() => {
+                    const scopeList = activeNotamScopeTab === 'ad_clsd' 
+                      ? (notamsData.adClosedNotams || [])
+                      : activeNotamScopeTab === 'flow'
+                      ? (notamsData.flowNotams || [])
+                      : activeNotamScopeTab === 'ashtam'
+                      ? (notamsData.ashtamNotams || [])
+                      : (notamsData.notams || []);
+
+                    const todayCount = scopeList.filter(isNotamActiveToday).length;
+                    const tomorrowCount = scopeList.filter(isNotamActiveTomorrowEarly).length;
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                          <button
+                            onClick={() => setActiveNotamSubTab('today')}
+                            style={{
+                              flex: 1,
+                              padding: '0.3rem',
+                              fontSize: '0.75rem',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontWeight: '700',
+                              backgroundColor: activeNotamSubTab === 'today' ? 'rgba(255,255,255,0.05)' : 'transparent',
+                              color: activeNotamSubTab === 'today' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
+                            }}
+                          >
+                            Vigentes Hoy ({todayCount})
+                          </button>
+                          <button
+                            onClick={() => setActiveNotamSubTab('tomorrow')}
+                            style={{
+                              flex: 1,
+                              padding: '0.3rem',
+                              fontSize: '0.75rem',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontWeight: '700',
+                              backgroundColor: activeNotamSubTab === 'tomorrow' ? 'rgba(255,255,255,0.05)' : 'transparent',
+                              color: activeNotamSubTab === 'tomorrow' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
+                            }}
+                          >
+                            Mañana (05-11 UTC) ({tomorrowCount})
+                          </button>
+                        </div>
+
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="Filtrar por texto (ej. SKCL, ASHTAM, VOLCAN, CLSD)..."
+                          style={{ fontSize: '0.8rem', padding: '0.35rem 0.5rem', color: 'white', backgroundColor: 'var(--bg-tertiary)' }}
+                          value={notamSearchQuery}
+                          onChange={(e) => setNotamSearchQuery(e.target.value)}
+                        />
+                      </div>
+                    );
+                  })()}
 
                   {/* Panel de Categorías */}
                   <div style={{
@@ -1681,9 +2034,12 @@ export default function ControllerPortal({
                       { key: 'RWY', label: 'RWY' },
                       { key: 'TXY', label: 'TXY' },
                       { key: 'SID/STAR/APP', label: 'SID/STAR/APP' },
-                      { key: 'NAV_AIDS', label: 'Ayudas (ILS/ALS)' },
+                      { key: 'NAV_AIDS', label: 'Ayudas' },
                       { key: 'LVP', label: 'Proc. (LVP)' },
-                      { key: 'MISC', label: 'Misceláneos' }
+                      { key: 'AD_CLSD', label: 'Cierres AD' },
+                      { key: 'FLOW', label: 'FLOW' },
+                      { key: 'ASHTAM', label: '🌋 ASHTAM' },
+                      { key: 'MISC', label: 'Otros' }
                     ].map(cat => {
                       const isSelected = selectedNotamCategory === cat.key;
                       return (
@@ -1692,8 +2048,8 @@ export default function ControllerPortal({
                           onClick={() => setSelectedNotamCategory(cat.key)}
                           className="btn"
                           style={{
-                            padding: '0.25rem 0.5rem',
-                            fontSize: '0.7rem',
+                            padding: '0.2rem 0.45rem',
+                            fontSize: '0.68rem',
                             fontWeight: '700',
                             borderRadius: '6px',
                             cursor: 'pointer',
@@ -1710,32 +2066,43 @@ export default function ControllerPortal({
                   </div>
 
                   {/* Lista de NOTAMs */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '280px', overflowY: 'auto', paddingRight: '0.2rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.2rem' }}>
                     {(() => {
-                      const filteredList = (notamsData.notams || [])
+                      const rawDataset = activeNotamScopeTab === 'ad_clsd' 
+                        ? (notamsData.adClosedNotams || [])
+                        : activeNotamScopeTab === 'flow'
+                        ? (notamsData.flowNotams || [])
+                        : activeNotamScopeTab === 'ashtam'
+                        ? (notamsData.ashtamNotams || [])
+                        : (notamsData.notams || []);
+
+                      const filteredList = rawDataset
                         .filter(activeNotamSubTab === 'today' ? isNotamActiveToday : isNotamActiveTomorrowEarly)
                         .filter(n => {
                           if (selectedNotamCategory === 'ALL') return true;
-                          return categorizeNotam(n) === selectedNotamCategory;
+                          const c = n.category === 'SID_STAR_APP' ? 'SID/STAR/APP' : (n.category || categorizeNotam(n));
+                          return c === selectedNotamCategory;
                         })
                         .filter(n => {
                           if (!notamSearchQuery.trim()) return true;
                           const query = notamSearchQuery.toLowerCase();
-                          return n.id.toLowerCase().includes(query) || n.description.toLowerCase().includes(query);
+                          return (n.id || '').toLowerCase().includes(query) || 
+                                 (n.airport || '').toLowerCase().includes(query) ||
+                                 (n.description || '').toLowerCase().includes(query);
                         });
 
                       if (filteredList.length > 0) {
                         return filteredList.map(n => {
-                          const isCritical = n.description.includes('CLSD') || n.description.includes('CLOSED') || n.description.includes('CIERRE');
-                          const isWarning = n.description.includes('U/S') || n.description.includes('WIP') || n.description.includes('LIMIT');
+                          const isCritical = n.severity === 'CRITICAL' || n.description?.includes('CLSD') || n.description?.includes('CLOSED') || n.description?.includes('CIERRE');
+                          const isWarning = n.severity === 'WARNING' || n.description?.includes('U/S') || n.description?.includes('WIP') || n.description?.includes('LIMIT') || n.description?.includes('FLOW');
                           
                           let badgeBg = 'rgba(255,255,255,0.05)';
                           let badgeCol = 'var(--text-secondary)';
                           if (isCritical) {
-                            badgeBg = 'rgba(244, 63, 94, 0.1)';
+                            badgeBg = 'rgba(244, 63, 94, 0.15)';
                             badgeCol = 'var(--status-danger)';
                           } else if (isWarning) {
-                            badgeBg = 'rgba(245, 158, 11, 0.1)';
+                            badgeBg = 'rgba(245, 158, 11, 0.15)';
                             badgeCol = 'var(--status-warning)';
                           }
 
@@ -1744,31 +2111,44 @@ export default function ControllerPortal({
                               key={n.id} 
                               style={{
                                 backgroundColor: 'rgba(255,255,255,0.02)',
-                                border: `1px solid ${isCritical ? 'rgba(244, 63, 94, 0.15)' : 'var(--color-border)'}`,
+                                border: `1px solid ${isCritical ? 'rgba(244, 63, 94, 0.25)' : isWarning ? 'rgba(245, 158, 11, 0.2)' : 'var(--color-border)'}`,
                                 borderRadius: '8px',
                                 padding: '0.75rem'
                               }}
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  backgroundColor: badgeBg,
-                                  color: badgeCol,
-                                  padding: '0.15rem 0.4rem',
-                                  borderRadius: '4px',
-                                  fontWeight: '800'
-                                }}>
-                                  {n.id}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span style={{
+                                    fontSize: '0.65rem',
+                                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                                    color: 'var(--accent-cyan)',
+                                    padding: '0.1rem 0.35rem',
+                                    borderRadius: '4px',
+                                    fontWeight: '800'
+                                  }}>
+                                    {n.airport || 'SKBO'}
+                                  </span>
+                                  <span style={{
+                                    fontSize: '0.7rem',
+                                    backgroundColor: badgeBg,
+                                    color: badgeCol,
+                                    padding: '0.15rem 0.4rem',
+                                    borderRadius: '4px',
+                                    fontWeight: '800'
+                                  }}>
+                                    {n.id}
+                                  </span>
+                                </div>
                                 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                                   {n.schedule ? `Horario: ${n.schedule}` : 'Todo el día'}
                                 </span>
                               </div>
-                              <p style={{ fontSize: '0.8rem', margin: 0, color: 'var(--text-primary)', lineHeight: '1.4' }}>
+                              <p style={{ fontSize: '0.8rem', margin: 0, color: 'var(--text-primary)', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
                                 {n.description}
                               </p>
-                              <div style={{ marginTop: '0.35rem', fontSize: '0.6rem', color: 'var(--text-muted)' }}>
-                                Validez: {n.dates_raw?.replace(',', '')}
+                              <div style={{ marginTop: '0.35rem', fontSize: '0.6rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Validez: {n.dates_raw || `${n.start_date || ''} - ${n.end_date || ''}`}</span>
+                                {n.source && <span>Fuente: FAA</span>}
                               </div>
                             </div>
                           );
@@ -1777,7 +2157,7 @@ export default function ControllerPortal({
 
                       return (
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0, textAlign: 'center', padding: '1.5rem 0' }}>
-                          No hay NOTAMs vigentes que coincidan.
+                          No hay NOTAMs vigentes en este ámbito que coincidan.
                         </p>
                       );
                     })()}
@@ -1785,7 +2165,7 @@ export default function ControllerPortal({
 
                   {notamsData.lastUpdated && (
                     <div style={{ marginTop: '0.75rem', fontSize: '0.6rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                      Última sinc: {new Date(notamsData.lastUpdated).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      Última sinc (FAA): {new Date(notamsData.lastUpdated).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                     </div>
                   )}
                 </div>
@@ -2834,6 +3214,128 @@ export default function ControllerPortal({
             >
               Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Control Diario de Posición (Radar de Turno para Encargados) */}
+      {radarChangeModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          <div className="glass-panel" style={{
+            width: '90%',
+            maxWidth: '480px',
+            padding: '2rem',
+            borderRadius: '16px',
+            border: '1px solid var(--color-border)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => setRadarChangeModal({ isOpen: false, shift: null, slotKey: null, currentCtrlId: null, newCtrlId: '' })}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
+              <UserCheck size={20} style={{ color: 'var(--accent-cyan)' }} />
+              <span>Control Diario de Posición (Encargado)</span>
+            </h3>
+
+            <div style={{
+              backgroundColor: 'var(--bg-tertiary)',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px',
+              border: '1px solid var(--color-border)',
+              fontSize: '0.85rem'
+            }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Turno y Posición:</div>
+              <div style={{ fontWeight: '700', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                Turno {radarChangeModal.shift === 'A' ? 'Madrugada (A)' : radarChangeModal.shift === 'M' ? 'Mañana (M)' : radarChangeModal.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} · {getSlotAcronym(radarChangeModal.slotKey)} ({getSlotDescription(radarChangeModal.slotKey)})
+              </div>
+            </div>
+
+            <div className="form-group" style={{ margin: 0 }}>
+              <label htmlFor="radar-ctrl-select" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'block' }}>
+                Selecciona el controlador real para esta posición hoy:
+              </label>
+              <select
+                id="radar-ctrl-select"
+                className="form-input"
+                style={{ width: '100%', padding: '0.6rem', fontSize: '0.9rem', backgroundColor: 'var(--bg-secondary)', color: 'white', borderRadius: '8px' }}
+                value={radarChangeModal.newCtrlId}
+                onChange={(e) => setRadarChangeModal(prev => ({ ...prev, newCtrlId: e.target.value }))}
+              >
+                <option value="">-- Vacante / Sin Asignar --</option>
+                {controllers.filter(c => c.active).map(c => {
+                  const requiredSkill = radarChangeModal.slotKey ? radarChangeModal.slotKey.split('-')[0] : '';
+                  let hasSkill = true;
+                  if (requiredSkill === 'ENT') {
+                    hasSkill = !!c.trainingPreferred;
+                  } else if (requiredSkill && requiredSkill !== 'INS' && requiredSkill !== 'CAE' && requiredSkill !== 'CHC' && requiredSkill !== 'OFI') {
+                    hasSkill = c.skills && c.skills.includes(requiredSkill);
+                  }
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.id}) {hasSkill ? '✓ Habilitado' : '⚠️ Sin Habilitación'}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div className="form-group" style={{ margin: 0 }}>
+              <label htmlFor="radar-comment" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <MessageSquare size={14} style={{ color: 'var(--accent-cyan)' }} />
+                <span>Comentario / Motivo del cambio (opcional):</span>
+              </label>
+              <textarea
+                id="radar-comment"
+                className="form-input"
+                style={{ width: '100%', minHeight: '65px', padding: '0.5rem', fontSize: '0.85rem', backgroundColor: 'var(--bg-secondary)', color: 'white', borderRadius: '8px', resize: 'none' }}
+                placeholder="Ej. Cambio de último momento por cita médica, permuta aprobada por encargado..."
+                value={radarChangeModal.comment}
+                onChange={(e) => setRadarChangeModal(prev => ({ ...prev, comment: e.target.value }))}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setRadarChangeModal({ isOpen: false, shift: null, slotKey: null, currentCtrlId: null, newCtrlId: '' })}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveRadarChange}
+              >
+                Guardar Cambio
+              </button>
+            </div>
           </div>
         </div>
       )}
