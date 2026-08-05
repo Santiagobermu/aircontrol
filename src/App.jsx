@@ -39,6 +39,7 @@ import LoginScreen from './components/LoginScreen';
 import ControllerPortal from './components/ControllerPortal';
 import AICopilotPanel from './components/AICopilotPanel';
 import ThemeToggle from './components/ThemeToggle';
+import MobileLayout from './components/mobile/MobileLayout';
 
 // Firebase & Firestore Sync
 import { db, auth } from './utils/firebase';
@@ -76,8 +77,17 @@ export default function App() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   
-  // Adaptabilidad Móvil
+  // Adaptabilidad Móvil y PWA
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -895,6 +905,36 @@ export default function App() {
   const userRole = isUserAdmin ? 'admin' : 'controller';
 
   const showControllerPortal = userRole === 'controller' || (viewAsController && userRole === 'admin');
+
+  // Si está en dispositivo móvil o vista móvil activada
+  if (isMobileView && (showControllerPortal || userRole === 'controller')) {
+    const currentCtrlObj = controllers.find(c => c.email?.toLowerCase() === currentUser.email?.toLowerCase()) || {
+      id: currentUser.email?.split('@')[0],
+      name: currentUser.displayName || currentUser.email.split('@')[0],
+      email: currentUser.email,
+      signature: currentUser.email.split('@')[0].substring(0, 3).toUpperCase(),
+      role: userRole
+    };
+
+    return (
+      <MobileLayout
+        currentUser={currentCtrlObj}
+        scheduleMonth={schedule}
+        exceptions={exceptions}
+        controllers={controllers}
+        trades={trades}
+        notamsData={notamsData}
+        manualAlerts={manualAlerts}
+        userRole={userRole}
+        onLogout={handleLogout}
+        onChangePassword={() => setIsChangePasswordModalOpen(true)}
+        onOpenTradeModal={() => setActiveTab('trades')}
+        onAddTrade={handleAddTrade}
+        onAcceptTrade={handleApproveTrade}
+        onRejectTrade={handleDeleteTrade}
+      />
+    );
+  }
 
   if (showControllerPortal) {
     return (

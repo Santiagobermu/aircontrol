@@ -7,11 +7,15 @@ FAA_SEARCH_URL = "https://notams.aim.faa.gov/notamSearch/search"
 
 # Location designators groups
 COLOMBIA_ICAOS = [
-    'SKBO', 'SKED', 'SKEC', 'SKCL', 'SKRG', 'SKPE', 'SKCG', 'SKBA',
-    'SKSM', 'SKUC', 'SKLT', 'SKNV', 'SKAR', 'SKFL', 'SKGO', 'SKIB',
-    'SKIP', 'SKJC', 'SKJU', 'SKLS', 'SKMD', 'SKMR', 'SKMZ', 'SKOC',
-    'SKOT', 'SKPZ', 'SKQU', 'SKSJ', 'SKSP', 'SKST', 'SKTM', 'SKTP',
-    'SKUI', 'SKVP', 'SKVV'
+    'SKUC', 'SKAR', 'SKBS', 'SKEJ', 'SKBQ', 'SKBO', 'SKBG', 'SKBU',
+    'SKCL', 'SKLC', 'SKCG', 'SKGO', 'SKGY', 'SKCZ', 'SKCC', 'SKYP',
+    'SKFL', 'SKGI', 'SKGP', 'SKIB', 'SKPD', 'SKIP', 'SKLT', 'SKMZ',
+    'SKQU', 'SKMD', 'SKMU', 'SKMR', 'SKNV', 'SKPS', 'SKPE', 'SKPP',
+    'SKPV', 'SKAS', 'SKPC', 'SKUI', 'SKRH', 'SKRG', 'SKSP', 'SKSJ',
+    'SKSM', 'SKSA', 'SKTM', 'SKCO', 'SKVP', 'SKVV', 'SKAG', 'SQHK',
+    'SKHA', 'SKEB', 'SKNA', 'SKMG', 'SKLM', 'SKMP', 'SKML', 'SKNQ',
+    'SKOC', 'SKPA', 'SKPI', 'SKPB', 'SKMO', 'SKLG', 'SKSG', 'SKSV',
+    'SQUJ', 'SKTL', 'SKUL', 'SKVG'
 ]
 
 NEIGHBOR_FIRS = ['SKEC', 'SPIM', 'SEFG', 'SVZM', 'SBMN', 'SBCW', 'MKJK']
@@ -207,7 +211,7 @@ def sync_skbo_notams():
                 continue
             norm = normalize_faa_notam(item, default_scope='FLOW_NEIGHBOR_FIRS')
             desc_upper = norm['description'].upper()
-            if 'FLOW' in desc_upper or 'ATFM' in desc_upper or 'REGULATION' in desc_upper or 'RESTRICTION' in desc_upper or 'SLOT' in desc_upper or 'CAPACITY' in desc_upper or 'RATE' in desc_upper:
+            if 'FLOW' in desc_upper:
                 norm['category'] = 'FLOW'
                 neighbor_flow_notams.append(norm)
                 seen_ids.add(nid)

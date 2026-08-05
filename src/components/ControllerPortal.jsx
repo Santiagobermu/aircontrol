@@ -1888,7 +1888,7 @@ export default function ControllerPortal({
                     )}
                   </div>
 
-                  {/* Pestañas de Ámbito Principal (SKBO / Cierres Colombia / FLOW FIRs / ASHTAMs) */}
+                  {/* Pestañas de Ámbito Principal (SKBO / Otros Aeropuertos / Control de Flujos / ASHTAMs) */}
                   <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => { setActiveNotamScopeTab('skbo'); setSelectedNotamCategory('ALL'); }}
@@ -1922,7 +1922,7 @@ export default function ControllerPortal({
                         color: activeNotamScopeTab === 'ad_clsd' ? 'var(--status-danger)' : 'var(--text-secondary)'
                       }}
                     >
-                      🚫 Cierres Col ({notamsData.adClosedNotams?.length || 0})
+                      🛫 Otros Aeropuertos ({notamsData.adClosedNotams?.length || 0})
                     </button>
                     <button
                       onClick={() => { setActiveNotamScopeTab('flow'); setSelectedNotamCategory('ALL'); }}
@@ -1939,7 +1939,7 @@ export default function ControllerPortal({
                         color: activeNotamScopeTab === 'flow' ? 'var(--status-warning)' : 'var(--text-secondary)'
                       }}
                     >
-                      ✈️ Flujo FIRs ({notamsData.flowNotams?.length || 0})
+                      ✈️ Control de Flujos ({notamsData.flowNotams?.length || 0})
                     </button>
                     <button
                       onClick={() => { setActiveNotamScopeTab('ashtam'); setSelectedNotamCategory('ALL'); }}
@@ -2022,48 +2022,45 @@ export default function ControllerPortal({
                     );
                   })()}
 
-                  {/* Panel de Categorías */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.25rem',
-                    flexWrap: 'wrap',
-                    marginBottom: '0.75rem'
-                  }}>
-                    {[
-                      { key: 'ALL', label: 'Todos' },
-                      { key: 'RWY', label: 'RWY' },
-                      { key: 'TXY', label: 'TXY' },
-                      { key: 'SID/STAR/APP', label: 'SID/STAR/APP' },
-                      { key: 'NAV_AIDS', label: 'Ayudas' },
-                      { key: 'LVP', label: 'Proc. (LVP)' },
-                      { key: 'AD_CLSD', label: 'Cierres AD' },
-                      { key: 'FLOW', label: 'FLOW' },
-                      { key: 'ASHTAM', label: '🌋 ASHTAM' },
-                      { key: 'MISC', label: 'Otros' }
-                    ].map(cat => {
-                      const isSelected = selectedNotamCategory === cat.key;
-                      return (
-                        <button
-                          key={cat.key}
-                          onClick={() => setSelectedNotamCategory(cat.key)}
-                          className="btn"
-                          style={{
-                            padding: '0.2rem 0.45rem',
-                            fontSize: '0.68rem',
-                            fontWeight: '700',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            border: 'none',
-                            backgroundColor: isSelected ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.03)',
-                            color: isSelected ? 'black' : 'var(--text-secondary)',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          {cat.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {/* Panel de Categorías (Solo se muestra cuando la pestaña activa es SKBO) */}
+                  {activeNotamScopeTab === 'skbo' && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.25rem',
+                      flexWrap: 'wrap',
+                      marginBottom: '0.75rem'
+                    }}>
+                      {[
+                        { key: 'ALL', label: 'Todos' },
+                        { key: 'RWY', label: 'RWY' },
+                        { key: 'TWY', label: 'TWY' },
+                        { key: 'SID/STAR/APP', label: 'SID/STAR/APP' },
+                        { key: 'MISC', label: 'Otros' }
+                      ].map(cat => {
+                        const isSelected = selectedNotamCategory === cat.key;
+                        return (
+                          <button
+                            key={cat.key}
+                            onClick={() => setSelectedNotamCategory(cat.key)}
+                            className="btn"
+                            style={{
+                              padding: '0.2rem 0.45rem',
+                              fontSize: '0.68rem',
+                              fontWeight: '700',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              border: 'none',
+                              backgroundColor: isSelected ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.03)',
+                              color: isSelected ? 'black' : 'var(--text-secondary)',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            {cat.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Lista de NOTAMs */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.2rem' }}>
@@ -2079,9 +2076,22 @@ export default function ControllerPortal({
                       const filteredList = rawDataset
                         .filter(activeNotamSubTab === 'today' ? isNotamActiveToday : isNotamActiveTomorrowEarly)
                         .filter(n => {
+                          if (activeNotamScopeTab !== 'skbo') return true;
                           if (selectedNotamCategory === 'ALL') return true;
-                          const c = n.category === 'SID_STAR_APP' ? 'SID/STAR/APP' : (n.category || categorizeNotam(n));
-                          return c === selectedNotamCategory;
+                          const rawCat = n.category || categorizeNotam(n);
+                          if (selectedNotamCategory === 'RWY') {
+                            return rawCat === 'RWY';
+                          }
+                          if (selectedNotamCategory === 'TWY') {
+                            return rawCat === 'TXY' || rawCat === 'TWY';
+                          }
+                          if (selectedNotamCategory === 'SID/STAR/APP') {
+                            return rawCat === 'SID_STAR_APP' || rawCat === 'SID/STAR/APP';
+                          }
+                          if (selectedNotamCategory === 'MISC') {
+                            return rawCat !== 'RWY' && rawCat !== 'TXY' && rawCat !== 'TWY' && rawCat !== 'SID_STAR_APP' && rawCat !== 'SID/STAR/APP';
+                          }
+                          return true;
                         })
                         .filter(n => {
                           if (!notamSearchQuery.trim()) return true;
