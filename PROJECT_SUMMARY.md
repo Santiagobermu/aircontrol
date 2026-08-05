@@ -1,15 +1,16 @@
 # AirControl - Sistema de Gestión y Optimización de Turnos ATC (El Dorado - SKBO)
 
-Este documento sirve como mapa técnico completo y exhaustivo del proyecto **AirControl** para que cualquier desarrollador o modelo de IA pueda entender de manera instantánea la arquitectura, la base de datos, los motores de programación, las reglas matemáticas del solucionador, la lógica del importador de Excel y la terminología aeronáutica del sistema.
+Este documento sirve como mapa técnico completo y exhaustivo del proyecto **AirControl** para que cualquier desarrollador o modelo de IA pueda entender de manera instantánea la arquitectura, la base de datos, los motores de programación, la aplicación móvil PWA, las reglas matemáticas del solucionador, la integración de NOTAMs y la terminología aeronáutica del sistema.
 
 ---
 
 ## 📌 Resumen General del Proyecto
-**AirControl** es una aplicación web de página única (SPA) diseñada para gestionar, visualizar y optimizar de forma automática el roster mensual de Controladores de Tránsito Aéreo (ATC) en el Aeropuerto Internacional El Dorado (SKBO).
+**AirControl** es una aplicación web progresiva (PWA) de página única (SPA) diseñada para gestionar, visualizar y optimizar de forma automática el roster mensual de Controladores de Tránsito Aéreo (ATC) en el Aeropuerto Internacional El Dorado (SKBO).
 
-El sistema cuenta con una arquitectura híbrida de optimización:
+El sistema cuenta con una arquitectura híbrida de optimización y doble interfaz responsiva (Escritorio + Móvil PWA):
 1. **Solucionador de Restricciones (Google OR-Tools CP-SAT)** ejecutado en Python en el backend (servidor Flask local / Firebase Cloud Functions) para una optimización matemática exacta.
 2. **Motor Heurístico Local en JavaScript** ejecutado en el cliente como plan de resguardo (*fallback*) automático en caso de desconexión o falla de red.
+3. **Aplicación Móvil PWA Táctil**: Interfaz nativa para teléfonos inteligentes (iOS / Android) basada en un sistema de diseño Glassmorphic, navegación por pestañas inferiores (Bottom Nav), modales *Bottom Sheet*, sincronización de NOTAMs y Webcal `.ics` en un toque.
 
 ---
 
@@ -18,21 +19,25 @@ El sistema cuenta con una arquitectura híbrida de optimización:
 ```
 ├── PROJECT_SUMMARY.md         # Documentación maestra técnica del proyecto (Este archivo)
 ├── AIRCONTROL_STITCH_SPEC.md  # Especificación de diseño de UI/UX para apps móviles y web
+├── DESIGN.md                  # Tokens de diseño, paleta de colores de turnos y estética Radar
 ├── TURNOS TWR AGOSTO 2026.xlsx# Archivo oficial de referencia del roster de Torre SKBO
 ├── package.json               # Dependencias de npm (Vite, React 19, Lucide React, XLSX, Firebase)
 ├── firebase.json              # Configuración de Firebase Hosting y Cloud Functions
 ├── firestore.rules            # Reglas de seguridad de Firestore Database
 ├── storage.rules              # Reglas de almacenamiento de suscripciones webcal (.ics)
-├── functions/                 # Backend de Optimización Matemática (Python 3.11)
+├── public/                    # Archivos estáticos e infraestructura PWA
+│   └── manifest.json          # Manifiesto PWA para instalación standalone en teléfonos
+├── functions/                 # Backend de Optimización Matemática y Parser NOTAMs (Python 3.11)
 │   ├── local_server.py        # Servidor Flask local para desarrollo (Puerto 8080)
 │   ├── main.py                # Punto de entrada para Firebase Cloud Functions
 │   ├── solver_engine.py       # Modelo matemático CP-SAT de Google OR-Tools
+│   ├── notams_parser.py       # Parser de NOTAMs oficiales y categorización
 │   └── requirements.txt       # Dependencias Python (ortools, flask, flask-cors, firebase-admin)
 └── src/                       # Frontend SPA (React + Vanilla CSS)
     ├── main.jsx               # Inicialización de la aplicación React
-    ├── App.jsx                # Estado global, autenticación JIT, ruteo de pestañas y Firebase
-    ├── index.css              # Sistema de diseño, tokens CSS, dark mode y estilos visuales
-    ├── components/            # Componentes React de Negocio y UI
+    ├── App.jsx                # Estado global, autenticación JIT, ruteo responsivo (Desktop/Mobile)
+    ├── index.css              # Sistema de diseño, tokens CSS, dark/light mode y utilidades Glassmorphism
+    ├── components/            # Componentes React de Negocio (Escritorio)
     │   ├── MonthlyGrid.jsx       # Malla mensual interactiva (edición manual, importador Excel)
     │   ├── ControllerPortal.jsx  # Portal del controlador (peticiones, swaps y suscripción webcal)
     │   ├── RequestPanel.jsx      # Panel de administración de peticiones y descansos
@@ -42,14 +47,56 @@ El sistema cuenta con una arquitectura híbrida de optimización:
     │   ├── ControllerList.jsx     # Gestión de perfiles, firmas y certificaciones de controladores
     │   ├── ControllerForm.jsx     # Formulario de creación/edición de controlador
     │   ├── SchedulerGrid.jsx      # Grilla principal de turnos diarios por jornada
+    │   ├── ThemeToggle.jsx        # Interruptor de modo claro / modo oscuro con persistencia
     │   └── LoginScreen.jsx       # Pantalla de autenticación por siglas o correo
+    │
+    └── components/mobile/     # Módulos y Pantallas para Dispositivos Móviles (PWA)
+        ├── MobileLayout.jsx      # Envoltorio principal con ruteador táctil e integración de estado
+        ├── MobileHeader.jsx      # Barra superior con reloj UTC en vivo, iniciales y centro de notificaciones
+        ├── MobileBottomNav.jsx   # Barra de navegación inferior (Roster, En Turno, Cambios, NOTAMs, Perfil)
+        ├── MobileRosterView.jsx  # Hero Card "Próximo Turno", grilla mensual homogénea y modal Bottom Sheet
+        ├── MobileGuardiaView.jsx # Vista "En Turno" con jornadas A/M/T/N, posiciones completas y resaltado (tú)
+        ├── MobileTradesView.jsx  # Gestión de Cambios (SWAP/COVER), filtro estricto y formulario táctil
+        ├── MobileNotamsView.jsx  # Boletines NOTAMs con texto completo JetBrains Mono, pestañas Web y sync CTE
+        └── MobileProfileView.jsx # Perfil táctico, copia Webcal 1-tap, herramientas CTE y cambio de clave
     └── utils/                 # Utilidades y Lógica de Negocio
-        ├── firebase.js           # Inicialización del SDK de Firebase (Firestore, Storage)
-        ├── db.js                 # Helpers CRUD de lectura/escritura en Firestore
+        ├── firebase.js           # Inicialización del SDK de Firebase (Firestore, Storage, Auth)
+        ├── db.js                 # Helpers CRUD de lectura/escritura en Firestore (trades, alerts, rules)
         ├── calendarExport.js     # Generador de suscripciones iCalendar (.ics) para webcal
         ├── ortoolsScheduler.js   # Cliente API HTTP para conectar con el backend CP-SAT
-        └── schedulerEngine.js    # Motor heurístico local JS y gestor de festivos colombianos
+        └── schedulerEngine.js    # Motor heurístico local JS, traductor de siglas y festivos colombianos
 ```
+
+---
+
+## 📱 Aplicación Móvil PWA (`src/components/mobile/`)
+
+AirControl detecta automáticamente si el dispositivo es un teléfono inteligente (`window.innerWidth <= 768px`) o si el usuario activa el modo móvil, renderizando `MobileLayout` con 5 pestañas de navegación táctil:
+
+1. **Mi Roster (`MobileRosterView.jsx`)**:
+   - Tarjeta **Hero "Próximo Turno"** destacando la sigla precisa de posición (`LNT`, `GNT`, `DPT`), horas UTC y fecha.
+   - Grilla de calendario homogénea (7 columnas) mostrando turnos completos en 4 letras (`MLNT`, `NGNT`) y apilado vertical para turnos dobles.
+   - Modal *Bottom Sheet* al tocar cualquier día para ver detalles, compañeros en guardia y botón rápido para solicitar cambio.
+
+2. **En Turno (`MobileGuardiaView.jsx`)**:
+   - Selector de jornada (**Madrugada A**, **Mañana M**, **Tarde T**, **Noche N**) y día (**Turno de Hoy** / **Turno de Mañana**).
+   - Nombres completos de posición: *Torre Norte (LNT)*, *Torre Sur (LST)*, *Superficie Norte (GNT)*, *Autorizaciones Titular (DPT)*, *Encargado de Turno (CTE)*, etc.
+   - Resaltado visual en color cyan brillante con etiqueta **`FIRMA (tú)`** para el controlador autenticado.
+
+3. **Cambios (`MobileTradesView.jsx`)**:
+   - Listado de permutas y reemplazos (SWAP / COVER) filtrado estrictamente para el usuario autenticado (solicitudes propias, dirigidas o públicas pendientes).
+   - Botón **`➕ Nuevo cambio`** que despliega un formulario *Bottom Sheet* para solicitar permutaciones con detección de turno asignado.
+
+4. **NOTAMs (`MobileNotamsView.jsx`)**:
+   - Renderizado del texto explicativo completo del boletín oficial en tipografía `JetBrains Mono`.
+   - Pestañas de alcance idénticas a la web: **SKBO**, **Otros AD (AD_CLSD)**, **Flujo (FLOW)**, **ASHTAM**.
+   - Sub-filtros para SKBO: `TODOS`, `RWY`, `TWY`, `SID/STAR/APP`, `OTROS`.
+   - Botones de **Sincronizar NOTAMs** y **Agregar Alerta Operativa** para usuarios con rol de Encargado (CTE).
+
+5. **Perfil (`MobileProfileView.jsx`)**:
+   - Tarjeta de perfil táctico con firmas, correo y certificaciones del controlador.
+   - Botón **Copiar Enlace de Suscripción Webcal (.ics)** para vincular el horario con Apple Calendar o Google Calendar.
+   - Herramientas para Encargados de Turno (CTE) y modal interactivo para **Cambiar Contraseña** mediante Firebase Auth.
 
 ---
 
@@ -85,7 +132,7 @@ Cada celda y turno se compone de la **letra de la jornada** (`M`=Mañana, `T`=Ta
 
 ### 1. El Solucionador Matemático CP-SAT (`functions/solver_engine.py`)
 
-Resuelve el cuadrante mensual mediante optimización basada en restricciones dures e inflexibles (*Hard Constraints*) y una función objetivo jerárquica con penalizaciones ponderadas.
+Resuelve el cuadrante mensual mediante optimización basada en restricciones duras e inflexibles (*Hard Constraints*) y una función objetivo jerárquica con penalizaciones ponderadas.
 
 #### Matriz de Cobertura Diaria Obligatoria (39 Slots Obligatorios Todos los Días):
 * **Madrugada (`A`) [6 slots]**: `ALNT` (`TWR-1`), `ALST` (`TWR-2`), `ACTE` (`CTE-1`), `AGNT` (`GND-1`), `AGST` (`GND-2`), `ADPR` (`DEL-2`).
@@ -122,27 +169,6 @@ Permite importar rosters mensuales oficiales (`.xlsx`) con 100% de precisión y 
   - Al procesar posiciones como `ENT`, `INS`, `SIM`, `OFI`, `CAE`, `CHC`, `ACC`, el importador busca casillas libres secuenciales (`ENT-1`, `ENT-2`, `ENT-3`...). Esto evita que múltiples alumnos o entrenadores en un mismo turno sobreescriban sus casillas.
 * **Mapeo de Terminales ACC**:
   - Los códigos de terminales `MTNT`, `MTNR`, `TNTR`, `TTNR`, `TTNA`, `MTNA`, `MTST`, `MTSA`, `TTST`, `TTSR`, `NTST`, `MTSR`, `NTNR`, `NTNT`, `TUWA`, `NUWA` se traducen automáticamente a la categoría **Centro de Control (`ACC-1`)**.
-* **Modal de Mapeo Interactivo**:
-  - Si el Excel contiene un código no reconocido (ej: `MUAR`), el sistema abre un modal de asignación interactivo para que el supervisor defina si es una posición operativa, excepción o token a ignorar.
-
----
-
-### 3. Asignación Manual y Jerarquía en UI (`MonthlyGrid.jsx`)
-
-En la gestión manual de celdas por clic, los turnos vacantes y candidatos se ordenan de la siguiente manera:
-1. **Por Jornada**: `M` (Mañana) ➔ `T` (Tarde) ➔ `N` (Noche) ➔ `A` (Madrugada).
-2. **Por Jerarquía de Posición**:
-   - `CTE` (Encargado)
-   - `TWR` (Torre)
-   - `GND` (Superficie)
-   - `DEL` (Autorizaciones)
-   - `FIC` (FIC)
-   - `ACC` (Centro de Control)
-   - `SIM` (Pseudopiloto)
-   - `OFI` (Oficina)
-   - `CAE` (Capacitación Especial)
-   - `CHC` (Chequeo)
-   - `ENT` / `INS` (Entrenamiento / Instrucción)
 
 ---
 
@@ -157,6 +183,7 @@ En la gestión manual de celdas por clic, los turnos vacantes y candidatos se or
   "skills": ["TWR", "GND", "DEL", "FIC", "ACC", "SIM"], // Habilidades vigentes
   "trainingPreferred": false,   // True si es Alumno en entrenamiento
   "calendarSyncEnabled": true,  // True si tiene suscripción webcal activa
+  "calendarSyncUrl": "https://firebasestorage.googleapis.com/v0/b/aircontrol-skbo-sbg.firebasestorage.app/o/calendars%2FJZA.ics?alt=media",
   "sequenceOffset": 2           // Desfase para rotación teórica
 }
 ```
@@ -182,29 +209,61 @@ En la gestión manual de celdas por clic, los turnos vacantes y candidatos se or
 }
 ```
 
-### 4. Colección `requests` (Peticiones del Portal del Controlador)
+### 4. Colección `trades` (Intercambios y Coberturas)
 ```json
 {
-  "id": "req-17830912...",
-  "controllerId": "JZA",
-  "date": "2026-08-15",
-  "position": "DESCANSO", // Opciones: TWR, GND, DEL, FIC, CTE, ACC, DESCANSO, LICN, LICR, AVOID
-  "shift": "N",
-  "comment": "Asunto personal o cita médica"
+  "id": "trade_1785960000",
+  "type": "SWAP",               // SWAP o COVER
+  "dateStr": "2026-08-15",
+  "requesterSignature": "SBG",
+  "requesterName": "Santiago Bermúdez",
+  "requesterShift": "MLNT",
+  "targetSignature": "OPEN",    // O sigla del controlador específico
+  "targetName": "Abierta a cualquier compañero",
+  "targetShift": "Por acordar",
+  "isPublic": true,
+  "comment": "Motivo o cita médica",
+  "status": "pending",           // pending, approved, rejected
+  "createdAt": "2026-08-05T20:00:00.000Z"
+}
+```
+
+### 5. Documento `settings/notams_skbo` (Estructura de NOTAMs Oficiales)
+```json
+{
+  "notams": [ ... ],             // Arreglo de NOTAMs para SKBO
+  "adClosedNotams": [ ... ],     // Arreglo de NOTAMs para Otros Aeropuertos (AD_CLSD)
+  "flowNotams": [ ... ],         // Arreglo de NOTAMs para Control de Flujo (FLOW)
+  "ashtamNotams": [ ... ],       // Arreglo de NOTAMs para Ceniza Volcánica (ASHTAM)
+  "lastUpdated": "2026-08-05T21:00:00Z",
+  "pdfUrl": "https://..."
+}
+```
+
+### 6. Colección `manual_alerts` (Avisos del Encargado de Turno)
+```json
+{
+  "id": "alert_9812",
+  "content": "Precaución en rodaje K por trabajos de mantenimiento...",
+  "createdBy": "Santiago Bermúdez",
+  "createdByEmail": "santiago@aircontrol.com",
+  "createdAt": "2026-08-05T21:30:00Z",
+  "expiresAt": null
 }
 ```
 
 ---
 
-## 🔒 Autenticación JIT y Portal del Controlador
+## 🔒 Autenticación JIT y Selección de Temas
 
-- **Inicio de Sesión**: Los controladores ingresan simplemente digitando sus **siglas/iniciales** (ej: `JZA`, `GMB`, `admin`). El sistema autocompleta el dominio `@aircontrol.com` internamente.
-- **Protección de Certificaciones en Peticiones**: Los controladores únicamente pueden solicitar turnos en posiciones para las cuales están **certificados en su perfil** (ej. un controlador sin certificación FIC no podrá seleccionar la posición FIC en su portal de peticiones).
+- **Inicio de Sesión**: Los controladores ingresan digitando sus **siglas/iniciales** (ej: `SBG`, `JZA`, `GMB`, `admin`). El sistema autocompleta el dominio `@aircontrol.com` internamente.
+- **Tema Claro / Oscuro (`ThemeToggle.jsx`)**: Persistencia del tema en `localStorage` con adaptación inmediata de colores Glassmorphic en web y móvil PWA.
 
 ---
 
-## 🚀 Despliegue y Hosting
+## 🚀 Despliegue y Endpoints Hosting
 
-- **Frontend**: Hospedado en Firebase Hosting ([https://aircontrol-skbo-sbg.web.app](https://aircontrol-skbo-sbg.web.app)).
-- **Backend Solver**: Desplegado en Firebase Cloud Functions (`https://us-central1-aircontrol-skbo-sbg.cloudfunctions.net/solve_schedule_api`) con respaldo automático en servidor local Flask (`http://localhost:8080/solve`).
-- **Repositorio de Código**: GitHub ([https://github.com/Santiagobermu/aircontrol.git](https://github.com/Santiagobermu/aircontrol.git)).
+- **Frontend SPA / PWA**: Hospedado en Firebase Hosting ([https://aircontrol-skbo-sbg.web.app](https://aircontrol-skbo-sbg.web.app)).
+- **Backend Solver CP-SAT**: Cloud Function ([`https://us-central1-aircontrol-skbo-sbg.cloudfunctions.net/solve_schedule_api`](https://us-central1-aircontrol-skbo-sbg.cloudfunctions.net/solve_schedule_api)).
+- **Sincronización NOTAMs API**: Cloud Function ([`https://us-central1-aircontrol-skbo-sbg.cloudfunctions.net/sync_notams_api`](https://us-central1-aircontrol-skbo-sbg.cloudfunctions.net/sync_notams_api)).
+- **Repositorio GitHub**: ([https://github.com/Santiagobermu/aircontrol.git](https://github.com/Santiagobermu/aircontrol.git)).
