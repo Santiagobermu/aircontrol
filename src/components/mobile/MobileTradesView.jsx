@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User } from 'lucide-react';
+import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User, Check, AlertCircle } from 'lucide-react';
 import { getSlotAcronym } from '../../utils/schedulerEngine';
 
 export default function MobileTradesView({ 
@@ -17,11 +17,11 @@ export default function MobileTradesView({
   // Estados del Formulario de Nuevo Cambio
   const [tradeType, setTradeType] = useState('SWAP'); // 'SWAP' | 'COVER'
   const [tradeDate, setTradeDate] = useState('');
-  const [selectedMyShift, setSelectedMyShift] = useState('');
+  const [selectedMyShiftCode, setSelectedMyShiftCode] = useState('');
   const [selectedColleagueSig, setSelectedColleagueSig] = useState('OPEN');
   const [tradeComment, setTradeComment] = useState('');
 
-  // Obtenemos los turnos del usuario para la fecha seleccionada en el formulario
+  // 1. Obtener los turnos asignados al usuario para la fecha seleccionada
   const getMyShiftsForDate = (dateStr) => {
     if (!dateStr || !scheduleMonth || !scheduleMonth[dateStr] || !currentUser) return [];
     const daySched = scheduleMonth[dateStr];
@@ -36,7 +36,8 @@ export default function MobileTradesView({
           myShifts.push({
             shift,
             slotKey,
-            fullCode: `${shift}${acronym}`
+            fullCode: `${shift}${acronym}`,
+            acronym
           });
         }
       });
@@ -45,15 +46,52 @@ export default function MobileTradesView({
   };
 
   const myAvailableShifts = getMyShiftsForDate(tradeDate);
+  const selectedShiftObj = myAvailableShifts.find(s => s.fullCode === selectedMyShiftCode) || myAvailableShifts[0];
+
+  // 2. Determinar la habilidad / certificación requerida para la posición seleccionada
+  const getRequiredSkill = (slotKey) => {
+    if (!slotKey) return null;
+    if (slotKey.includes('CTE')) return 'CTE';
+    if (slotKey.includes('TWR') || slotKey.includes('LNT') || slotKey.includes('LST') || slotKey.includes('LPT')) return 'TWR';
+    if (slotKey.includes('GND') || slotKey.includes('GNT') || slotKey.includes('GST') || slotKey.includes('GPT')) return 'GND';
+    if (slotKey.includes('DEL') || slotKey.includes('DPT') || slotKey.includes('DPR')) return 'DEL';
+    if (slotKey.includes('FIC') || slotKey.includes('FPT') || slotKey.includes('FPR') || slotKey.includes('FPA')) return 'FIC';
+    if (slotKey.includes('ACC')) return 'ACC';
+    return null;
+  };
+
+  const requiredSkill = selectedShiftObj ? getRequiredSkill(selectedShiftObj.slotKey) : null;
+
+  // 3. Filtrar controladores HABILITADOS para asumir la posición seleccionada
+  const qualifiedControllers = controllers.filter(c => {
+    // Excluir al usuario actual
+    const isMe = c.signature === currentUser?.signature || c.id === currentUser?.id;
+    if (isMe) return false;
+
+    // Si no se requiere una habilidad específica (posiciones dinámicas), todos están habilitados
+    if (!requiredSkill) return true;
+
+    // Admin o usuario con la certificación requerida en sus skills
+    const isAdmin = c.role === 'admin' || c.isAdmin;
+    const hasSkill = Array.isArray(c.skills) && c.skills.includes(requiredSkill);
+    
+    return isAdmin || hasSkill;
+  });
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!tradeDate || !selectedMyShift) {
-      alert('Por favor selecciona la fecha y tu turno a ceder.');
+    if (!tradeDate) {
+      alert('Por favor selecciona una fecha válida.');
       return;
     }
 
-    const targetCtrl = controllers.find(c => c.signature === selectedColleagueSig);
+    const shiftToSubmit = selectedMyShiftCode || (myAvailableShifts[0]?.fullCode || '');
+    if (!shiftToSubmit) {
+      alert('Por favor selecciona el turno que deseas cambiar o ceder.');
+      return;
+    }
+
+    const targetCtrl = qualifiedControllers.find(c => c.signature === selectedColleagueSig);
     const newTradeObj = {
       id: `trade_${Date.now()}`,
       type: tradeType,
@@ -61,7 +99,7 @@ export default function MobileTradesView({
       date: tradeDate,
       requesterSignature: currentUser?.signature || 'ATC',
       requesterName: currentUser?.name || 'Controlador',
-      requesterShift: selectedMyShift,
+      requesterShift: shiftToSubmit,
       targetSignature: selectedColleagueSig === 'OPEN' ? 'Abierta' : selectedColleagueSig,
       targetName: selectedColleagueSig === 'OPEN' ? 'Abierta a cualquier compañero' : (targetCtrl ? targetCtrl.name : selectedColleagueSig),
       targetShift: tradeType === 'COVER' ? 'Reemplazo' : 'Por acordar',
@@ -77,12 +115,12 @@ export default function MobileTradesView({
     
     setIsModalOpen(false);
     setTradeDate('');
-    setSelectedMyShift('');
+    setSelectedMyShiftCode('');
     setTradeComment('');
     alert('¡Solicitud de cambio registrada exitosamente!');
   };
 
-  // 1. Mapeo y Normalización unificada de campos (Soporta esquema Desktop y Móvil)
+  // Mapeo y Normalización unificada de campos (Soporta esquema Desktop y Móvil)
   const normalizedTrades = trades.map(t => {
     const fromSig = t.requesterSignature || t.fromControllerSignature || t.fromControllerId || t.requesterId || '';
     const fromName = t.requesterName || t.fromControllerName || controllers.find(c => c.id === fromSig || c.signature === fromSig)?.name || (fromSig ? fromSig : 'Solicitante');
@@ -115,9 +153,9 @@ export default function MobileTradesView({
       status: isApproved ? 'approved' : isRejected ? 'rejected' : 'pending',
       rawStatus: t.status
     };
-  }).filter(t => t.fromSig && t.fromSig.trim() !== ''); // Descartar solicitudes corruptas o sin solicitante
+  }).filter(t => t.fromSig && t.fromSig.trim() !== '');
 
-  // 2. Filtrar permutas/cambios estrictamente relevantes para el controlador logueado
+  // Filtrar permutas/cambios estrictamente relevantes para el controlador logueado
   const userTrades = normalizedTrades.filter(t => {
     const mySig = currentUser?.signature;
     const myId = currentUser?.id;
@@ -126,7 +164,6 @@ export default function MobileTradesView({
     const isTargetingMe = Boolean((mySig && t.toSig === mySig) || (myId && t.toSig === myId));
     const isOpenPending = Boolean(t.isPublic && t.status === 'pending');
 
-    // Una solicitud solo debe mostrarse si la creó el usuario, va dirigida al usuario, o es una solicitud pública pendiente
     const isRelevant = isMyRequest || isTargetingMe || isOpenPending;
     if (!isRelevant) return false;
 
@@ -157,7 +194,11 @@ export default function MobileTradesView({
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setIsModalOpen(true);
+            setTradeDate('');
+            setSelectedMyShiftCode('');
+          }}
           className="btn btn-primary"
           style={{
             padding: '0.5rem 0.8rem',
@@ -201,7 +242,7 @@ export default function MobileTradesView({
         ))}
       </div>
 
-      {/* LISTA DE TARJETAS DE CAMBIO (Limpia: Si no hay elementos, no muestra recuadros vacíos) */}
+      {/* LISTA DE TARJETAS DE CAMBIO */}
       {userTrades.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
           {userTrades.map((trade, idx) => {
@@ -336,7 +377,7 @@ export default function MobileTradesView({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ fontSize: '1.05rem', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ArrowRightLeft size={18} color="var(--accent-cyan)" />
-                Nueva Solicitud de Cambio
+                {tradeType === 'SWAP' ? 'Nuevo Intercambio (SWAP)' : 'Nuevo Reemplazo (COVER)'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)' }}>
                 <X size={20} />
@@ -344,10 +385,11 @@ export default function MobileTradesView({
             </div>
 
             <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* Tipo de Cambio */}
+              
+              {/* Selector Tipo de Solicitud (SWAP vs COVER) */}
               <div className="form-group">
                 <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block' }}>
-                  Tipo de Solicitud
+                  Modalidad de Solicitud:
                 </label>
                 <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--bg-primary)', padding: '0.2rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
                   <button
@@ -355,40 +397,42 @@ export default function MobileTradesView({
                     onClick={() => setTradeType('SWAP')}
                     style={{
                       flex: 1,
-                      padding: '0.5rem',
+                      padding: '0.55rem',
                       borderRadius: '8px',
                       border: 'none',
                       background: tradeType === 'SWAP' ? 'var(--accent-cyan)' : 'transparent',
                       color: tradeType === 'SWAP' ? '#000' : 'var(--text-secondary)',
-                      fontWeight: '700',
-                      fontSize: '0.78rem'
+                      fontWeight: '800',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer'
                     }}
                   >
-                    Intercambio (SWAP)
+                    🔄 Intercambio (SWAP)
                   </button>
                   <button
                     type="button"
                     onClick={() => setTradeType('COVER')}
                     style={{
                       flex: 1,
-                      padding: '0.5rem',
+                      padding: '0.55rem',
                       borderRadius: '8px',
                       border: 'none',
                       background: tradeType === 'COVER' ? 'var(--accent-cyan)' : 'transparent',
                       color: tradeType === 'COVER' ? '#000' : 'var(--text-secondary)',
-                      fontWeight: '700',
-                      fontSize: '0.78rem'
+                      fontWeight: '800',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer'
                     }}
                   >
-                    Reemplazo (COVER)
+                    🛡️ Reemplazo (COVER)
                   </button>
                 </div>
               </div>
 
-              {/* Fecha */}
+              {/* Paso 1: Selección de Fecha */}
               <div className="form-group">
                 <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block' }}>
-                  Fecha del Cambio:
+                  1. Fecha del Turno a {tradeType === 'SWAP' ? 'Intercambiar' : 'Cubrir'}:
                 </label>
                 <input
                   type="date"
@@ -396,77 +440,125 @@ export default function MobileTradesView({
                   value={tradeDate}
                   onChange={e => {
                     setTradeDate(e.target.value);
-                    setSelectedMyShift('');
+                    setSelectedMyShiftCode('');
                   }}
                   required
                   style={{ width: '100%', padding: '0.6rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)' }}
                 />
               </div>
 
-              {/* Mi Turno a Ceder */}
+              {/* Paso 2: Selección de Turnos Asignados ese día */}
               {tradeDate && (
                 <div className="form-group">
                   <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block', color: 'var(--accent-cyan)' }}>
-                    Mi Turno Asignado esa Fecha:
+                    2. Selecciona tu Turno Asignado esa Fecha:
                   </label>
+                  
                   {myAvailableShifts.length > 0 ? (
-                    <select
-                      className="form-input"
-                      value={selectedMyShift}
-                      onChange={e => setSelectedMyShift(e.target.value)}
-                      required
-                      style={{ width: '100%', padding: '0.6rem', background: 'var(--bg-primary)', border: '1px solid var(--accent-cyan)', borderRadius: '10px', color: 'var(--text-primary)' }}
-                    >
-                      <option value="">-- Selecciona tu turno a ceder --</option>
-                      {myAvailableShifts.map((s, idx) => (
-                        <option key={idx} value={s.fullCode}>
-                          Turno {s.fullCode} ({s.slotKey})
-                        </option>
-                      ))}
-                    </select>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {myAvailableShifts.map((shiftObj, idx) => {
+                        const isSelected = (selectedMyShiftCode || myAvailableShifts[0].fullCode) === shiftObj.fullCode;
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedMyShiftCode(shiftObj.fullCode)}
+                            style={{
+                              padding: '0.65rem 0.85rem',
+                              borderRadius: '10px',
+                              border: isSelected ? '1.5px solid var(--accent-cyan)' : '1px solid var(--glass-border)',
+                              background: isSelected ? 'rgba(6, 182, 212, 0.12)' : 'var(--bg-primary)',
+                              color: isSelected ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justify: 'space-between',
+                              alignItems: 'center',
+                              fontWeight: '700',
+                              fontSize: '0.82rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '800' }}>
+                                Turno {shiftObj.fullCode}
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                ({shiftObj.slotKey})
+                              </span>
+                            </div>
+                            {isSelected && <Check size={16} color="var(--accent-cyan)" />}
+                          </div>
+                        );
+                      })}
+                    </div>
                   ) : (
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Ej. MLNT o TLST (Escribe tu turno si no aparece)"
-                      value={selectedMyShift}
-                      onChange={e => setSelectedMyShift(e.target.value.toUpperCase())}
-                      required
-                      style={{ width: '100%', padding: '0.6rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)' }}
-                    />
+                    <div style={{
+                      padding: '0.75rem',
+                      background: 'rgba(244, 63, 94, 0.1)',
+                      border: '1px solid var(--status-danger)',
+                      borderRadius: '10px',
+                      color: 'var(--status-danger)',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}>
+                      <AlertCircle size={16} />
+                      <span>No tienes turnos programados en el roster para el {tradeDate}.</span>
+                    </div>
                   )}
                 </div>
               )}
 
-              {/* Compañero Receptor */}
-              <div className="form-group">
-                <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block' }}>
-                  Compañero Destino (Opcional):
-                </label>
-                <select
-                  className="form-input"
-                  value={selectedColleagueSig}
-                  onChange={e => setSelectedColleagueSig(e.target.value)}
-                  style={{ width: '100%', padding: '0.6rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)' }}
-                >
-                  <option value="OPEN">📢 Abierta a cualquier compañero del equipo</option>
-                  {controllers.filter(c => c.signature !== currentUser?.signature).map(c => (
-                    <option key={c.id || c.signature} value={c.signature}>
-                      {c.name} ({c.signature})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Paso 3: Selección de Controladores HABILITADOS para esa Posición */}
+              {tradeDate && myAvailableShifts.length > 0 && (
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: '700', margin: 0 }}>
+                      3. Selecciona Compañero Habilitado ({qualifiedControllers.length}):
+                    </label>
+                    {requiredSkill && (
+                      <span style={{
+                        fontSize: '0.65rem',
+                        background: 'rgba(6, 182, 212, 0.15)',
+                        color: 'var(--accent-cyan)',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '5px',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: '800'
+                      }}>
+                        Certificación Requerida: {requiredSkill}
+                      </span>
+                    )}
+                  </div>
+
+                  <select
+                    className="form-input"
+                    value={selectedColleagueSig}
+                    onChange={e => setSelectedColleagueSig(e.target.value)}
+                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.82rem' }}
+                  >
+                    <option value="OPEN">📢 Abierta a cualquier compañero habilitado</option>
+                    {qualifiedControllers.map(c => (
+                      <option key={c.id || c.signature} value={c.signature}>
+                        {c.name} ({c.signature}) — Habilitado {requiredSkill ? `[${requiredSkill}]` : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.3rem' }}>
+                    * Solo se listan los controladores del equipo con certificación activa para la posición seleccionada.
+                  </span>
+                </div>
+              )}
 
               {/* Comentarios */}
               <div className="form-group">
                 <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block' }}>
-                  Comentarios / Justificación:
+                  Comentarios / Justificación (Opcional):
                 </label>
                 <textarea
                   className="form-input"
                   rows={2}
-                  placeholder="Justificación o motivo de la solicitud..."
+                  placeholder="Escribe un motivo o comentario breve..."
                   value={tradeComment}
                   onChange={e => setTradeComment(e.target.value)}
                   style={{ width: '100%', resize: 'none', padding: '0.55rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)' }}
@@ -477,7 +569,12 @@ export default function MobileTradesView({
                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-secondary" style={{ flex: 1, padding: '0.65rem' }}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.65rem', fontWeight: '700' }}>
+                <button
+                  type="submit"
+                  disabled={!tradeDate || myAvailableShifts.length === 0}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '0.65rem', fontWeight: '700' }}
+                >
                   Enviar Solicitud
                 </button>
               </div>
