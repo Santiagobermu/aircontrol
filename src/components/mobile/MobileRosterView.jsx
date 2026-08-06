@@ -491,12 +491,12 @@ export default function MobileRosterView({
                         </div>
                       )}
 
-                      {/* Botón Solicitar Permuta */}
+                      {/* Botón Solicitar Permuta (Redirecciona a Reemplazo con la fecha preseleccionada) */}
                       <button
                         onClick={() => {
-                          const dayData = selectedDayDetail;
+                          const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDayDetail.dayNum).padStart(2, '0')}`;
                           setSelectedDayDetail(null);
-                          if (onOpenTradeModal) onOpenTradeModal(dayData);
+                          if (onOpenTradeModal) onOpenTradeModal(dateStr, 'COVER');
                         }}
                         className="btn btn-primary"
                         style={{
@@ -513,7 +513,7 @@ export default function MobileRosterView({
                         }}
                       >
                         <ArrowRightLeft size={16} />
-                        Solicitar Permuta para Turno {shiftItem.fullCode}
+                        Solicitar Cambio para Turno {shiftItem.fullCode}
                       </button>
                     </div>
                   );

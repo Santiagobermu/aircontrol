@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Radio, Clock, Bell, X, AlertTriangle, ArrowRightLeft, Trash2, Megaphone } from 'lucide-react';
+import { Radio, Clock, Bell, X, AlertTriangle, ArrowRightLeft, Trash2, Megaphone, RefreshCw } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 import { deleteManualAlertDB } from '../../utils/db';
 
@@ -29,7 +29,7 @@ export default function MobileHeader({
 
   const initials = currentUser?.signature || currentUser?.name?.slice(0, 3)?.toUpperCase() || 'ATC';
 
-  // 1. Filtrar solicitudes de permuta pendientes dirgidas al usuario o públicas
+  // 1. Filtrar solicitudes de permuta pendientes dirigidas al usuario o públicas
   const pendingTrades = trades.filter(t => t.status === 'pending' && (t.targetSignature === currentUser?.signature || t.isPublic));
 
   // 2. Filtrar mensajes del encargado de turno / alertas manuales activas
@@ -50,6 +50,10 @@ export default function MobileHeader({
     }
   };
 
+  const handleRefreshApp = () => {
+    window.location.reload();
+  };
+
   return (
     <>
       <header className="mobile-header-bar">
@@ -67,11 +71,31 @@ export default function MobileHeader({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          {/* Reloj UTC */}
           <div className="utc-clock-badge">
             <Clock size={13} />
             <span>{utcTime}</span>
           </div>
+
+          {/* Botón Refrescar */}
+          <button
+            onClick={handleRefreshApp}
+            style={{
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '8px',
+              padding: '0.35rem',
+              color: 'var(--accent-cyan)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title="Refrescar datos de la aplicación"
+          >
+            <RefreshCw size={14} />
+          </button>
 
           <ThemeToggle 
             style={{ 
@@ -83,7 +107,7 @@ export default function MobileHeader({
             }} 
           />
 
-          {/* Botón de Campana de Notificaciones de Mensajes del Encargado / Cambios de Turno */}
+          {/* Botón de Campana de Notificaciones */}
           <button 
             onClick={() => setIsAlertsModalOpen(true)}
             style={{

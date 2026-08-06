@@ -24,6 +24,12 @@ export default function MobileLayout({
   onRejectTrade
 }) {
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'guardia' | 'trades' | 'notams' | 'profile'
+  const [tradeInitialData, setTradeInitialData] = useState({ date: '', type: 'COVER' });
+
+  const handleOpenTradeForDate = (dateStr, type = 'COVER') => {
+    setTradeInitialData({ date: dateStr || '', type: type || 'COVER' });
+    setActiveTab('trades');
+  };
 
   const pendingTradesCount = trades.filter(t => t.status === 'pending' && (t.targetSignature === currentUser?.signature || t.isPublic)).length;
 
@@ -46,7 +52,7 @@ export default function MobileLayout({
             scheduleMonth={scheduleMonth}
             exceptions={exceptions}
             controllers={controllers}
-            onOpenTradeModal={() => setActiveTab('trades')}
+            onOpenTradeModal={handleOpenTradeForDate}
           />
         )}
 
@@ -64,6 +70,7 @@ export default function MobileLayout({
             trades={trades}
             controllers={controllers}
             scheduleMonth={scheduleMonth}
+            initialTradeData={tradeInitialData}
             onAddTrade={onAddTrade}
             onAcceptTrade={onAcceptTrade}
             onRejectTrade={onRejectTrade}
