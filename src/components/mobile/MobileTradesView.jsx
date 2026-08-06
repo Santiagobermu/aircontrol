@@ -21,26 +21,17 @@ export default function MobileTradesView({
   const [selectedColleagueSig, setSelectedColleagueSig] = useState('OPEN');
   const [tradeComment, setTradeComment] = useState('');
 
-  // 1. Obtener los turnos asignados al usuario para la fecha seleccionada (con emparejamiento no sensible a mayúsculas)
-  const mySigLower = (currentUser?.signature || '').toLowerCase();
-  const myIdLower = (currentUser?.id || '').toLowerCase();
-  const myEmailPrefix = (currentUser?.email ? currentUser.email.split('@')[0] : '').toLowerCase();
-
-  const isMatchMe = (val) => {
-    if (!val) return false;
-    const str = String(val).toLowerCase();
-    return str === mySigLower || str === myIdLower || str === myEmailPrefix;
-  };
-
+  // 1. Obtener los turnos asignados al usuario para la fecha seleccionada
   const getMyShiftsForDate = (dateStr) => {
-    if (!dateStr || !scheduleMonth || !scheduleMonth[dateStr]) return [];
+    if (!dateStr || !scheduleMonth || !scheduleMonth[dateStr] || !currentUser) return [];
     const daySched = scheduleMonth[dateStr];
+    const ctrlId = currentUser.id || currentUser.signature;
     const myShifts = [];
 
     ['M', 'T', 'N', 'A'].forEach(shift => {
       const slots = daySched[shift] || {};
       Object.entries(slots).forEach(([slotKey, assignedId]) => {
-        if (assignedId && isMatchMe(assignedId)) {
+        if (assignedId && (assignedId === ctrlId || assignedId === currentUser.signature)) {
           const acronym = getSlotAcronym(slotKey, shift);
           myShifts.push({
             shift,
@@ -58,46 +49,36 @@ export default function MobileTradesView({
   const selectedShiftObj = myAvailableShifts.find(s => s.fullCode === selectedMyShiftCode) || myAvailableShifts[0];
 
   // 2. Determinar la habilidad / certificación requerida para la posición seleccionada
-  const getRequiredSkill = (slotKey) => {
-    if (!slotKey) return null;
-    if (slotKey.includes('CTE')) return 'CTE';
-    if (slotKey.includes('TWR') || slotKey.includes('LNT') || slotKey.includes('LST') || slotKey.includes('LPT')) return 'TWR';
-    if (slotKey.includes('GND') || slotKey.includes('GNT') || slotKey.includes('GST') || slotKey.includes('GPT')) return 'GND';
-    if (slotKey.includes('DEL') || slotKey.includes('DPT') || slotKey.includes('DPR')) return 'DEL';
-    if (slotKey.includes('FIC') || slotKey.includes('FPT') || slotKey.includes('FPR') || slotKey.includes('FPA')) return 'FIC';
-    if (slotKey.includes('ACC')) return 'ACC';
+  const getRequiredSkill = (slotKey, acronym) => {
+    const key = (slotKey || '').toUpperCase();
+    const acr = (acronym || '').toUpperCase();
+
+    if (key.includes('CTE') || acr === 'CTE') return 'CTE';
+    if (key.includes('TWR') || acr === 'LNT' || acr === 'LST' || acr === 'LPT') return 'TWR';
+    if (key.includes('GND') || acr === 'GNT' || acr === 'GST' || acr === 'GPT') return 'GND';
+    if (key.includes('DEL') || acr === 'DPT' || acr === 'DPR') return 'DEL';
+    if (key.includes('FIC') || acr === 'FPT' || acr === 'FPR' || acr === 'FPA') return 'FIC';
+    if (key.includes('ACC') || acr === 'ACC') return 'ACC';
     return null;
   };
 
-  const requiredSkill = selectedShiftObj ? getRequiredSkill(selectedShiftObj.slotKey) : null;
+  const requiredSkill = selectedShiftObj ? getRequiredSkill(selectedShiftObj.slotKey, selectedShiftObj.acronym) : null;
 
-  // Lista de controladores por defecto si la lista prop viniera vacía
-  const fallbackControllers = [
-    { id: 'JZA', signature: 'JZA', name: 'Jorge Zubiría', skills: ['TWR', 'GND', 'DEL', 'CTE'] },
-    { id: 'GMB', signature: 'GMB', name: 'Gustavo Medina', skills: ['TWR', 'GND', 'DEL', 'CTE'] },
-    { id: 'CSO', signature: 'CSO', name: 'Carlos Sotomayor', skills: ['TWR', 'GND', 'DEL'] },
-    { id: 'LSG', signature: 'LSG', name: 'Luis Segura', skills: ['TWR', 'GND', 'DEL'] },
-    { id: 'ZAO', signature: 'ZAO', name: 'Zulma Osorio', skills: ['TWR', 'GND', 'DEL', 'CTE'] },
-    { id: 'JMA', signature: 'JMA', name: 'José Martínez', skills: ['TWR', 'GND', 'DEL'] },
-    { id: 'OVM', signature: 'OVM', name: 'Oscar Valderrama', skills: ['TWR', 'GND', 'DEL'] },
-    { id: 'AFA', signature: 'AFA', name: 'Alfonso Arango', skills: ['TWR', 'GND', 'DEL'] },
-    { id: 'DSE', signature: 'DSE', name: 'Diego Serrano', skills: ['TWR', 'GND', 'DEL'] }
-  ];
+  // 3. Filtrar controladores HABILITADOS para asumir la posición seleccionada
+  const qualifiedControllers = controllers.filter(c => {
+    // Excluir al usuario actual
+    const isMe = c.signature === currentUser?.signature || c.id === currentUser?.id;
+    if (isMe) return false;
 
-  const sourceControllers = (controllers && controllers.length > 0) ? controllers : fallbackControllers;
-
-  // 3. Filtrar otros controladores excluyendo al usuario actual
-  const targetColleagues = sourceControllers.filter(c => {
-    return !isMatchMe(c.signature) && !isMatchMe(c.id) && !isMatchMe(c.name);
-  });
-
-  // Helper para verificar si un compañero está certificado para la posición
-  const isColleagueQualified = (ctrl) => {
+    // Si no se requiere una habilidad específica (posiciones dinámicas), todos están habilitados
     if (!requiredSkill) return true;
-    if (ctrl.role === 'admin' || ctrl.isAdmin) return true;
-    if (!ctrl.skills || ctrl.skills.length === 0) return true;
-    return ctrl.skills.includes(requiredSkill);
-  };
+
+    // Admin o usuario con la certificación requerida en sus skills
+    const isAdmin = c.role === 'admin' || c.isAdmin;
+    const hasSkill = Array.isArray(c.skills) && c.skills.includes(requiredSkill);
+    
+    return isAdmin || hasSkill;
+  });
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -107,8 +88,12 @@ export default function MobileTradesView({
     }
 
     const shiftToSubmit = selectedMyShiftCode || (myAvailableShifts[0]?.fullCode || '');
+    if (!shiftToSubmit) {
+      alert('Por favor selecciona el turno que deseas cambiar o ceder.');
+      return;
+    }
 
-    const targetCtrl = targetColleagues.find(c => c.signature === selectedColleagueSig || c.id === selectedColleagueSig);
+    const targetCtrl = qualifiedControllers.find(c => c.signature === selectedColleagueSig);
     const newTradeObj = {
       id: `trade_${Date.now()}`,
       type: tradeType,
@@ -116,7 +101,7 @@ export default function MobileTradesView({
       date: tradeDate,
       requesterSignature: currentUser?.signature || 'ATC',
       requesterName: currentUser?.name || 'Controlador',
-      requesterShift: shiftToSubmit || 'Guardia',
+      requesterShift: shiftToSubmit,
       targetSignature: selectedColleagueSig === 'OPEN' ? 'Abierta' : selectedColleagueSig,
       targetName: selectedColleagueSig === 'OPEN' ? 'Abierta a cualquier compañero' : (targetCtrl ? targetCtrl.name : selectedColleagueSig),
       targetShift: tradeType === 'COVER' ? 'Reemplazo' : 'Por acordar',
@@ -140,11 +125,11 @@ export default function MobileTradesView({
   // Mapeo y Normalización unificada de campos (Soporta esquema Desktop y Móvil)
   const normalizedTrades = trades.map(t => {
     const fromSig = t.requesterSignature || t.fromControllerSignature || t.fromControllerId || t.requesterId || '';
-    const fromName = t.requesterName || t.fromControllerName || sourceControllers.find(c => isMatchMe(c.id) || isMatchMe(c.signature))?.name || (fromSig ? fromSig : 'Solicitante');
+    const fromName = t.requesterName || t.fromControllerName || controllers.find(c => c.id === fromSig || c.signature === fromSig)?.name || (fromSig ? fromSig : 'Solicitante');
     const fromShift = t.requesterShift || t.fromShiftCode || t.fromShift || 'Turno';
 
     const toSig = t.targetSignature || t.toControllerSignature || t.toControllerId || t.targetId || 'OPEN';
-    const toName = t.targetName || t.toControllerName || (toSig === 'OPEN' || toSig === 'ALL' || t.isPublic ? 'Abierta a cualquier compañero' : (sourceControllers.find(c => c.id === toSig || c.signature === toSig)?.name || toSig));
+    const toName = t.targetName || t.toControllerName || (toSig === 'OPEN' || toSig === 'ALL' || t.isPublic ? 'Abierta a cualquier compañero' : (controllers.find(c => c.id === toSig || c.signature === toSig)?.name || toSig));
     const toShift = t.targetShift || t.toShiftCode || t.toShift || (t.type === 'COVER' ? 'Reemplazo' : 'Por acordar');
 
     const isPublic = Boolean(t.isPublic || toSig === 'OPEN' || toSig === 'ALL' || !t.toControllerId);
@@ -174,8 +159,11 @@ export default function MobileTradesView({
 
   // Filtrar permutas/cambios estrictamente relevantes para el controlador logueado
   const userTrades = normalizedTrades.filter(t => {
-    const isMyRequest = isMatchMe(t.fromSig);
-    const isTargetingMe = isMatchMe(t.toSig);
+    const mySig = currentUser?.signature;
+    const myId = currentUser?.id;
+
+    const isMyRequest = Boolean((mySig && t.fromSig === mySig) || (myId && t.fromSig === myId));
+    const isTargetingMe = Boolean((mySig && t.toSig === mySig) || (myId && t.toSig === myId));
     const isOpenPending = Boolean(t.isPublic && t.status === 'pending');
 
     const isRelevant = isMyRequest || isTargetingMe || isOpenPending;
@@ -262,7 +250,7 @@ export default function MobileTradesView({
           {userTrades.map((trade, idx) => {
             const statusInfo = getStatusBadge(trade.status);
             const StatusIcon = statusInfo.icon;
-            const isTarget = isMatchMe(trade.toSig);
+            const isTarget = (currentUser?.signature && trade.toSig === currentUser.signature) || (currentUser?.id && trade.toSig === currentUser.id);
 
             return (
               <div key={idx} style={{
@@ -516,51 +504,53 @@ export default function MobileTradesView({
                       gap: '0.4rem'
                     }}>
                       <AlertCircle size={16} />
-                      <span>No tienes turnos programados en el roster para el {tradeDate}. Puedes continuar o ingresar la fecha deseada.</span>
+                      <span>No tienes turnos programados en el roster para el {tradeDate}.</span>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Paso 3: Selección de Compañeros Destino */}
-              <div className="form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                  <label style={{ fontSize: '0.78rem', fontWeight: '700', margin: 0 }}>
-                    3. Selecciona Compañero Destino ({targetColleagues.length}):
-                  </label>
-                  {requiredSkill && (
-                    <span style={{
-                      fontSize: '0.65rem',
-                      background: 'rgba(6, 182, 212, 0.15)',
-                      color: 'var(--accent-cyan)',
-                      padding: '0.1rem 0.4rem',
-                      borderRadius: '5px',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: '800'
-                    }}>
-                      Certificación: {requiredSkill}
-                    </span>
-                  )}
-                </div>
+              {/* Paso 3: Selección de Controladores HABILITADOS para esa Posición */}
+              {tradeDate && myAvailableShifts.length > 0 && (
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: '700', margin: 0 }}>
+                      3. Selecciona Compañero Habilitado ({qualifiedControllers.length}):
+                    </label>
+                    {requiredSkill && (
+                      <span style={{
+                        fontSize: '0.65rem',
+                        background: 'rgba(6, 182, 212, 0.15)',
+                        color: 'var(--accent-cyan)',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '5px',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: '800'
+                      }}>
+                        Certificación Requerida: {requiredSkill}
+                      </span>
+                    )}
+                  </div>
 
-                <select
-                  className="form-input"
-                  value={selectedColleagueSig}
-                  onChange={e => setSelectedColleagueSig(e.target.value)}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.82rem' }}
-                >
-                  <option value="OPEN">📢 Abierta a cualquier compañero del equipo</option>
-                  {targetColleagues.map(c => {
-                    const sig = c.signature || c.id || c.name;
-                    const qualified = isColleagueQualified(c);
-                    return (
-                      <option key={c.id || sig} value={sig}>
-                        {c.name || sig} ({sig}) {qualified && requiredSkill ? `✓ [Habilitado ${requiredSkill}]` : ''}
+                  <select
+                    className="form-input"
+                    value={selectedColleagueSig}
+                    onChange={e => setSelectedColleagueSig(e.target.value)}
+                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.82rem' }}
+                  >
+                    <option value="OPEN">📢 Abierta a cualquier compañero habilitado</option>
+                    {qualifiedControllers.map(c => (
+                      <option key={c.id || c.signature} value={c.signature}>
+                        {c.name} ({c.signature}) — Habilitado {requiredSkill ? `[${requiredSkill}]` : ''}
                       </option>
-                    );
-                  })}
-                </select>
-              </div>
+                    ))}
+                  </select>
+
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.3rem' }}>
+                    * Solo se listan los controladores del equipo con certificación activa para la posición seleccionada.
+                  </span>
+                </div>
+              )}
 
               {/* Comentarios */}
               <div className="form-group">
@@ -583,7 +573,7 @@ export default function MobileTradesView({
                 </button>
                 <button
                   type="submit"
-                  disabled={!tradeDate}
+                  disabled={!tradeDate || myAvailableShifts.length === 0}
                   className="btn btn-primary"
                   style={{ flex: 1, padding: '0.65rem', fontWeight: '700' }}
                 >
