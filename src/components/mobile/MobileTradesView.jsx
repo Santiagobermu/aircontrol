@@ -35,16 +35,30 @@ export default function MobileTradesView({
     }
   }, [initialTradeData]);
 
+  // Helper para obtener la firma / iniciales de un controlador de forma segura
+  const getCtrlSig = (ctrl) => {
+    if (!ctrl) return '';
+    return (ctrl.signature || ctrl.id || ctrl.name || '').toString().trim();
+  };
+
+  // Helper para comparar si dos objetos o siglas pertenecen al mismo controlador
+  const isSameCtrl = (ctrlA, ctrlB) => {
+    if (!ctrlA || !ctrlB) return false;
+    const sigA = (typeof ctrlA === 'string' ? ctrlA : getCtrlSig(ctrlA)).toUpperCase();
+    const sigB = (typeof ctrlB === 'string' ? ctrlB : getCtrlSig(ctrlB)).toUpperCase();
+    return sigA && sigB && sigA === sigB;
+  };
+
   // Helper para determinar la habilidad / certificación requerida por una posición
   const getRequiredSkillForSlot = (slotKey, shift) => {
     if (!slotKey) return null;
     const code = slotKey.toUpperCase();
     const acronym = getSlotAcronym(slotKey, shift);
 
-    if (acronym === 'LNT' || acronym === 'LST' || acronym === 'LPT' || code.includes('TWR')) return 'TWR';
-    if (acronym === 'GNT' || acronym === 'GST' || acronym === 'GPT' || code.includes('GND')) return 'GND';
-    if (acronym === 'DPT' || acronym === 'DPR' || code.includes('DEL')) return 'DEL';
-    if (acronym === 'FPT' || acronym === 'FPR' || acronym === 'FPA' || code.includes('FIC')) return 'FIC';
+    if (acronym === 'LNT' || acronym === 'LST' || acronym === 'LPT' || code.includes('TWR') || code.includes('LNT') || code.includes('LST')) return 'TWR';
+    if (acronym === 'GNT' || acronym === 'GST' || acronym === 'GPT' || code.includes('GND') || code.includes('GNT') || code.includes('GST')) return 'GND';
+    if (acronym === 'DPT' || acronym === 'DPR' || code.includes('DEL') || code.includes('DPT') || code.includes('DPR')) return 'DEL';
+    if (acronym === 'FPT' || acronym === 'FPR' || acronym === 'FPA' || code.includes('FIC') || code.includes('FPT')) return 'FIC';
     if (acronym === 'CTE' || code.includes('CTE')) return 'CTE';
     if (acronym === 'ACC' || code.includes('ACC')) return 'ACC';
     if (acronym === 'SIM' || code.includes('SIM')) return 'SIM';
@@ -52,26 +66,27 @@ export default function MobileTradesView({
   };
 
   // Helper para verificar si un controlador tiene la certificación requerida
-  const isControllerEnabled = (ctrl, requiredSkill) => {
+  const isControllerQualified = (ctrl, requiredSkill) => {
     if (!ctrl) return false;
-    if (!requiredSkill) return true; // Posiciones abiertas no requieren certificación previa
+    if (!requiredSkill) return true; // Si no hay restricción de posición, está habilitado
+    
+    const skills = ctrl.skills || [];
     if (requiredSkill === 'CTE') {
-      return ctrl.isSupervisor || ctrl.isAdmin || (ctrl.skills && ctrl.skills.includes('CTE'));
+      return ctrl.isSupervisor || ctrl.isAdmin || skills.includes('CTE');
     }
-    return ctrl.skills && ctrl.skills.includes(requiredSkill);
+    return skills.includes(requiredSkill) || skills.includes(requiredSkill.toUpperCase());
   };
 
-  // Obtenemos los turnos propios asignados el día seleccionado
+  // Turnos propios asignados el día seleccionado
   const getMyShiftsForDate = (dateStr) => {
     if (!dateStr || !scheduleMonth || !scheduleMonth[dateStr] || !currentUser) return [];
     const daySched = scheduleMonth[dateStr];
-    const ctrlId = currentUser.id || currentUser.signature;
     const myShifts = [];
 
     ['M', 'T', 'N', 'A'].forEach(shift => {
       const slots = daySched[shift] || {};
       Object.entries(slots).forEach(([slotKey, assignedId]) => {
-        if (assignedId && (assignedId === ctrlId || assignedId === currentUser.signature)) {
+        if (assignedId && (isSameCtrl(assignedId, currentUser))) {
           const acronym = getSlotAcronym(slotKey, shift);
           const fullCode = `${shift}${acronym}`;
           const requiredSkill = getRequiredSkillForSlot(slotKey, shift);
@@ -87,20 +102,19 @@ export default function MobileTradesView({
     return myShifts;
   };
 
-  // Obtenemos los turnos asignados a OTROS controladores ese día (Para SWAP)
+  // Turnos asignados a OTROS controladores ese día (Para SWAP)
   const getOtherAssignedShiftsOnDate = (dateStr) => {
     if (!dateStr || !scheduleMonth || !scheduleMonth[dateStr] || !currentUser) return [];
     const daySched = scheduleMonth[dateStr];
-    const ctrlId = currentUser.id || currentUser.signature;
     const result = [];
 
     ['M', 'T', 'N', 'A'].forEach(shift => {
       const slots = daySched[shift] || {};
       Object.entries(slots).forEach(([slotKey, assignedId]) => {
-        if (assignedId && assignedId !== ctrlId && assignedId !== currentUser.signature) {
-          const ctrlObj = controllers.find(c => c.id === assignedId || c.signature === assignedId);
-          const name = ctrlObj ? ctrlObj.name : assignedId;
-          const sig = ctrlObj ? ctrlObj.signature : assignedId;
+        if (assignedId && !isSameCtrl(assignedId, currentUser)) {
+          const ctrlObj = controllers.find(c => isSameCtrl(c, assignedId)) || { name: assignedId, signature: assignedId };
+          const name = ctrlObj.name || assignedId;
+          const sig = getCtrlSig(ctrlObj);
           const acronym = getSlotAcronym(slotKey, shift);
           const fullCode = `${shift}${acronym}`;
           const requiredSkill = getRequiredSkillForSlot(slotKey, shift);
@@ -134,11 +148,13 @@ export default function MobileTradesView({
   };
   const requiredSkillForMyShift = selectedMyShiftObj.requiredSkill || getRequiredSkillForSlot(selectedMyShiftObj.slotKey, selectedMyShiftObj.shift);
 
-  // Filtrar controladores HABILITADOS para asumir mi turno
-  const enabledControllersForMyShift = controllers.filter(c => {
-    if (c.signature === currentUser?.signature || c.id === currentUser?.id) return false;
-    return isControllerEnabled(c, requiredSkillForMyShift);
-  });
+  // Filtrar controladores HABILITADOS para asumir mi turno (Excluyéndome a mí mismo)
+  const availableOthers = controllers.filter(c => !isSameCtrl(c, currentUser));
+  
+  const qualifiedOthers = availableOthers.filter(c => isControllerQualified(c, requiredSkillForMyShift));
+  
+  // Si ningún controlador tiene cargadas las habilidades o si está vacío, usar todos los compañeros como resguardo
+  const displayedColleagues = qualifiedOthers.length > 0 ? qualifiedOthers : availableOthers;
 
   // Al enviar la solicitud
   const handleFormSubmit = async (e) => {
@@ -148,17 +164,22 @@ export default function MobileTradesView({
       return;
     }
 
-    const targetCtrl = controllers.find(c => c.signature === selectedColleagueSig);
+    const targetCtrl = controllers.find(c => isSameCtrl(c, selectedColleagueSig));
+    const targetSig = targetCtrl ? getCtrlSig(targetCtrl) : (selectedColleagueSig === 'OPEN' ? 'Abierta' : selectedColleagueSig);
+    const targetName = selectedColleagueSig === 'OPEN' 
+      ? 'Abierta a cualquier compañero habilitado' 
+      : (targetCtrl ? targetCtrl.name : selectedColleagueSig);
+
     const newTradeObj = {
       id: `trade_${Date.now()}`,
       type: tradeType,
       dateStr: tradeDate,
       date: tradeDate,
-      requesterSignature: currentUser?.signature || 'ATC',
+      requesterSignature: getCtrlSig(currentUser) || 'ATC',
       requesterName: currentUser?.name || 'Controlador',
       requesterShift: selectedMyShift,
-      targetSignature: selectedColleagueSig === 'OPEN' ? 'Abierta' : selectedColleagueSig,
-      targetName: selectedColleagueSig === 'OPEN' ? 'Abierta a cualquier compañero habilitado' : (targetCtrl ? targetCtrl.name : selectedColleagueSig),
+      targetSignature: targetSig,
+      targetName: targetName,
       targetShift: tradeType === 'COVER' ? 'Reemplazo' : (targetShiftToSwap || 'Por acordar'),
       isPublic: selectedColleagueSig === 'OPEN',
       comment: tradeComment.trim(),
@@ -182,11 +203,11 @@ export default function MobileTradesView({
   // Mapeo y Normalización unificada de campos (Soporta esquema Desktop y Móvil)
   const normalizedTrades = trades.map(t => {
     const fromSig = t.requesterSignature || t.fromControllerSignature || t.fromControllerId || t.requesterId || '';
-    const fromName = t.requesterName || t.fromControllerName || controllers.find(c => c.id === fromSig || c.signature === fromSig)?.name || (fromSig ? fromSig : 'Solicitante');
+    const fromName = t.requesterName || t.fromControllerName || controllers.find(c => isSameCtrl(c, fromSig))?.name || (fromSig ? fromSig : 'Solicitante');
     const fromShift = t.requesterShift || t.fromShiftCode || t.fromShift || 'Turno';
 
     const toSig = t.targetSignature || t.toControllerSignature || t.toControllerId || t.targetId || 'OPEN';
-    const toName = t.targetName || t.toControllerName || (toSig === 'OPEN' || toSig === 'ALL' || t.isPublic ? 'Abierta a cualquier compañero habilitado' : (controllers.find(c => c.id === toSig || c.signature === toSig)?.name || toSig));
+    const toName = t.targetName || t.toControllerName || (toSig === 'OPEN' || toSig === 'ALL' || t.isPublic ? 'Abierta a cualquier compañero habilitado' : (controllers.find(c => isSameCtrl(c, toSig))?.name || toSig));
     const toShift = t.targetShift || t.toShiftCode || t.toShift || (t.type === 'COVER' ? 'Reemplazo' : 'Por acordar');
 
     const isPublic = Boolean(t.isPublic || toSig === 'OPEN' || toSig === 'ALL' || !t.toControllerId);
@@ -212,15 +233,12 @@ export default function MobileTradesView({
       status: isApproved ? 'approved' : isRejected ? 'rejected' : 'pending',
       rawStatus: t.status
     };
-  }).filter(t => t.fromSig && t.fromSig.trim() !== ''); // Descartar solicitudes corruptas o sin solicitante
+  }).filter(t => t.fromSig && t.fromSig.trim() !== '');
 
   // Filtrar permutas/cambios estrictamente relevantes para el controlador logueado
   const userTrades = normalizedTrades.filter(t => {
-    const mySig = currentUser?.signature;
-    const myId = currentUser?.id;
-
-    const isMyRequest = Boolean((mySig && t.fromSig === mySig) || (myId && t.fromSig === myId));
-    const isTargetingMe = Boolean((mySig && t.toSig === mySig) || (myId && t.toSig === myId));
+    const isMyRequest = isSameCtrl(t.fromSig, currentUser);
+    const isTargetingMe = isSameCtrl(t.toSig, currentUser);
     const isOpenPending = Boolean(t.isPublic && t.status === 'pending');
 
     const isRelevant = isMyRequest || isTargetingMe || isOpenPending;
@@ -310,7 +328,7 @@ export default function MobileTradesView({
           {userTrades.map((trade, idx) => {
             const statusInfo = getStatusBadge(trade.status);
             const StatusIcon = statusInfo.icon;
-            const isTarget = (currentUser?.signature && trade.toSig === currentUser.signature) || (currentUser?.id && trade.toSig === currentUser.id);
+            const isTarget = isSameCtrl(trade.toSig, currentUser);
 
             return (
               <div key={idx} style={{
@@ -590,15 +608,18 @@ export default function MobileTradesView({
                   style={{ width: '100%', padding: '0.6rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)' }}
                 >
                   <option value="OPEN">📢 Abierta a cualquier compañero habilitado</option>
-                  {enabledControllersForMyShift.map(c => (
-                    <option key={c.id || c.signature} value={c.signature}>
-                      {c.name} ({c.signature}) {requiredSkillForMyShift ? `· Habilitado ${requiredSkillForMyShift}` : ''}
-                    </option>
-                  ))}
+                  {displayedColleagues.map(c => {
+                    const sig = getCtrlSig(c);
+                    return (
+                      <option key={sig} value={sig}>
+                        {c.name || sig} ({sig}) {requiredSkillForMyShift ? `· Habilitado ${requiredSkillForMyShift}` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
                 {requiredSkillForMyShift && (
                   <span style={{ fontSize: '0.68rem', color: 'var(--accent-cyan)', display: 'block', marginTop: '0.2rem' }}>
-                    * Se muestran únicamente los controladores con certificación vigente en {requiredSkillForMyShift}.
+                    * Se muestran los controladores con certificación en {requiredSkillForMyShift}.
                   </span>
                 )}
               </div>
