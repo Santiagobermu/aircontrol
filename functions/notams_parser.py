@@ -375,8 +375,8 @@ def sync_skbo_notams():
             n['scope'] = 'SKBO'
             skbo_notams.append(n)
         else:
-            # Check for AD / RWY Closed in Colombia (CLD / AD_CLSD)
-            if n['category'] == 'AD_CLSD' or 'CLSD' in desc_upper or 'CLOSED' in desc_upper or 'CIERRE' in desc_upper or 'PISTA CERRADA' in desc_upper or 'CLD' in desc_upper:
+            # Check strictly for AD CLSD or RWY CLSD in national airports
+            if 'AD CLSD' in desc_upper or 'RWY CLSD' in desc_upper or 'AD CLOSED' in desc_upper or 'RWY CLOSED' in desc_upper or 'PISTA CERRADA' in desc_upper or 'AERODROME CLOSED' in desc_upper or 'AEROPUERTO CERRADO' in desc_upper:
                 norm_clsd = dict(n)
                 norm_clsd['scope'] = 'AD_CLSD_COLOMBIA'
                 norm_clsd['category'] = 'AD_CLSD'
