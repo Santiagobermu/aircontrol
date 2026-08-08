@@ -2158,7 +2158,7 @@ export default function ControllerPortal({
                               </p>
                               <div style={{ marginTop: '0.35rem', fontSize: '0.6rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
                                 <span>Validez: {n.dates_raw || `${n.start_date || ''} - ${n.end_date || ''}`}</span>
-                                {n.source && <span>Fuente: FAA</span>}
+                                {n.source && <span>Fuente: {n.source.includes('AEROCIVIL') ? 'Aerocivil' : 'FAA'}</span>}
                               </div>
                             </div>
                           );

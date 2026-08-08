@@ -395,14 +395,6 @@ def sync_skbo_notams():
             if not nid or nid in seen_ids:
                 continue
             norm = normalize_faa_notam(item, default_scope='FLOW_NEIGHBOR_FIRS')
-            desc_upper = norm['description'].upper()
-            
-            if 'ASHTAM' in desc_upper or 'VOLCANO' in desc_upper or 'VOLCANIC' in desc_upper:
-                norm_ash = dict(norm)
-                norm_ash['scope'] = 'ASHTAM'
-                ashtam_notams.append(norm_ash)
-                seen_ids.add(nid)
-
             # Exclude Checklist / administrative summary NOTAMs (QKKKK)
             if 'CHECKLIST' in desc_upper or 'QKKKK' in desc_upper or 'LISTA DE VERIFICACION' in desc_upper:
                 continue

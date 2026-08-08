@@ -400,7 +400,7 @@ export default function MobileNotamsView({
 
                 {/* Fechas de Vigencia & Horario */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '0.1rem' }}>
-                  <span>Horario: {notam.schedule || '24h'}</span>
+                  <span>Fuente: {notam.source && notam.source.includes('AEROCIVIL') ? 'Aerocivil' : 'FAA'} | {notam.schedule ? `Horario: ${notam.schedule}` : '24h'}</span>
                   <span>Vigencia: {notam.dates_raw || `${notam.start_date || ''} - ${notam.end_date || 'PERM'}`}</span>
                 </div>
               </div>
