@@ -1,16 +1,23 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock } from 'lucide-react';
 import { getAuth, updatePassword } from 'firebase/auth';
 import ThemeToggle from '../ThemeToggle';
 import { addManualAlertDB } from '../../utils/db';
+import { generateICS, uploadCalendarToStorage } from '../../utils/calendarExport';
+import { SHIFTS, getSlotAcronym, getSlotDescription } from '../../utils/schedulerEngine';
 
 export default function MobileProfileView({ 
   currentUser, 
   userRole = 'controller',
-  onLogout 
+  scheduleMonth = {},
+  exceptions = {},
+  onLogout,
+  onChangePassword,
+  onUpdateController
 }) {
   const [copiedWebcal, setCopiedWebcal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
   
   // Alertas del Encargado
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
@@ -29,11 +36,51 @@ export default function MobileProfileView({
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
   const roleTitle = isEncargado ? 'Encargado de Turno / CTE Certificado' : 'Controlador Certificado SKBO';
 
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+
+  const myMonthlyShifts = useMemo(() => {
+    if (!currentUser) return {};
+    const monthlyMap = {};
+    const count = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+
+    for (let i = 1; i <= count; i++) {
+      const dayStr = String(i).padStart(2, '0');
+      const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
+      monthlyMap[dateStr] = [];
+
+      const exc = exceptions[currentUser.id]?.[dateStr];
+      if (exc && exc !== 'OPERATIVO') {
+        monthlyMap[dateStr].push({ type: 'EXCEPTION', status: exc });
+      }
+
+      const daySched = scheduleMonth[dateStr];
+      if (daySched) {
+        SHIFTS.forEach(shift => {
+          const slots = daySched[shift] || {};
+          Object.keys(slots).forEach(slotKey => {
+            if (slots[slotKey] === currentUser.id) {
+              monthlyMap[dateStr].push({
+                type: 'SHIFT',
+                shift,
+                slotKey,
+                acronym: getSlotAcronym(slotKey),
+                description: getSlotDescription(slotKey)
+              });
+            }
+          });
+        });
+      }
+    }
+    return monthlyMap;
+  }, [currentUser, currentYear, currentMonth, scheduleMonth, exceptions]);
+
+  const rawUrl = currentUser?.calendarSyncUrl || `https://firebasestorage.googleapis.com/v0/b/aircontrol-skbo-sbg.firebasestorage.app/o/calendars%2F${currentUser?.id || currentUser?.signature}.ics?alt=media`;
+  const webcalUrl = rawUrl.replace(/^https:\/\//, 'webcal://');
+
   // Copiar Enlace Webcal (.ics)
   const handleCopyWebcal = async () => {
-    const rawUrl = currentUser?.calendarSyncUrl || `https://firebasestorage.googleapis.com/v0/b/aircontrol-skbo-sbg.firebasestorage.app/o/calendars%2F${currentUser?.id || currentUser?.signature}.ics?alt=media`;
-    const webcalUrl = rawUrl.replace(/^https:\/\//, 'webcal://');
-
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(webcalUrl);
@@ -51,6 +98,58 @@ export default function MobileProfileView({
     } catch (err) {
       console.error(err);
       alert(`Enlace Webcal: ${webcalUrl}`);
+    }
+  };
+
+  const handleToggleCloudSync = async () => {
+    if (!currentUser) return;
+    setSyncLoading(true);
+    try {
+      if (currentUser.calendarSyncEnabled) {
+        if (onUpdateController) {
+          await onUpdateController({
+            ...currentUser,
+            calendarSyncEnabled: false,
+            calendarSyncUrl: null
+          });
+        }
+      } else {
+        const icsContent = generateICS(currentUser, currentYear, currentMonth, myMonthlyShifts);
+        const downloadUrl = await uploadCalendarToStorage(currentUser.id, icsContent);
+        if (onUpdateController) {
+          await onUpdateController({
+            ...currentUser,
+            calendarSyncEnabled: true,
+            calendarSyncUrl: downloadUrl
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error al gestionar la sincronización de calendario: ' + err.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleForceSync = async () => {
+    if (!currentUser) return;
+    setSyncLoading(true);
+    try {
+      const icsContent = generateICS(currentUser, currentYear, currentMonth, myMonthlyShifts);
+      const newUrl = await uploadCalendarToStorage(currentUser.id, icsContent);
+      if (onUpdateController) {
+        await onUpdateController({
+          ...currentUser,
+          calendarSyncUrl: newUrl
+        });
+      }
+      alert('Sincronización forzada con éxito.');
+    } catch (err) {
+      console.error(err);
+      alert('Error al forzar actualización: ' + err.message);
+    } finally {
+      setSyncLoading(false);
     }
   };
 
@@ -245,43 +344,160 @@ export default function MobileProfileView({
         </div>
       )}
 
-      {/* Sincronización Webcal Calendario (.ics) */}
+      {/* Sincronización Webcal Calendario (.ics / iPhone & Mac) */}
       <div style={{
         background: 'var(--glass-bg)',
         border: '1px solid var(--glass-border)',
-        borderRadius: '14px',
-        padding: '1rem',
+        borderRadius: '16px',
+        padding: '1.2rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.6rem'
+        gap: '0.8rem'
       }}>
-        <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Calendar size={18} color="var(--accent-cyan)" />
-          Sincronización Webcal Móvil (.ics)
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+            <Calendar size={20} color="var(--accent-cyan)" />
+            Sincronización de Calendario (.ics)
+          </h3>
+          {currentUser?.calendarSyncEnabled && (
+            <span style={{
+              fontSize: '0.68rem',
+              fontWeight: '700',
+              color: 'var(--status-success)',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              padding: '0.2rem 0.55rem',
+              borderRadius: '20px'
+            }}>
+              ✓ Activa
+            </span>
+          )}
+        </div>
+
         <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-          Conecta tus turnos de AirControl en tiempo real con Apple Calendar u Google Calendar en tu iPhone.
+          Conecta tus turnos de AirControl en tiempo real con Apple Calendar en tu iPhone o Mac, u otros calendarios como Google Calendar.
         </p>
 
-        <button
-          onClick={handleCopyWebcal}
-          className="btn btn-secondary"
+        {/* Botón Principal Destacado: 1-Clic Suscribirse en iPhone / Mac */}
+        <a
+          href={webcalUrl}
+          className="btn btn-primary"
           style={{
             width: '100%',
-            padding: '0.65rem',
-            borderRadius: '10px',
-            fontSize: '0.8rem',
-            fontWeight: '700',
+            padding: '0.8rem',
+            borderRadius: '12px',
+            fontSize: '0.88rem',
+            fontWeight: '800',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.4rem',
-            marginTop: '0.2rem'
+            gap: '0.5rem',
+            textDecoration: 'none',
+            background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+            boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
+            color: '#ffffff',
+            boxSizing: 'border-box'
+          }}
+          onClick={async (e) => {
+            if (!currentUser?.calendarSyncEnabled) {
+              e.preventDefault();
+              await handleToggleCloudSync();
+              window.location.href = webcalUrl;
+            }
           }}
         >
-          {copiedWebcal ? <Check size={16} color="var(--status-success)" /> : <Copy size={16} />}
-          {copiedWebcal ? '¡Enlace Webcal Copiado!' : 'Copiar Enlace de Suscripción Webcal'}
-        </button>
+          <Calendar size={18} />
+          📅 Suscribirse en iPhone / Mac (Un Clic)
+        </a>
+
+        {/* Acciones Secundarias */}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={handleCopyWebcal}
+            className="btn btn-secondary"
+            style={{
+              flex: 1,
+              padding: '0.65rem',
+              borderRadius: '10px',
+              fontSize: '0.78rem',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem'
+            }}
+          >
+            {copiedWebcal ? <Check size={16} color="var(--status-success)" /> : <Copy size={16} />}
+            {copiedWebcal ? '¡Copiado!' : 'Copiar Enlace'}
+          </button>
+
+          {currentUser?.calendarSyncEnabled ? (
+            <>
+              <button
+                onClick={handleForceSync}
+                disabled={syncLoading}
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.65rem 0.75rem',
+                  borderRadius: '10px',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+              >
+                <RefreshCw size={15} className={syncLoading ? 'spin-animation' : ''} />
+                {syncLoading ? 'Actualizando...' : 'Forzar Sync'}
+              </button>
+
+              <button
+                onClick={handleToggleCloudSync}
+                disabled={syncLoading}
+                className="btn btn-danger-outline"
+                style={{
+                  padding: '0.65rem 0.75rem',
+                  borderRadius: '10px',
+                  fontSize: '0.78rem',
+                  fontWeight: '700'
+                }}
+              >
+                Desactivar
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleToggleCloudSync}
+              disabled={syncLoading}
+              className="btn btn-secondary"
+              style={{
+                flex: 1,
+                padding: '0.65rem',
+                borderRadius: '10px',
+                fontSize: '0.78rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              ☁️ {syncLoading ? 'Activando...' : 'Activar Nube'}
+            </button>
+          )}
+        </div>
+
+        {/* Indicaciones breves */}
+        <div style={{
+          borderTop: '1px dashed var(--color-border)',
+          paddingTop: '0.6rem',
+          marginTop: '0.2rem',
+          fontSize: '0.72rem',
+          color: 'var(--text-muted)',
+          lineHeight: '1.4'
+        }}>
+          💡 <strong>iPhone / Mac:</strong> Presiona el botón azul para añadir la suscripción directa en tu app de Calendario. Los cambios de turnos (swaps) se actualizarán solos.
+        </div>
       </div>
 
       {/* Ajustes de Tema y Cuenta */}

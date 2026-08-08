@@ -14,6 +14,9 @@ export default function MobileRosterView({
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedDayDetail, setSelectedDayDetail] = useState(null);
 
+  const rawUrl = currentUser?.calendarSyncUrl || `https://firebasestorage.googleapis.com/v0/b/aircontrol-skbo-sbg.firebasestorage.app/o/calendars%2F${currentUser?.id || currentUser?.signature}.ics?alt=media`;
+  const webcalUrl = rawUrl.replace(/^https:\/\//, 'webcal://');
+
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -242,12 +245,30 @@ export default function MobileRosterView({
         boxShadow: 'var(--glass-shadow)'
       }}>
         {/* Cabecera del Mes */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.8rem', flexWrap: 'wrap', gap: '0.4rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <CalendarIcon size={17} color="var(--accent-cyan)" />
             {monthNames[selectedMonth]} {selectedYear}
           </h3>
-          <div style={{ display: 'flex', gap: '0.3rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <a
+              href={webcalUrl}
+              style={{
+                background: 'rgba(6, 182, 212, 0.15)',
+                border: '1px solid var(--accent-cyan)',
+                color: 'var(--accent-cyan)',
+                borderRadius: '8px',
+                padding: '0.35rem 0.6rem',
+                fontSize: '0.72rem',
+                fontWeight: '700',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem'
+              }}
+            >
+              📅 Sync iPhone / Mac
+            </a>
             <button 
               onClick={handlePrevMonth} 
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', borderRadius: '8px', padding: '0.35rem', cursor: 'pointer' }}

@@ -21,7 +21,8 @@ export default function MobileLayout({
   onOpenTradeModal,
   onAddTrade,
   onAcceptTrade,
-  onRejectTrade
+  onRejectTrade,
+  onUpdateController
 }) {
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'guardia' | 'trades' | 'notams' | 'profile'
   const [tradeInitialData, setTradeInitialData] = useState({ date: '', type: 'COVER' });
@@ -53,6 +54,7 @@ export default function MobileLayout({
             exceptions={exceptions}
             controllers={controllers}
             onOpenTradeModal={handleOpenTradeForDate}
+            onUpdateController={onUpdateController}
           />
         )}
 
@@ -89,8 +91,11 @@ export default function MobileLayout({
           <MobileProfileView 
             currentUser={currentUser}
             userRole={userRole}
+            scheduleMonth={scheduleMonth}
+            exceptions={exceptions}
             onLogout={onLogout}
             onChangePassword={onChangePassword}
+            onUpdateController={onUpdateController}
           />
         )}
       </main>

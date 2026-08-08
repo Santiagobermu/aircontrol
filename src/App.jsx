@@ -932,6 +932,7 @@ export default function App() {
         onAddTrade={handleAddTrade}
         onAcceptTrade={handleApproveTrade}
         onRejectTrade={handleDeleteTrade}
+        onUpdateController={handleUpdateController}
       />
     );
   }
