@@ -1860,7 +1860,7 @@ export default function ControllerPortal({
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
                     <h3 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700' }}>
                       <Radio size={18} style={{ color: 'var(--accent-cyan)' }} />
-                      <span>NOTAMs Oficiales (FAA Search)</span>
+                      <span>NOTAMs Oficiales (Aerocivil + FAA)</span>
                     </h3>
                     
                     {(userRole === 'admin' || currentController?.isSupervisor) && (
@@ -2175,7 +2175,7 @@ export default function ControllerPortal({
 
                   {notamsData.lastUpdated && (
                     <div style={{ marginTop: '0.75rem', fontSize: '0.6rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                      Última sinc (FAA): {new Date(notamsData.lastUpdated).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      Última sinc (Aerocivil + FAA): {new Date(notamsData.lastUpdated).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                     </div>
                   )}
                 </div>

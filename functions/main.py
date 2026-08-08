@@ -112,7 +112,7 @@ def sync_notams_api(req: https_fn.Request) -> https_fn.Response:
             mimetype='application/json'
         )
 
-@scheduler_fn.on_schedule(schedule="30 5 * * *", timezone="America/Bogota")
+@scheduler_fn.on_schedule(schedule="45 1,5,9,13,17,21 * * *", timezone="America/Bogota")
 def scheduled_sync_notams(event: scheduler_fn.ScheduledEvent) -> None:
     from firebase_admin import _apps, initialize_app
     if not _apps:

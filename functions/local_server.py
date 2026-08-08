@@ -43,6 +43,17 @@ def solve():
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+@app.route('/sync_notams_api', methods=['GET', 'POST'])
+def sync_notams():
+    try:
+        from notams_parser import sync_skbo_notams
+        result = sync_skbo_notams()
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
-    print("Starting local OR-Tools scheduling solver on http://localhost:8080")
+    print("Starting local server (Solver + NOTAMs) on http://localhost:8080")
     app.run(host='0.0.0.0', port=8080, debug=True)
