@@ -67,6 +67,7 @@ def parse_aerocivil_date(date_str):
 
 
 RE_AD_RWY_CLSD = re.compile(r'\b(AD|RWY|AERODROME|AEROPUERTO|PISTA)\b.*\b(CLSD|CLOSED|CERRAD[AO])\b', re.IGNORECASE)
+RE_CTL_FLOW = re.compile(r'\b(CTL\s+FLOW|FLOW\s+CONTROL|FLOW\s+RESTRICTION|ATFM|REGULATION|SLOT|FLUJO|FLOW)\b', re.IGNORECASE)
 
 
 def categorize_notam(desc, Q_code='', scope='SKBO'):
@@ -75,7 +76,7 @@ def categorize_notam(desc, Q_code='', scope='SKBO'):
         return 'ASHTAM'
     if RE_AD_RWY_CLSD.search(d):
         return 'AD_CLSD'
-    if 'FLOW' in d or 'ATFM' in d or 'REGULATION' in d or 'SLOT' in d or 'CAPACITY' in d or 'RATE' in d or 'FLUJO' in d or 'CTL FLOW' in d:
+    if RE_CTL_FLOW.search(d) and 'CHECKLIST' not in d and 'QKKKK' not in d:
         return 'FLOW'
     if 'RWY' in d or 'RUNWAY' in d or 'PISTA' in d or 'QMR' in Q_code:
         return 'RWY'
@@ -402,8 +403,12 @@ def sync_skbo_notams():
                 ashtam_notams.append(norm_ash)
                 seen_ids.add(nid)
 
-            # Strictly filter for CTL FLOW / ATFM / REGULATION / SLOT / FLOW
-            if 'FLOW' in desc_upper or 'CTL FLOW' in desc_upper or 'ATFM' in desc_upper or 'REGULATION' in desc_upper or 'SLOT' in desc_upper or 'RATE' in desc_upper:
+            # Exclude Checklist / administrative summary NOTAMs (QKKKK)
+            if 'CHECKLIST' in desc_upper or 'QKKKK' in desc_upper or 'LISTA DE VERIFICACION' in desc_upper:
+                continue
+
+            # Strictly filter for CTL FLOW / ATFM / REGULATION / SLOT / FLOW with word boundary regex
+            if RE_CTL_FLOW.search(desc_upper):
                 norm['category'] = 'FLOW'
                 flow_notams.append(norm)
                 seen_ids.add(nid)
