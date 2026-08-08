@@ -17,10 +17,10 @@ COLOMBIA_ICAOS = [
     'SKFL', 'SKGI', 'SKGP', 'SKIB', 'SKPD', 'SKIP', 'SKLT', 'SKMZ',
     'SKQU', 'SKMD', 'SKMU', 'SKMR', 'SKNV', 'SKPS', 'SKPE', 'SKPP',
     'SKPV', 'SKAS', 'SKPC', 'SKUI', 'SKRH', 'SKRG', 'SKSP', 'SKSJ',
-    'SKSM', 'SKSA', 'SKTM', 'SKCO', 'SKVP', 'SKVV', 'SKAG', 'SQHK',
-    'SKHA', 'SKEB', 'SKNA', 'SKMG', 'SKLM', 'SKMP', 'SKML', 'SKNQ',
+    'SKSM', 'SKSA', 'SKTM', 'SKCO', 'SKVP', 'SKVV', 'SKAG',
+    'SKHA', 'SKNA', 'SKLM','SKNQ',
     'SKOC', 'SKPA', 'SKPI', 'SKPB', 'SKMO', 'SKLG', 'SKSG', 'SKSV',
-    'SQUJ', 'SKTL', 'SKUL', 'SKVG', 'SKEC', 'SKED'
+    'SKTL', 'SKUL', 'SKVG', 'SKEC', 'SKED'
 ]
 
 # FIRs adyacentes internacionales para consultar exclusivamente CTL FLOW en la FAA
@@ -66,11 +66,14 @@ def parse_aerocivil_date(date_str):
     return date_str
 
 
+RE_AD_RWY_CLSD = re.compile(r'\b(AD|RWY|AERODROME|AEROPUERTO|PISTA)\b.*\b(CLSD|CLOSED|CERRAD[AO])\b', re.IGNORECASE)
+
+
 def categorize_notam(desc, Q_code='', scope='SKBO'):
     d = desc.upper()
     if 'ASHTAM' in d or 'VOLCANO' in d or 'VOLCANIC' in d or 'CENIZA' in d or 'ERUPTION' in d or 'QWA' in Q_code or 'QWV' in Q_code:
         return 'ASHTAM'
-    if 'AD CLSD' in d or 'AERODROME CLOSED' in d or 'AD CLOSED' in d or 'PISTA CERRADA' in d or 'RWY CLSD' in d or 'RUNWAY CLOSED' in d:
+    if RE_AD_RWY_CLSD.search(d):
         return 'AD_CLSD'
     if 'FLOW' in d or 'ATFM' in d or 'REGULATION' in d or 'SLOT' in d or 'CAPACITY' in d or 'RATE' in d or 'FLUJO' in d or 'CTL FLOW' in d:
         return 'FLOW'
@@ -375,8 +378,8 @@ def sync_skbo_notams():
             n['scope'] = 'SKBO'
             skbo_notams.append(n)
         else:
-            # Check strictly for AD CLSD or RWY CLSD in national airports
-            if 'AD CLSD' in desc_upper or 'RWY CLSD' in desc_upper or 'AD CLOSED' in desc_upper or 'RWY CLOSED' in desc_upper or 'PISTA CERRADA' in desc_upper or 'AERODROME CLOSED' in desc_upper or 'AEROPUERTO CERRADO' in desc_upper:
+            # Check strictly for AD CLSD or RWY CLSD in national airports (e.g. RWY 04/22 CLSD)
+            if RE_AD_RWY_CLSD.search(desc_upper):
                 norm_clsd = dict(n)
                 norm_clsd['scope'] = 'AD_CLSD_COLOMBIA'
                 norm_clsd['category'] = 'AD_CLSD'
