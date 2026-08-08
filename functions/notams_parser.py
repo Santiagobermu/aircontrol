@@ -378,8 +378,8 @@ def sync_skbo_notams():
         if n['airport'] == 'SKBO':
             n['scope'] = 'SKBO'
             skbo_notams.append(n)
-        else:
-            # Check strictly for AD CLSD or RWY CLSD in national airports (e.g. RWY 04/22 CLSD)
+        elif n['airport'] in COLOMBIA_ICAOS:
+            # Check strictly for AD CLSD or RWY CLSD in national airports in COLOMBIA_ICAOS
             if RE_AD_RWY_CLSD.search(desc_upper):
                 norm_clsd = dict(n)
                 norm_clsd['scope'] = 'AD_CLSD_COLOMBIA'
