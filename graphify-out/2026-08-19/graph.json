@@ -1077,8 +1077,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_aicopilotpanel",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "aicopilotpanel.jsx"
     },
     {
@@ -1146,8 +1146,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_controllerportal",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "controllerportal.jsx"
     },
     {
@@ -1169,8 +1169,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_loginscreen",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "loginscreen.jsx"
     },
     {
@@ -1181,8 +1181,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_loginscreen_loginscreen",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "loginscreen()"
     },
     {
@@ -1296,8 +1296,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_themetoggle",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "themetoggle.jsx"
     },
     {
@@ -1308,8 +1308,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_themetoggle_themetoggle",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "themetoggle()"
     },
     {
@@ -1371,6 +1371,29 @@
       "norm_label": "mobilebottomnav()"
     },
     {
+      "label": "MobileGeneralRosterView.jsx",
+      "file_type": "code",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_components_mobile_mobilegeneralrosterview",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
+      "norm_label": "mobilegeneralrosterview.jsx"
+    },
+    {
+      "label": "MobileGeneralRosterView()",
+      "file_type": "code",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L21",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
+      "norm_label": "mobilegeneralrosterview()"
+    },
+    {
       "label": "MobileGuardiaView.jsx",
       "file_type": "code",
       "source_file": "src/components/mobile/MobileGuardiaView.jsx",
@@ -1400,8 +1423,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 5,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileheader.jsx"
     },
     {
@@ -1412,8 +1435,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader_mobileheader",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 5,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileheader()"
     },
     {
@@ -1431,7 +1454,7 @@
       "label": "MobileLayout()",
       "file_type": "code",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L10",
+      "source_location": "L12",
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout_mobilelayout",
@@ -1469,8 +1492,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobileprofileview",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "mobileprofileview.jsx"
     },
     {
@@ -1481,8 +1504,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobileprofileview_mobileprofileview",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "mobileprofileview()"
     },
     {
@@ -1549,8 +1572,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_calendarexport",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "calendarexport.js"
     },
     {
@@ -1561,8 +1584,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_calendarexport_generateics",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "generateics()"
     },
     {
@@ -1573,8 +1596,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_calendarexport_uploadcalendartostorage",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "uploadcalendartostorage()"
     },
     {
@@ -1585,8 +1608,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_calendarexport_getmonthlyshiftsforcontroller",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "getmonthlyshiftsforcontroller()"
     },
     {
@@ -1597,8 +1620,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_calendarexport_triggercalendarsyncifenabled",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "triggercalendarsyncifenabled()"
     },
     {
@@ -1868,8 +1891,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_db_addmanualalertdb",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "addmanualalertdb()"
     },
     {
@@ -1880,8 +1903,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_db_deletemanualalertdb",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 5,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "deletemanualalertdb()"
     },
     {
@@ -1891,8 +1914,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_firebase",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "firebase.js"
     },
     {
@@ -1902,8 +1925,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_utils_firebase_firebaseconfig",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "firebaseconfig"
     },
     {
@@ -1913,8 +1936,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_utils_firebase_app",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "app"
     },
     {
@@ -1935,8 +1958,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_utils_firebase_auth",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "auth"
     },
     {
@@ -1946,8 +1969,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_utils_firebase_storage",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "storage"
     },
     {
@@ -2109,8 +2132,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_utils_schedulerengine_shifts",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 20,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "shifts"
     },
     {
@@ -6351,7 +6374,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6363,11 +6386,106 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
       "target": "src_components_mobile_mobilebottomnav_mobilebottomnav",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview",
+      "target": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine_getslotacronym",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine_getslotdescription",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileLayout.jsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilelayout",
+      "target": "src_components_mobile_mobilegeneralrosterview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L111",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine_getslotacronym"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L195",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine_getslotdescription"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileLayout.jsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilelayout",
+      "target": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
       "confidence_score": 1.0
     },
     {
@@ -6410,7 +6528,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L5",
+      "source_location": "L7",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6434,7 +6552,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L5",
+      "source_location": "L7",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6481,7 +6599,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L2",
+      "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6505,7 +6623,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L2",
+      "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6516,7 +6634,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L10",
+      "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6528,7 +6646,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L7",
+      "source_location": "L9",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6540,7 +6658,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L7",
+      "source_location": "L9",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6552,7 +6670,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L8",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6564,7 +6682,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L8",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6576,7 +6694,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6588,7 +6706,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6600,7 +6718,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L6",
+      "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -6612,7 +6730,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileLayout.jsx",
-      "source_location": "L6",
+      "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilelayout",
@@ -7041,7 +7159,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/mobile/MobileTradesView.jsx",
-      "source_location": "L60",
+      "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobiletradesview_mobiletradesview",
@@ -8176,5 +8294,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "00e4e88cfe8d480d6a1b2697e151e98d75efc5b2"
+  "built_at_commit": "ec3deb49d152d4b302ac56d3f9ebb98a1314ecbd"
 }

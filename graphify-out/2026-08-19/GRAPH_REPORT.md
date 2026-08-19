@@ -1,16 +1,16 @@
 # Graph Report - Proyecto  (2026-08-19)
 
 ## Corpus Check
-- 46 files · ~76,480 words
+- 47 files · ~80,384 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 225 nodes · 477 edges · 20 communities (13 shown, 7 thin omitted)
+- 227 nodes · 485 edges · 21 communities (14 shown, 7 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `00e4e88c`
+- Built from commit: `ec3deb49`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -33,15 +33,16 @@
 - AirControl Hero Image
 - rules/graphify.md
 - workflows/graphify.md
+- ControllerPortal.jsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `App()` - 22 edges
 2. `ControllerPortal()` - 22 edges
-3. `getSlotAcronym()` - 17 edges
+3. `getSlotAcronym()` - 19 edges
 4. `isColombianHoliday()` - 16 edges
-5. `solve_schedule()` - 12 edges
-6. `validateAssignment()` - 12 edges
-7. `getSlotDescription()` - 11 edges
+5. `getSlotDescription()` - 13 edges
+6. `solve_schedule()` - 12 edges
+7. `validateAssignment()` - 12 edges
 8. `runAutoSchedulerForMonth()` - 11 edges
 9. `sync_skbo_notams()` - 10 edges
 10. `MonthlyGrid()` - 8 edges
@@ -61,15 +62,15 @@
 ## Import Cycles
 - None detected.
 
-## Communities (20 total, 7 thin omitted)
+## Communities (21 total, 7 thin omitted)
 
 ### Community 0 - "App.jsx"
-Cohesion: 0.11
-Nodes (38): App(), ControllerList(), ControllerPortal(), LoginScreen(), MobileHeader(), MobileProfileView(), ThemeToggle(), generateICS() (+30 more)
+Cohesion: 0.15
+Nodes (24): App(), ControllerList(), ControllerPortal(), addControllerDB(), addRequestDB(), addTradeDB(), DEFAULT_SEQUENCE, deleteControllerDB() (+16 more)
 
 ### Community 1 - "schedulerEngine.js"
-Cohesion: 0.16
-Nodes (26): AICopilotPanel(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), generateSettleTrade(), TradePanel() (+18 more)
+Cohesion: 0.15
+Nodes (26): AICopilotPanel(), MobileGeneralRosterView(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), generateSettleTrade() (+18 more)
 
 ### Community 2 - "sync_skbo_notams"
 Cohesion: 0.14
@@ -84,8 +85,8 @@ Cohesion: 0.16
 Nodes (17): health(), solve(), sync_notams(), get_days_elapsed(), get_sequence_day_index(), get_week_days_of_date(), has_certification(), is_colombian_holiday() (+9 more)
 
 ### Community 5 - "MobileLayout.jsx"
-Cohesion: 0.29
-Nodes (5): MobileBottomNav(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView()
+Cohesion: 0.23
+Nodes (7): MobileBottomNav(), MobileGuardiaView(), MobileHeader(), MobileLayout(), MobileRosterView(), MobileTradesView(), deleteManualAlertDB()
 
 ### Community 6 - "devDependencies"
 Cohesion: 0.11
@@ -107,6 +108,10 @@ Nodes (9): MobileNotamsView(), categorizeNotam(), extractNotamDates(), filterNot
 Cohesion: 0.67
 Nodes (3): AirControl Stitch Specification, AirControl Design System, AirControl Architecture Summary
 
+### Community 20 - "ControllerPortal.jsx"
+Cohesion: 0.22
+Nodes (13): LoginScreen(), MobileProfileView(), ThemeToggle(), generateICS(), getMonthlyShiftsForController(), triggerCalendarSyncIfEnabled(), uploadCalendarToStorage(), addManualAlertDB() (+5 more)
+
 ## Knowledge Gaps
 - **51 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+46 more)
   These have ≤1 connection - possible missing edges or undocumented components.
@@ -122,7 +127,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _51 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.10552061495457722 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14717741935483872 - nodes in this community are weakly interconnected._
 - **Should `sync_skbo_notams` be split into smaller, more focused modules?**
   _Cohesion score 0.1422924901185771 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
