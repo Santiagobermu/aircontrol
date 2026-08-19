@@ -75,9 +75,9 @@
     "semantic_hash": "bf1e38b00bd0c8548004d8effecfb461"
   },
   "src/components/ControllerPortal.jsx": {
-    "mtime": 1786213484.6554809,
-    "ast_hash": "b59389282f29248d600089cdb4e05cd7",
-    "semantic_hash": "b59389282f29248d600089cdb4e05cd7"
+    "mtime": 1787164267.3901067,
+    "ast_hash": "d28039a201c1a3594fe7fd5338684022",
+    "semantic_hash": ""
   },
   "src/components/LoginScreen.jsx": {
     "mtime": 1785790592.6882823,
@@ -135,9 +135,9 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileNotamsView.jsx": {
-    "mtime": 1786213493.2556975,
-    "ast_hash": "11f0e33414bfdf11b0a3988d5e60e1a5",
-    "semantic_hash": "11f0e33414bfdf11b0a3988d5e60e1a5"
+    "mtime": 1787164220.4482484,
+    "ast_hash": "16aa47125b85dbbc7cb27d5f21a25936",
+    "semantic_hash": ""
   },
   "src/components/mobile/MobileProfileView.jsx": {
     "mtime": 1786214021.869602,
@@ -257,6 +257,11 @@
   "src/assets/vite.svg": {
     "mtime": 1779811906.1213334,
     "ast_hash": "9960a24288958394ac50e57ff638b036",
+    "semantic_hash": ""
+  },
+  "src/utils/notamUtils.js": {
+    "mtime": 1787164185.6493342,
+    "ast_hash": "cad26c8274849c1da4fab34841925adc",
     "semantic_hash": ""
   }
 }

@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Calendar, Users } from 'lucide-react';
 import MobileHeader from './MobileHeader';
 import MobileBottomNav from './MobileBottomNav';
 import MobileRosterView from './MobileRosterView';
+import MobileGeneralRosterView from './MobileGeneralRosterView';
 import MobileGuardiaView from './MobileGuardiaView';
 import MobileTradesView from './MobileTradesView';
 import MobileNotamsView from './MobileNotamsView';
@@ -13,6 +15,7 @@ export default function MobileLayout({
   exceptions = {},
   controllers,
   trades = [],
+  publishState = {},
   notamsData = { notams: [], adClosedNotams: [], flowNotams: [], ashtamNotams: [] },
   manualAlerts = [],
   userRole = 'controller',
@@ -26,6 +29,7 @@ export default function MobileLayout({
   onUpdateController
 }) {
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'guardia' | 'trades' | 'notams' | 'profile'
+  const [rosterSubTab, setRosterSubTab] = useState('personal'); // 'personal' | 'general'
   const [tradeInitialData, setTradeInitialData] = useState({ date: '', type: 'COVER' });
 
   const isSameCtrl = (ctrlA, ctrlB) => {
@@ -40,8 +44,8 @@ export default function MobileLayout({
 
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
 
-  const handleOpenTradeForDate = (dateStr, type = 'COVER') => {
-    setTradeInitialData({ date: dateStr || '', type: type || 'COVER' });
+  const handleOpenTradeForDate = (dateStr, type = 'COVER', extraOptions = {}) => {
+    setTradeInitialData({ date: dateStr || '', type: type || 'COVER', ...extraOptions });
     setActiveTab('trades');
   };
 
@@ -66,14 +70,83 @@ export default function MobileLayout({
       {/* Cuerpo Principal según pestaña activa */}
       <main style={{ flex: 1, paddingBottom: '1rem' }}>
         {activeTab === 'roster' && (
-          <MobileRosterView 
-            currentUser={currentUser}
-            scheduleMonth={scheduleMonth}
-            exceptions={exceptions}
-            controllers={controllers}
-            onOpenTradeModal={handleOpenTradeForDate}
-            onUpdateController={onUpdateController}
-          />
+          <div style={{ padding: '0.8rem 1rem 0 1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {/* Switcher Superior: Mi Roster / Roster General */}
+            <div style={{
+              display: 'flex',
+              background: 'var(--bg-secondary)',
+              borderRadius: '12px',
+              padding: '0.25rem',
+              border: '1px solid var(--glass-border)'
+            }}>
+              <button
+                onClick={() => setRosterSubTab('personal')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.55rem',
+                  border: 'none',
+                  borderRadius: '9px',
+                  background: rosterSubTab === 'personal' ? 'var(--accent-cyan)' : 'transparent',
+                  color: rosterSubTab === 'personal' ? '#000' : 'var(--text-secondary)',
+                  fontWeight: '800',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Calendar size={16} />
+                Mi Roster
+              </button>
+              <button
+                onClick={() => setRosterSubTab('general')}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.55rem',
+                  border: 'none',
+                  borderRadius: '9px',
+                  background: rosterSubTab === 'general' ? 'var(--accent-cyan)' : 'transparent',
+                  color: rosterSubTab === 'general' ? '#000' : 'var(--text-secondary)',
+                  fontWeight: '800',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Users size={16} />
+                Roster General
+              </button>
+            </div>
+
+            {/* Vista según sub-tab */}
+            {rosterSubTab === 'personal' ? (
+              <MobileRosterView 
+                currentUser={currentUser}
+                scheduleMonth={scheduleMonth}
+                exceptions={exceptions}
+                controllers={controllers}
+                onOpenTradeModal={handleOpenTradeForDate}
+                onUpdateController={onUpdateController}
+              />
+            ) : (
+              <MobileGeneralRosterView
+                currentUser={currentUser}
+                scheduleMonth={scheduleMonth}
+                exceptions={exceptions}
+                controllers={controllers}
+                publishState={publishState}
+                userRole={userRole}
+                onOpenTradeModal={handleOpenTradeForDate}
+              />
+            )}
+          </div>
         )}
 
         {activeTab === 'guardia' && (

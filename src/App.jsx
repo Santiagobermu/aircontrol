@@ -1072,6 +1072,7 @@ export default function App() {
         exceptions={exceptions}
         controllers={controllers}
         trades={trades}
+        publishState={publishState}
         notamsData={notamsData}
         manualAlerts={manualAlerts}
         userRole={userRole}

@@ -168,7 +168,7 @@ export default function MobileRosterView({
   };
 
   return (
-    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
       
       {/* SECCIÓN HERO: PRÓXIMO TURNO CON POSICIÓN CONCRETA */}
       <div className="hero-shift-card">

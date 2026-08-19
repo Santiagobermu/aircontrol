@@ -27,14 +27,15 @@ export default function MobileTradesView({
   const [selectedColleagueSig, setSelectedColleagueSig] = useState('OPEN');
   const [tradeComment, setTradeComment] = useState('');
 
-  // Reaccionar cuando viene una redirección desde "Mi Roster"
+  // Reaccionar cuando viene una redirección desde "Mi Roster" o "Roster General"
   useEffect(() => {
     if (initialTradeData && initialTradeData.date) {
       setTradeDate(initialTradeData.date);
       setTradeType(initialTradeData.type || 'COVER');
-      setSelectedMyShift('');
-      setTargetShiftToSwap('');
-      setSelectedColleagueSig('OPEN');
+      setSelectedMyShift(initialTradeData.selectedMyShift || '');
+      setTargetShiftToSwap(initialTradeData.targetShift || '');
+      setSelectedColleagueSig(initialTradeData.targetSig || 'OPEN');
+      setTradeComment(initialTradeData.comment || '');
       setIsModalOpen(true);
     }
   }, [initialTradeData]);

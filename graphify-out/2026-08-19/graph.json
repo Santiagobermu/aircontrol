@@ -1077,8 +1077,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_aicopilotpanel",
-      "community": 9,
-      "community_name": "firebase.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "aicopilotpanel.jsx"
     },
     {
@@ -1154,7 +1154,7 @@
       "label": "ControllerPortal()",
       "file_type": "code",
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L53",
+      "source_location": "L54",
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_controllerportal_controllerportal",
@@ -1169,8 +1169,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_loginscreen",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "loginscreen.jsx"
     },
     {
@@ -1181,8 +1181,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_loginscreen_loginscreen",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "loginscreen()"
     },
     {
@@ -1192,8 +1192,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_monthlygrid",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "monthlygrid.jsx"
     },
     {
@@ -1204,8 +1204,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_monthlygrid_monthlygrid",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "monthlygrid()"
     },
     {
@@ -1296,8 +1296,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_themetoggle",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "themetoggle.jsx"
     },
     {
@@ -1308,8 +1308,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_themetoggle_themetoggle",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "themetoggle()"
     },
     {
@@ -1319,8 +1319,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_tradepanel",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "tradepanel.jsx"
     },
     {
@@ -1331,8 +1331,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_tradepanel_generatesettletrade",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "generatesettletrade()"
     },
     {
@@ -1343,8 +1343,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_tradepanel_tradepanel",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "tradepanel()"
     },
     {
@@ -1355,7 +1355,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilebottomnav.jsx"
     },
     {
@@ -1367,7 +1367,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav_mobilebottomnav",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilebottomnav()"
     },
     {
@@ -1378,7 +1378,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileguardiaview.jsx"
     },
     {
@@ -1390,7 +1390,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview_mobileguardiaview",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileguardiaview()"
     },
     {
@@ -1400,8 +1400,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "mobileheader.jsx"
     },
     {
@@ -1412,8 +1412,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader_mobileheader",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "mobileheader()"
     },
     {
@@ -1424,7 +1424,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilelayout.jsx"
     },
     {
@@ -1436,7 +1436,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout_mobilelayout",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilelayout()"
     },
     {
@@ -1446,20 +1446,20 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobilenotamsview",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 9,
+      "community_name": "notamUtils.js",
       "norm_label": "mobilenotamsview.jsx"
     },
     {
       "label": "MobileNotamsView()",
       "file_type": "code",
       "source_file": "src/components/mobile/MobileNotamsView.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobilenotamsview_mobilenotamsview",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 9,
+      "community_name": "notamUtils.js",
       "norm_label": "mobilenotamsview()"
     },
     {
@@ -1469,8 +1469,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobileprofileview",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "mobileprofileview.jsx"
     },
     {
@@ -1481,8 +1481,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobileprofileview_mobileprofileview",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "mobileprofileview()"
     },
     {
@@ -1493,7 +1493,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilerosterview.jsx"
     },
     {
@@ -1505,7 +1505,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview_mobilerosterview",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilerosterview()"
     },
     {
@@ -1516,7 +1516,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobiletradesview.jsx"
     },
     {
@@ -1528,7 +1528,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview_mobiletradesview",
       "community": 5,
-      "community_name": "getSlotAcronym",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobiletradesview()"
     },
     {
@@ -1868,8 +1868,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_db_addmanualalertdb",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "addmanualalertdb()"
     },
     {
@@ -1891,8 +1891,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_firebase",
-      "community": 9,
-      "community_name": "firebase.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "firebase.js"
     },
     {
@@ -1902,8 +1902,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_utils_firebase_firebaseconfig",
-      "community": 9,
-      "community_name": "firebase.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "firebaseconfig"
     },
     {
@@ -1913,8 +1913,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_utils_firebase_app",
-      "community": 9,
-      "community_name": "firebase.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "app"
     },
     {
@@ -1924,8 +1924,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_utils_firebase_db",
-      "community": 9,
-      "community_name": "firebase.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "db"
     },
     {
@@ -1946,9 +1946,116 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_utils_firebase_storage",
-      "community": 9,
-      "community_name": "firebase.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "storage"
+    },
+    {
+      "label": "notamUtils.js",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_utils_notamutils",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "notamutils.js"
+    },
+    {
+      "label": "parseNotamDate()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L16",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_parsenotamdate",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "parsenotamdate()"
+    },
+    {
+      "label": "extractNotamDates()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L69",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_extractnotamdates",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "extractnotamdates()"
+    },
+    {
+      "label": "isNotamActiveOnDate()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L131",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_isnotamactiveondate",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "isnotamactiveondate()"
+    },
+    {
+      "label": "filterNotamsByDate()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L193",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_filternotamsbydate",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "filternotamsbydate()"
+    },
+    {
+      "label": "categorizeNotam()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L201",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_categorizenotam",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "categorizenotam()"
+    },
+    {
+      "label": "formatShortUtcDate()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L223",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_formatshortutcdate",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "formatshortutcdate()"
+    },
+    {
+      "label": "formatNotamDateRange()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L237",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_formatnotamdaterange",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "formatnotamdaterange()"
+    },
+    {
+      "label": "getUtcDateString()",
+      "file_type": "code",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L251",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_notamutils_getutcdatestring",
+      "community": 9,
+      "community_name": "notamUtils.js",
+      "norm_label": "getutcdatestring()"
     },
     {
       "label": "ortoolsScheduler.js",
@@ -1957,8 +2064,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_ortoolsscheduler",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "ortoolsscheduler.js"
     },
     {
@@ -2036,8 +2143,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotacronym",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "getslotacronym()"
     },
     {
@@ -2048,8 +2155,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotdescription",
-      "community": 5,
-      "community_name": "getSlotAcronym",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "getslotdescription()"
     },
     {
@@ -2155,8 +2262,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_adjustdynamicslots",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "adjustdynamicslots()"
     },
     {
@@ -2179,8 +2286,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_validateassignment",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "schedulerEngine.js",
       "norm_label": "validateassignment()"
     },
     {
@@ -4934,7 +5041,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L53",
+      "source_location": "L54",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal",
@@ -5174,6 +5281,66 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal",
+      "target": "src_utils_notamutils",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal",
+      "target": "src_utils_notamutils_categorizenotam",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal",
+      "target": "src_utils_notamutils_formatnotamdaterange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal",
+      "target": "src_utils_notamutils_getutcdatestring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal",
+      "target": "src_utils_notamutils_isnotamactiveondate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ControllerPortal.jsx",
       "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
@@ -5259,7 +5426,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L330",
+      "source_location": "L254",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5271,7 +5438,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L571",
+      "source_location": "L495",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5283,7 +5450,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L361",
+      "source_location": "L285",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5295,7 +5462,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L232",
+      "source_location": "L156",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5307,7 +5474,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L990",
+      "source_location": "L914",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5319,7 +5486,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L709",
+      "source_location": "L633",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5331,7 +5498,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L107",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5343,7 +5510,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L1008",
+      "source_location": "L932",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5355,7 +5522,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L848",
+      "source_location": "L772",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5367,7 +5534,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L565",
+      "source_location": "L489",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5379,7 +5546,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L837",
+      "source_location": "L761",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5391,7 +5558,55 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L540",
+      "source_location": "L2034",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal_controllerportal",
+      "target": "src_utils_notamutils_categorizenotam"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L2072",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal_controllerportal",
+      "target": "src_utils_notamutils_formatnotamdaterange"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L93",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal_controllerportal",
+      "target": "src_utils_notamutils_getutcdatestring"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L1817",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_controllerportal_controllerportal",
+      "target": "src_utils_notamutils_isnotamactiveondate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/ControllerPortal.jsx",
+      "source_location": "L464",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5403,7 +5618,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L407",
+      "source_location": "L331",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5415,7 +5630,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L408",
+      "source_location": "L332",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5427,7 +5642,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L433",
+      "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -5439,7 +5654,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L767",
+      "source_location": "L691",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6408,7 +6623,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/mobile/MobileNotamsView.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilenotamsview",
@@ -6440,16 +6655,124 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview",
+      "target": "src_utils_notamutils",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview",
+      "target": "src_utils_notamutils_categorizenotam",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview",
+      "target": "src_utils_notamutils_formatnotamdaterange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview",
+      "target": "src_utils_notamutils_getutcdatestring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview",
+      "target": "src_utils_notamutils_isnotamactiveondate",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/mobile/MobileNotamsView.jsx",
-      "source_location": "L152",
+      "source_location": "L191",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilenotamsview_mobilenotamsview",
       "target": "src_utils_db_addmanualalertdb"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L158",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview_mobilenotamsview",
+      "target": "src_utils_notamutils_categorizenotam"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L498",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview_mobilenotamsview",
+      "target": "src_utils_notamutils_formatnotamdaterange"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview_mobilenotamsview",
+      "target": "src_utils_notamutils_getutcdatestring"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileNotamsView.jsx",
+      "source_location": "L134",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilenotamsview_mobilenotamsview",
+      "target": "src_utils_notamutils_isnotamactiveondate"
     },
     {
       "relation": "contains",
@@ -7170,6 +7493,154 @@
       "_origin": "ast",
       "source": "src_utils_firebase",
       "target": "src_utils_firebase_storage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L201",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_categorizenotam",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L69",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_extractnotamdates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L193",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_filternotamsbydate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L237",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_formatnotamdaterange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L223",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_formatshortutcdate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L251",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_getutcdatestring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L131",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_isnotamactiveondate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils",
+      "target": "src_utils_notamutils_parsenotamdate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L72",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils_extractnotamdates",
+      "target": "src_utils_notamutils_parsenotamdate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L238",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils_formatnotamdaterange",
+      "target": "src_utils_notamutils_extractnotamdates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L164",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils_isnotamactiveondate",
+      "target": "src_utils_notamutils_extractnotamdates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L195",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils_filternotamsbydate",
+      "target": "src_utils_notamutils_isnotamactiveondate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/notamUtils.js",
+      "source_location": "L240",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_notamutils_formatnotamdaterange",
+      "target": "src_utils_notamutils_formatshortutcdate",
       "confidence_score": 1.0
     },
     {
