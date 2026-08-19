@@ -508,7 +508,8 @@ export default function ControllerPortal({
     }
   };
 
-  // ==================== TRADES / CAMBIOS DE TURNO (SWAP) ====================
+  // ==================== TRADES / CAMBIOS DE TURNO ====================
+  const [tradeType, setTradeType] = useState('COVER'); // 'COVER' | 'SWAP'
   const [tradeDate, setTradeDate] = useState('');
   const [selectedMyShift, setSelectedMyShift] = useState(''); // "shift|slotKey"
   const [targetControllerId, setTargetControllerId] = useState('OPEN');
@@ -590,7 +591,7 @@ export default function ControllerPortal({
 
   // Obtener turnos reales del colega en el día seleccionado para los que YO esté habilitado
   const colleagueShiftsOnSelectedTradeDate = useMemo(() => {
-    if (!tradeDate || !targetControllerId || targetControllerId === 'OPEN' || !schedule[tradeDate] || !currentController) return [];
+    if (!tradeDate || !targetControllerId || targetControllerId === 'OPEN' || tradeType !== 'SWAP' || !schedule[tradeDate] || !currentController) return [];
     
     const list = [];
     SHIFTS.forEach(shift => {
@@ -609,16 +610,16 @@ export default function ControllerPortal({
     });
 
     return list.filter(s => isControllerQualified(currentController, s.requiredSkill));
-  }, [tradeDate, targetControllerId, schedule, currentController]);
+  }, [tradeDate, targetControllerId, tradeType, schedule, currentController]);
 
-  // Enviar propuesta de SWAP a un colega o Solicitud Abierta
+  // Enviar propuesta de SWAP o COVER a un colega o Solicitud Abierta
   const handleProposeTrade = async (e) => {
     e.preventDefault();
     if (!tradeDate || !currentController || !selectedMyShift) {
-      alert('Por favor selecciona la fecha y tu turno a ceder.');
+      alert(tradeType === 'COVER' ? 'Por favor selecciona la fecha y el turno a cubrir.' : 'Por favor selecciona la fecha y tu turno a ceder.');
       return;
     }
-    if (targetControllerId !== 'OPEN' && !selectedColleagueShift) {
+    if (tradeType === 'SWAP' && targetControllerId !== 'OPEN' && !selectedColleagueShift) {
       alert('Por favor selecciona el turno del compañero a intercambiar.');
       return;
     }
@@ -631,7 +632,7 @@ export default function ControllerPortal({
     let collShift = '';
     let collKey = '';
     
-    if (targetControllerId !== 'OPEN' && selectedColleagueShift) {
+    if (tradeType === 'SWAP' && targetControllerId !== 'OPEN' && selectedColleagueShift) {
       const parts = selectedColleagueShift.split('|');
       collShift = parts[0];
       collKey = parts[1];
@@ -641,7 +642,7 @@ export default function ControllerPortal({
       id: `trade-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       date: tradeDate,
       dateStr: tradeDate,
-      type: 'SWAP',
+      type: tradeType, // 'SWAP' | 'COVER'
       fromControllerId: currentController.id,
       fromControllerSignature: currentController.signature || currentController.id,
       requesterSignature: currentController.signature || currentController.id,
@@ -652,8 +653,8 @@ export default function ControllerPortal({
       toControllerSignature: targetSig,
       targetSignature: targetSig,
       targetName: targetName,
-      targetShift: targetControllerId === 'OPEN' ? 'Abierta' : (collShift ? `${collShift}${getSlotAcronym(collKey, collShift)}` : 'Por acordar'),
-      toSlot: collShift && collKey ? { shift: collShift, slotKey: collKey } : null,
+      targetShift: tradeType === 'COVER' ? 'Reemplazo' : (targetControllerId === 'OPEN' ? 'Abierta' : (collShift ? `${collShift}${getSlotAcronym(collKey, collShift)}` : 'Por acordar')),
+      toSlot: tradeType === 'SWAP' && collShift && collKey ? { shift: collShift, slotKey: collKey } : null,
       isPublic: targetControllerId === 'OPEN',
       comment: tradeComment.trim(),
       status: 'PENDIENTE_ACEPTACION',
@@ -661,9 +662,10 @@ export default function ControllerPortal({
     };
 
     await addTradeDB(newTrade);
+    const typeLabel = tradeType === 'COVER' ? 'COVER' : 'SWAP';
     alert(targetControllerId === 'OPEN' 
-      ? '¡Solicitud de SWAP Abierta publicada exitosamente!' 
-      : '¡Propuesta de SWAP enviada exitosamente a tu compañero!');
+      ? `¡Solicitud de ${typeLabel} Abierta publicada exitosamente!` 
+      : `¡Propuesta de ${typeLabel} enviada exitosamente a tu compañero!`);
 
     // Resetear form
     setTradeDate('');
@@ -2244,6 +2246,35 @@ export default function ControllerPortal({
 
                 <form onSubmit={handleProposeTrade} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                   
+                  {/* Tipo de Operación */}
+                  <div className="form-group">
+                    <label style={{ fontWeight: '700' }}>Tipo de Operación</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTradeType('COVER');
+                          setSelectedColleagueShift('');
+                        }}
+                        className={`filter-btn ${tradeType === 'COVER' ? 'active' : ''}`}
+                        style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', borderRadius: '8px', fontWeight: '700' }}
+                      >
+                        Hacer el Turno (COVER)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTradeType('SWAP');
+                          setSelectedColleagueShift('');
+                        }}
+                        className={`filter-btn ${tradeType === 'SWAP' ? 'active' : ''}`}
+                        style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', borderRadius: '8px', fontWeight: '700' }}
+                      >
+                        Intercambio (SWAP)
+                      </button>
+                    </div>
+                  </div>
+
                   {/* 1. Fecha del Cambio */}
                   <div className="form-group">
                     <label htmlFor="trade-date" style={{ fontWeight: '700' }}>1. Fecha del Cambio</label>
@@ -2262,10 +2293,12 @@ export default function ControllerPortal({
                     />
                   </div>
 
-                  {/* 2. Turno a Ceder */}
+                  {/* 2. Turno a Ceder / Cubrir */}
                   {tradeDate && (
                     <div className="form-group" style={{ animation: 'fadeIn 0.2s ease' }}>
-                      <label htmlFor="my-trade-slot" style={{ color: 'var(--accent-cyan)', fontWeight: '700' }}>2. Turno a Ceder:</label>
+                      <label htmlFor="my-trade-slot" style={{ color: 'var(--accent-cyan)', fontWeight: '700' }}>
+                        {tradeType === 'COVER' ? '2. Turno a Solicitar que sea Cubierto:' : '2. Turno a Ceder:'}
+                      </label>
                       {myShiftsOnSelectedTradeDate.length > 0 ? (
                         <select
                           id="my-trade-slot"
@@ -2279,7 +2312,7 @@ export default function ControllerPortal({
                           required
                           style={{ borderColor: 'var(--accent-cyan)' }}
                         >
-                          <option value="">-- Selecciona tu turno a ceder --</option>
+                          <option value="">-- Selecciona el turno --</option>
                           {myShiftsOnSelectedTradeDate.map(s => (
                             <option key={s.fullKey} value={s.fullKey}>
                               {s.shift === 'A' ? 'Madrugada (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotAcronym(s.slotKey, s.shift)} ({getSlotDescription(s.slotKey, s.shift)}) {s.requiredSkill ? `· Req: ${s.requiredSkill}` : ''}
@@ -2288,16 +2321,18 @@ export default function ControllerPortal({
                         </select>
                       ) : (
                         <p style={{ fontSize: '0.75rem', color: 'var(--status-danger)', margin: 0, fontStyle: 'italic' }}>
-                          * No tienes turnos programados en esta fecha para realizar un SWAP.
+                          * No tienes turnos programados en esta fecha.
                         </p>
                       )}
                     </div>
                   )}
 
-                  {/* 3. Controlador Receptor (Filtrado por Habilitación requerida) */}
+                  {/* 3. Controlador que Recibirá el Turno (Filtrado por Habilitación) */}
                   {tradeDate && selectedMyShift && (
                     <div className="form-group" style={{ animation: 'fadeIn 0.2s ease' }}>
-                      <label htmlFor="target-colleague" style={{ color: 'var(--accent-indigo)', fontWeight: '700' }}>3. Controlador Receptor:</label>
+                      <label htmlFor="target-colleague" style={{ color: 'var(--accent-indigo)', fontWeight: '700' }}>
+                        {tradeType === 'COVER' ? '3. Controlador que Recibirá el Turno:' : '3. Controlador Receptor:'}
+                      </label>
                       <select
                         id="target-colleague"
                         className="form-input"
@@ -2324,8 +2359,8 @@ export default function ControllerPortal({
                     </div>
                   )}
 
-                  {/* 4. Turno a Intercambiar con Receptor */}
-                  {tradeDate && selectedMyShift && (
+                  {/* 4. Turno a Intercambiar con Receptor (SOLO PARA SWAP) */}
+                  {tradeType === 'SWAP' && tradeDate && selectedMyShift && (
                     <div className="form-group" style={{ animation: 'fadeIn 0.2s ease' }}>
                       <label htmlFor="colleague-trade-slot" style={{ color: 'var(--status-warning)', fontWeight: '700' }}>4. Turno a Intercambiar con Receptor:</label>
                       {targetControllerId === 'OPEN' ? (
@@ -2379,7 +2414,7 @@ export default function ControllerPortal({
                       id="trade-comment"
                       className="form-input"
                       rows={2}
-                      placeholder="Motivo o detalle del intercambio..."
+                      placeholder="Motivo o detalle de la solicitud..."
                       value={tradeComment}
                       onChange={(e) => setTradeComment(e.target.value)}
                       style={{ resize: 'none', padding: '0.55rem' }}
@@ -2390,9 +2425,9 @@ export default function ControllerPortal({
                     type="submit" 
                     className="btn btn-primary" 
                     style={{ width: '100%', padding: '0.7rem', marginTop: '0.5rem', fontWeight: '700' }}
-                    disabled={!tradeDate || !selectedMyShift || (targetControllerId !== 'OPEN' && (!selectedColleagueShift || colleagueShiftsOnSelectedTradeDate.length === 0))}
+                    disabled={!tradeDate || !selectedMyShift || (tradeType === 'SWAP' && targetControllerId !== 'OPEN' && (!selectedColleagueShift || colleagueShiftsOnSelectedTradeDate.length === 0))}
                   >
-                    Enviar Propuesta de SWAP
+                    {tradeType === 'COVER' ? 'Enviar Propuesta de COVER' : 'Enviar Propuesta de SWAP'}
                   </button>
                 </form>
               </div>

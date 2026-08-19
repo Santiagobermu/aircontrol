@@ -75,8 +75,8 @@
     "semantic_hash": "bf1e38b00bd0c8548004d8effecfb461"
   },
   "src/components/ControllerPortal.jsx": {
-    "mtime": 1787164267.3901067,
-    "ast_hash": "d28039a201c1a3594fe7fd5338684022",
+    "mtime": 1787168398.6754143,
+    "ast_hash": "30a677487fe308b4a997974ad1042005",
     "semantic_hash": ""
   },
   "src/components/LoginScreen.jsx": {
@@ -150,8 +150,8 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileTradesView.jsx": {
-    "mtime": 1787165169.07447,
-    "ast_hash": "2dadce1c0ca96e62c57f382f5aa5de2c",
+    "mtime": 1787168308.4290748,
+    "ast_hash": "d21b198f24f4809480b95232e567e7af",
     "semantic_hash": ""
   },
   "src/main.jsx": {

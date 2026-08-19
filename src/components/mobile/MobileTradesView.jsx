@@ -177,11 +177,11 @@ export default function MobileTradesView({
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!tradeDate || !selectedMyShift) {
-      alert('Por favor selecciona la fecha y tu turno a ceder.');
+      alert(tradeType === 'COVER' ? 'Por favor selecciona la fecha y el turno a cubrir.' : 'Por favor selecciona la fecha y tu turno a ceder.');
       return;
     }
 
-    if (selectedColleagueSig !== 'OPEN' && !targetShiftToSwap) {
+    if (tradeType === 'SWAP' && selectedColleagueSig !== 'OPEN' && !targetShiftToSwap) {
       alert('Por favor selecciona el turno a intercambiar con el receptor.');
       return;
     }
@@ -192,11 +192,11 @@ export default function MobileTradesView({
       ? 'Abierta a cualquier compañero habilitado' 
       : (targetCtrl ? targetCtrl.name : selectedColleagueSig);
 
-    const targetOtherShiftObj = selectedColleagueSig !== 'OPEN' ? otherAssignedShifts.find(s => s.fullCode === targetShiftToSwap) : null;
+    const targetOtherShiftObj = tradeType === 'SWAP' && selectedColleagueSig !== 'OPEN' ? otherAssignedShifts.find(s => s.fullCode === targetShiftToSwap) : null;
 
     const newTradeObj = {
       id: `trade_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-      type: 'SWAP',
+      type: tradeType, // 'SWAP' | 'COVER'
       dateStr: tradeDate,
       date: tradeDate,
       fromControllerId: currentUser?.id || getCtrlSig(currentUser) || 'ATC',
@@ -209,8 +209,8 @@ export default function MobileTradesView({
       toControllerSignature: targetSig,
       targetSignature: targetSig,
       targetName: targetName,
-      targetShift: selectedColleagueSig === 'OPEN' ? 'Abierta' : (targetShiftToSwap || 'Por acordar'),
-      toSlot: targetOtherShiftObj ? { shift: targetOtherShiftObj.shift, slotKey: targetOtherShiftObj.slotKey } : null,
+      targetShift: tradeType === 'COVER' ? 'Reemplazo' : (selectedColleagueSig === 'OPEN' ? 'Abierta' : (targetShiftToSwap || 'Por acordar')),
+      toSlot: tradeType === 'SWAP' && targetOtherShiftObj ? { shift: targetOtherShiftObj.shift, slotKey: targetOtherShiftObj.slotKey } : null,
       isPublic: selectedColleagueSig === 'OPEN',
       comment: tradeComment.trim(),
       status: 'PENDIENTE_ACEPTACION',
@@ -227,7 +227,7 @@ export default function MobileTradesView({
     setTargetShiftToSwap('');
     setSelectedColleagueSig('OPEN');
     setTradeComment('');
-    alert('¡Solicitud de intercambio (SWAP) registrada exitosamente!');
+    alert(tradeType === 'COVER' ? '¡Solicitud de reemplazo (COVER) registrada exitosamente!' : '¡Solicitud de intercambio (SWAP) registrada exitosamente!');
   };
 
   // Mapeo y Normalización unificada de campos (Soporta esquema Desktop y Móvil)
@@ -602,6 +602,53 @@ export default function MobileTradesView({
 
             <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               
+              {/* Tipo de Solicitud */}
+              <div className="form-group">
+                <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block' }}>
+                  Tipo de Solicitud:
+                </label>
+                <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--bg-primary)', padding: '0.2rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTradeType('COVER');
+                      setTargetShiftToSwap('');
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.45rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: tradeType === 'COVER' ? 'var(--accent-cyan)' : 'transparent',
+                      color: tradeType === 'COVER' ? '#000' : 'var(--text-secondary)',
+                      fontWeight: '800',
+                      fontSize: '0.78rem'
+                    }}
+                  >
+                    Hacer el Turno (COVER)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTradeType('SWAP');
+                      setTargetShiftToSwap('');
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.45rem',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: tradeType === 'SWAP' ? 'var(--accent-cyan)' : 'transparent',
+                      color: tradeType === 'SWAP' ? '#000' : 'var(--text-secondary)',
+                      fontWeight: '800',
+                      fontSize: '0.78rem'
+                    }}
+                  >
+                    Intercambio (SWAP)
+                  </button>
+                </div>
+              </div>
+
               {/* 1. Fecha del Cambio */}
               <div className="form-group">
                 <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block' }}>
@@ -622,11 +669,11 @@ export default function MobileTradesView({
                 />
               </div>
 
-              {/* 2. Turno a Ceder */}
+              {/* 2. Turno a Ceder / Cubrir */}
               {tradeDate && (
                 <div className="form-group">
                   <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block', color: 'var(--accent-cyan)' }}>
-                    2. Turno a Ceder:
+                    {tradeType === 'COVER' ? '2. Turno a Solicitar que sea Cubierto:' : '2. Turno a Ceder:'}
                   </label>
                   {myAvailableShifts.length > 0 ? (
                     <select
@@ -640,7 +687,7 @@ export default function MobileTradesView({
                       required
                       style={{ width: '100%', padding: '0.6rem', background: 'var(--bg-primary)', border: '1px solid var(--accent-cyan)', borderRadius: '10px', color: 'var(--text-primary)' }}
                     >
-                      <option value="">-- Selecciona tu turno a ceder --</option>
+                      <option value="">-- Selecciona el turno --</option>
                       {myAvailableShifts.map((s, idx) => (
                         <option key={idx} value={s.fullCode}>
                           Turno {s.fullCode} ({s.slotKey}) {s.requiredSkill ? `· Req: ${s.requiredSkill}` : ''}
@@ -661,11 +708,11 @@ export default function MobileTradesView({
                 </div>
               )}
 
-              {/* 3. Controlador Receptor (Filtrado por Habilitación del turno a ceder) */}
+              {/* 3. Controlador que Recibirá el Turno (Filtrado por Habilitación) */}
               {tradeDate && selectedMyShift && (
                 <div className="form-group">
                   <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block', color: 'var(--accent-indigo)' }}>
-                    3. Controlador Receptor:
+                    {tradeType === 'COVER' ? '3. Controlador que Recibirá el Turno:' : '3. Controlador Receptor:'}
                   </label>
                   <select
                     className="form-input"
@@ -695,8 +742,8 @@ export default function MobileTradesView({
                 </div>
               )}
 
-              {/* 4. Turno a Intercambiar con Receptor */}
-              {tradeDate && selectedMyShift && (
+              {/* 4. Turno a Intercambiar con Receptor (SOLO PARA SWAP) */}
+              {tradeType === 'SWAP' && tradeDate && selectedMyShift && (
                 <div className="form-group">
                   <label style={{ fontSize: '0.78rem', fontWeight: '700', marginBottom: '0.3rem', display: 'block', color: 'var(--status-warning)' }}>
                     4. Turno a Intercambiar con Receptor:
@@ -752,7 +799,7 @@ export default function MobileTradesView({
                 <textarea
                   className="form-input"
                   rows={2}
-                  placeholder="Motivo o detalle del intercambio..."
+                  placeholder="Motivo o detalle de la solicitud..."
                   value={tradeComment}
                   onChange={e => setTradeComment(e.target.value)}
                   style={{ width: '100%', resize: 'none', padding: '0.55rem', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)' }}
@@ -766,10 +813,10 @@ export default function MobileTradesView({
                 <button 
                   type="submit" 
                   className="btn btn-primary" 
-                  disabled={!tradeDate || !selectedMyShift || (selectedColleagueSig !== 'OPEN' && (!targetShiftToSwap || availableColleagueShifts.length === 0))}
+                  disabled={!tradeDate || !selectedMyShift || (tradeType === 'SWAP' && selectedColleagueSig !== 'OPEN' && (!targetShiftToSwap || availableColleagueShifts.length === 0))}
                   style={{ flex: 1, padding: '0.65rem', fontWeight: '700' }}
                 >
-                  Enviar Solicitud
+                  {tradeType === 'COVER' ? 'Enviar Solicitud de COVER' : 'Enviar Solicitud de SWAP'}
                 </button>
               </div>
             </form>
