@@ -29,8 +29,26 @@ export default function MobileHeader({
 
   const initials = currentUser?.signature || currentUser?.name?.slice(0, 3)?.toUpperCase() || 'ATC';
 
+  const isSameCtrl = (ctrlA, ctrlB) => {
+    if (!ctrlA || !ctrlB) return false;
+    const sigA = (typeof ctrlA === 'string' ? ctrlA : (ctrlA.signature || ctrlA.id || ctrlA.name || '')).toString().trim().toUpperCase();
+    const sigB = (typeof ctrlB === 'string' ? ctrlB : (ctrlB.signature || ctrlB.id || ctrlB.name || '')).toString().trim().toUpperCase();
+    if (sigA && sigB && sigA === sigB) return true;
+    const idA = (typeof ctrlA === 'object' ? (ctrlA.id || ctrlA.signature) : ctrlA).toString().trim().toUpperCase();
+    const idB = (typeof ctrlB === 'object' ? (ctrlB.id || ctrlB.signature) : ctrlB).toString().trim().toUpperCase();
+    return idA && idB && idA === idB;
+  };
+
+  const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
+
   // 1. Filtrar solicitudes de permuta pendientes dirigidas al usuario o públicas
-  const pendingTrades = trades.filter(t => t.status === 'pending' && (t.targetSignature === currentUser?.signature || t.isPublic));
+  const pendingTrades = trades.filter(t => {
+    const isTargetMe = isSameCtrl(t.targetSignature || t.toControllerSignature || t.toControllerId, currentUser);
+    const isOpen = Boolean(t.isPublic || t.targetSignature === 'OPEN' || t.toControllerId === 'OPEN');
+    const isPendingPeer = (t.status === 'pending' || t.status === 'PENDIENTE_ACEPTACION' || !t.status) && (isTargetMe || isOpen);
+    const isPendingAdmin = t.status === 'PENDIENTE_APROBACION' && isEncargado;
+    return isPendingPeer || isPendingAdmin;
+  });
 
   // 2. Filtrar mensajes del encargado de turno / alertas manuales activas
   const now = new Date();
@@ -41,8 +59,6 @@ export default function MobileHeader({
 
   // Contador total solo de solicitudes de cambio de turno o mensajes del encargado
   const totalNotificationBadgeCount = pendingTrades.length + activeManualAlerts.length;
-
-  const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
 
   const handleDeleteAlert = async (id) => {
     if (window.confirm('¿Deseas eliminar esta alerta del turno?')) {

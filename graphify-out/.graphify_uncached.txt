@@ -1,0 +1,11 @@
+/Users/santiagobermudez/Documents/Documentos/Proyecto/AIRCONTROL_STITCH_SPEC.md
+/Users/santiagobermudez/Documents/Documentos/Proyecto/DESIGN.md
+/Users/santiagobermudez/Documents/Documentos/Proyecto/PROJECT_SUMMARY.md
+/Users/santiagobermudez/Documents/Documentos/Proyecto/README.md
+/Users/santiagobermudez/Documents/Documentos/Proyecto/functions/requirements.txt
+/Users/santiagobermudez/Documents/Documentos/Proyecto/index.html
+/Users/santiagobermudez/Documents/Documentos/Proyecto/public/favicon.svg
+/Users/santiagobermudez/Documents/Documentos/Proyecto/public/icons.svg
+/Users/santiagobermudez/Documents/Documentos/Proyecto/src/assets/hero.png
+/Users/santiagobermudez/Documents/Documentos/Proyecto/src/assets/react.svg
+/Users/santiagobermudez/Documents/Documentos/Proyecto/src/assets/vite.svg

@@ -1,0 +1,22 @@
+{
+  "0": "App.jsx",
+  "1": "schedulerEngine.js",
+  "2": "sync_skbo_notams",
+  "3": "package.json",
+  "4": "solve_schedule",
+  "5": "getSlotAcronym",
+  "6": "devDependencies",
+  "7": "storage.js",
+  "8": "manifest.json",
+  "9": "firebase.js",
+  "10": "AirControl Architecture Summary",
+  "11": "AirControl HTML Entrypoint",
+  "12": "eslint.config.js",
+  "13": "Firebase Functions Dependencies",
+  "14": "AirControl Icon Assets SVG",
+  "15": "AirControl README",
+  "16": "AirControl Hero Image",
+  "17": "vite.config.js",
+  "18": "rules/graphify.md",
+  "19": "workflows/graphify.md"
+}

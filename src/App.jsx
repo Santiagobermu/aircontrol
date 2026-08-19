@@ -639,117 +639,262 @@ export default function App() {
     showNotification('Petición especial cancelada.');
   };
 
+  // Helper para comparar controladores de forma robusta
+  const getCtrlSig = (ctrl) => {
+    if (!ctrl) return '';
+    if (typeof ctrl === 'string') return ctrl.trim().toUpperCase();
+    return (ctrl.signature || ctrl.id || ctrl.name || '').toString().trim().toUpperCase();
+  };
+
+  const isSameCtrl = (ctrlA, ctrlB) => {
+    if (!ctrlA || !ctrlB) return false;
+    const sigA = getCtrlSig(ctrlA);
+    const sigB = getCtrlSig(ctrlB);
+    if (sigA && sigB && sigA === sigB) return true;
+    
+    const idA = (typeof ctrlA === 'object' ? (ctrlA.id || ctrlA.signature || ctrlA.name) : ctrlA).toString().trim().toUpperCase();
+    const idB = (typeof ctrlB === 'object' ? (ctrlB.id || ctrlB.signature || ctrlB.name) : ctrlB).toString().trim().toUpperCase();
+    if (idA && idB && idA === idB) return true;
+    
+    const emailA = (typeof ctrlA === 'object' ? ctrlA.email : '').toString().trim().toLowerCase();
+    const emailB = (typeof ctrlB === 'object' ? ctrlB.email : '').toString().trim().toLowerCase();
+    if (emailA && emailB && emailA === emailB) return true;
+
+    return false;
+  };
+
   // CRUD de Cambios y Coberturas (Fase 10)
   const handleAddTrade = async (newTrade) => {
     await addTradeDB(newTrade);
-    showNotification('Solicitud de cambio registrada como Pendiente.');
+    showNotification('Solicitud de cambio registrada como Pendiente.', 'success');
   };
 
   const handleDeleteTrade = async (id) => {
     await deleteTradeDB(id);
-    showNotification('Solicitud de cambio cancelada / rechazada.');
+    showNotification('Solicitud de cambio cancelada / rechazada.', 'warning');
   };
 
-  const handleApproveTrade = async (id) => {
-    const trade = trades.find(t => t.id === id);
-    if (!trade || trade.status !== 'PENDIENTE_APROBACION') return;
+  // Resolver controlador a partir de ID, firma o nombre
+  const resolveController = (ctrlIdentifier) => {
+    if (!ctrlIdentifier) return null;
+    return controllers.find(c => isSameCtrl(c, ctrlIdentifier)) || {
+      id: typeof ctrlIdentifier === 'object' ? (ctrlIdentifier.id || ctrlIdentifier.signature) : ctrlIdentifier,
+      name: typeof ctrlIdentifier === 'object' ? (ctrlIdentifier.name || ctrlIdentifier.signature) : ctrlIdentifier,
+      signature: typeof ctrlIdentifier === 'object' ? (ctrlIdentifier.signature || ctrlIdentifier.id) : ctrlIdentifier,
+      skills: ['TWR', 'GND', 'DEL']
+    };
+  };
 
+  // Helper para resolver los slots { shift, slotKey } de un trade
+  const resolveTradeSlots = (trade, currentSched) => {
+    const dateStr = trade.date || trade.dateStr;
+    const daySched = currentSched[dateStr] || {};
+    
+    let fromShift = trade.fromSlot?.shift;
+    let fromSlotKey = trade.fromSlot?.slotKey;
+    
+    // Si no viene en fromSlot, buscar en el schedule del día para el controlador A
+    const ctrlA = resolveController(trade.fromControllerId || trade.requesterSignature || trade.fromControllerSignature);
+    if ((!fromShift || !fromSlotKey) && ctrlA && dateStr && daySched) {
+      const preferredShift = trade.requesterShift?.slice(0, 1) || 'M';
+      ['M', 'T', 'N', 'A'].forEach(s => {
+        const slots = daySched[s] || {};
+        Object.entries(slots).forEach(([k, assigned]) => {
+          if (isSameCtrl(assigned, ctrlA)) {
+            if (!fromShift || s === preferredShift) {
+              fromShift = s;
+              fromSlotKey = k;
+            }
+          }
+        });
+      });
+    }
+
+    let toShift = trade.toSlot?.shift;
+    let toSlotKey = trade.toSlot?.slotKey;
+    const ctrlB = resolveController(trade.toControllerId || trade.targetSignature || trade.toControllerSignature);
+
+    if (trade.type === 'SWAP' && (!toShift || !toSlotKey) && ctrlB && dateStr && daySched) {
+      const preferredShift = trade.targetShift?.slice(0, 1) || 'T';
+      ['M', 'T', 'N', 'A'].forEach(s => {
+        const slots = daySched[s] || {};
+        Object.entries(slots).forEach(([k, assigned]) => {
+          if (isSameCtrl(assigned, ctrlB)) {
+            if (!toShift || s === preferredShift) {
+              toShift = s;
+              toSlotKey = k;
+            }
+          }
+        });
+      });
+    }
+
+    return {
+      ctrlA: ctrlA || { id: trade.fromControllerId || 'ATC-A', name: trade.requesterName || 'Controlador A', signature: trade.requesterSignature || 'A' },
+      ctrlB: ctrlB || { id: trade.toControllerId || 'ATC-B', name: trade.targetName || 'Controlador B', signature: trade.targetSignature || 'B' },
+      dateStr: dateStr || new Date().toISOString().substring(0, 10),
+      fromSlot: fromShift && fromSlotKey ? { shift: fromShift, slotKey: fromSlotKey } : (trade.fromSlot || { shift: 'M', slotKey: 'TWR-1' }),
+      toSlot: toShift && toSlotKey ? { shift: toShift, slotKey: toSlotKey } : (trade.toSlot || (trade.type === 'SWAP' ? { shift: 'T', slotKey: 'GND-1' } : null))
+    };
+  };
+
+  // Ejecución física del cambio en el cuadrante (Roster)
+  const executeTradeScheduleChange = async (trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot) => {
     const updatedSchedule = { ...schedule };
-    const dateStr = trade.date;
-
-    // Inicializar fecha si no existe en schedule
     if (!updatedSchedule[dateStr]) {
       updatedSchedule[dateStr] = createEmptyDaySchedule(dateStr);
     }
 
-    // --- VALIDACIÓN DE LICENCIAS Y REGLAS DE TRANSCIÓN ---
     const testSchedule = JSON.parse(JSON.stringify(updatedSchedule));
     let warnings = [];
 
-    const ctrlA = controllers.find(c => c.id === trade.fromControllerId);
-    const ctrlB = controllers.find(c => c.id === trade.toControllerId);
+    const fromShift = fromSlot.shift;
+    const fromSlotKey = fromSlot.slotKey;
 
-    if (trade.type === 'SWAP') {
-      const fromShift = trade.fromSlot.shift;
-      const fromSlotKey = trade.fromSlot.slotKey;
-      const toShift = trade.toSlot.shift;
-      const toSlotKey = trade.toSlot.slotKey;
+    if (trade.type === 'SWAP' && toSlot) {
+      const toShift = toSlot.shift;
+      const toSlotKey = toSlot.slotKey;
 
-      // Realizar la simulación
-      testSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
-      testSchedule[dateStr][toShift][toSlotKey] = trade.fromControllerId;
+      testSchedule[dateStr][fromShift][fromSlotKey] = ctrlB.id;
+      testSchedule[dateStr][toShift][toSlotKey] = ctrlA.id;
 
-      // Validar para A (que va a toShift / toSlotKey)
-      const valA = validateAssignment(trade.fromControllerId, dateStr, toShift, toSlotKey, testSchedule, controllers, exceptions);
-      if (!valA.isValid) {
-        warnings.push(`[${ctrlA?.name || trade.fromControllerId}]: ${valA.error}`);
+      const valA = validateAssignment(ctrlA.id, dateStr, toShift, toSlotKey, testSchedule, controllers, exceptions);
+      if (!valA.isValid) warnings.push(`[${ctrlA?.name || ctrlA.id}]: ${valA.error}`);
+
+      const valB = validateAssignment(ctrlB.id, dateStr, fromShift, fromSlotKey, testSchedule, controllers, exceptions);
+      if (!valB.isValid) warnings.push(`[${ctrlB?.name || ctrlB.id}]: ${valB.error}`);
+
+      if (warnings.length > 0) {
+        const proceed = window.confirm(
+          `Se han detectado los siguientes avisos en el Roster para esta solicitud:\n\n` +
+          warnings.map(w => `• ${w}`).join('\n') +
+          `\n\n¿Desea forzar la aprobación y ejecución de todas formas?`
+        );
+        if (!proceed) return;
       }
 
-      // Validar para B (que va a fromShift / fromSlotKey)
-      const valB = validateAssignment(trade.toControllerId, dateStr, fromShift, fromSlotKey, testSchedule, controllers, exceptions);
-      if (!valB.isValid) {
-        warnings.push(`[${ctrlB?.name || trade.toControllerId}]: ${valB.error}`);
+      updatedSchedule[dateStr][fromShift][fromSlotKey] = ctrlB.id;
+      updatedSchedule[dateStr][toShift][toSlotKey] = ctrlA.id;
+      showNotification('Intercambio de turnos (SWAP) ejecutado y aplicado al Roster con éxito.', 'success');
+    } else {
+      // COVER
+      testSchedule[dateStr][fromShift][fromSlotKey] = ctrlB.id;
+
+      const valB = validateAssignment(ctrlB.id, dateStr, fromShift, fromSlotKey, testSchedule, controllers, exceptions);
+      if (!valB.isValid) warnings.push(`[${ctrlB?.name || ctrlB.id}]: ${valB.error}`);
+
+      if (warnings.length > 0) {
+        const proceed = window.confirm(
+          `Se han detectado los siguientes avisos en el Roster para esta solicitud:\n\n` +
+          warnings.map(w => `• ${w}`).join('\n') +
+          `\n\n¿Desea forzar la aprobación y ejecución de todas formas?`
+        );
+        if (!proceed) return;
       }
-    } else if (trade.type === 'COVER') {
-      const fromShift = trade.fromSlot.shift;
-      const fromSlotKey = trade.fromSlot.slotKey;
 
-      // Realizar la simulación
-      testSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
-
-      // Validar para B (que va a fromShift / fromSlotKey)
-      const valB = validateAssignment(trade.toControllerId, dateStr, fromShift, fromSlotKey, testSchedule, controllers, exceptions);
-      if (!valB.isValid) {
-        warnings.push(`[${ctrlB?.name || trade.toControllerId}]: ${valB.error}`);
-      }
-    }
-
-    if (warnings.length > 0) {
-      const proceed = window.confirm(
-        `Se han detectado los siguientes conflictos / advertencias en las habilitaciones o Roster para esta solicitud:\n\n` +
-        warnings.map(w => `• ${w}`).join('\n') +
-        `\n\n¿Desea forzar la aprobación y ejecución de todas formas?`
-      );
-      if (!proceed) return;
-    }
-
-    if (trade.type === 'SWAP') {
-      const fromShift = trade.fromSlot.shift;
-      const fromSlotKey = trade.fromSlot.slotKey;
-      const toShift = trade.toSlot.shift;
-      const toSlotKey = trade.toSlot.slotKey;
-
-      // Realizar el intercambio físico en el cuadrante
-      updatedSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
-      updatedSchedule[dateStr][toShift][toSlotKey] = trade.fromControllerId;
-
-      showNotification('Intercambio de turnos (SWAP) ejecutado con éxito.');
-    } else if (trade.type === 'COVER') {
-      const fromShift = trade.fromSlot.shift;
-      const fromSlotKey = trade.fromSlot.slotKey;
-
-      // Reemplazo físico en el cuadrante (B toma el slot de A, A queda liberado de ese slot)
-      updatedSchedule[dateStr][fromShift][fromSlotKey] = trade.toControllerId;
-
-      showNotification('Reemplazo de turno (COVER) ejecutado con éxito. Deuda registrada.');
+      updatedSchedule[dateStr][fromShift][fromSlotKey] = ctrlB.id;
+      showNotification('Reemplazo de turno (COVER) ejecutado y aplicado al Roster con éxito.', 'success');
     }
 
     // Guardar cuadrante actualizado en Firestore
     await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
 
     // Actualizar estado de la solicitud de cambio a APROBADO en Firestore
-    const updatedTrade = { ...trade, status: 'APROBADO' };
+    const updatedTrade = {
+      ...trade,
+      date: dateStr,
+      dateStr,
+      fromControllerId: ctrlA?.id || trade.fromControllerId,
+      toControllerId: ctrlB?.id || trade.toControllerId,
+      fromSlot,
+      toSlot,
+      status: 'APROBADO',
+      approvedAt: new Date().toISOString()
+    };
     await updateTradeDB(updatedTrade);
 
     // Auto-sincronizar calendarios de los controladores
     const parts = dateStr.split('-');
     const yr = parseInt(parts[0], 10);
     const mo = parseInt(parts[1], 10) - 1;
-    await triggerCalendarSyncIfEnabled(trade.fromControllerId, controllers, yr, mo, updatedSchedule, exceptions);
-    await triggerCalendarSyncIfEnabled(trade.toControllerId, controllers, yr, mo, updatedSchedule, exceptions);
+    await triggerCalendarSyncIfEnabled(ctrlA.id, controllers, yr, mo, updatedSchedule, exceptions);
+    await triggerCalendarSyncIfEnabled(ctrlB.id, controllers, yr, mo, updatedSchedule, exceptions);
 
-    // Forzar actualización de vista
     setSelectedDayStr(dateStr);
+    alert(`¡Cambio para el día ${dateStr} aprobado y aplicado con éxito en el Roster oficial!`);
+  };
+
+  // Aceptar propuesta recibida (Paso 1: Acuerdo entre compañeros)
+  const handleAcceptTrade = async (id) => {
+    const trade = trades.find(t => t.id === id);
+    if (!trade) {
+      alert('No se encontró la solicitud de cambio especificada.');
+      return;
+    }
+
+    const { ctrlA, ctrlB, dateStr, fromSlot, toSlot } = resolveTradeSlots(trade, schedule);
+    const isEncargadoOrAdmin = isUserAdmin || userRole === 'admin' || userRole === 'supervisor' || ctrlB?.isSupervisor || ctrlB?.isAdmin || (ctrlB?.skills && ctrlB.skills.includes('CTE'));
+
+    // Validaciones de habilidades
+    const posA = fromSlot.slotKey.split('-')[0];
+    if (posA !== 'ENT' && ctrlB?.skills && !ctrlB.skills.includes(posA)) {
+      const proceed = window.confirm(`Advertencia: ${ctrlB.name || 'El receptor'} no tiene registrada la certificación ${posA} para cubrir este turno. ¿Deseas continuar?`);
+      if (!proceed) return;
+    }
+
+    if (trade.type === 'SWAP' && toSlot) {
+      const posB = toSlot.slotKey.split('-')[0];
+      if (posB !== 'ENT' && ctrlA?.skills && !ctrlA.skills.includes(posB)) {
+        const proceed = window.confirm(`Advertencia: ${ctrlA.name || 'El solicitante'} no tiene registrada la certificación ${posB} para cubrir tu turno. ¿Deseas continuar?`);
+        if (!proceed) return;
+      }
+    }
+
+    // Si el usuario que acepta es Supervisor/Admin, puede ejecutar directamente si lo desea
+    if (isEncargadoOrAdmin) {
+      const confirmDirect = window.confirm(
+        `Eres Supervisor/Jefatura. ¿Deseas APROBAR Y APLICAR directamente este cambio al Roster oficial del ${dateStr}?`
+      );
+      if (confirmDirect) {
+        await executeTradeScheduleChange(trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot);
+        return;
+      }
+    }
+
+    // Actualizar estado a PENDIENTE_APROBACION en Firestore
+    const updatedTrade = {
+      ...trade,
+      date: dateStr,
+      dateStr,
+      fromControllerId: ctrlA?.id || trade.fromControllerId || getCtrlSig(ctrlA),
+      fromControllerSignature: getCtrlSig(ctrlA),
+      toControllerId: ctrlB?.id || trade.toControllerId || getCtrlSig(ctrlB),
+      toControllerSignature: getCtrlSig(ctrlB),
+      fromSlot,
+      toSlot,
+      status: 'PENDIENTE_APROBACION',
+      acceptedAt: new Date().toISOString()
+    };
+
+    await updateTradeDB(updatedTrade);
+    alert(`¡Has aceptado la propuesta de cambio para el ${dateStr} con ${ctrlA?.name || 'tu compañero'}! Ha sido enviada a Jefatura/Supervisor para su aprobación final.`);
+    showNotification('Solicitud acordada entre compañeros. Enviada a jefatura para aprobación final.', 'success');
+  };
+
+  // Aprobación final por Jefatura / Supervisor (Paso 2: Aplicación en Roster)
+  const handleApproveTrade = async (id) => {
+    const trade = trades.find(t => t.id === id);
+    if (!trade) {
+      alert('No se encontró la solicitud de cambio.');
+      return;
+    }
+    if (trade.status === 'APROBADO') {
+      alert('Esta solicitud ya fue aprobada y aplicada.');
+      return;
+    }
+
+    const { ctrlA, ctrlB, dateStr, fromSlot, toSlot } = resolveTradeSlots(trade, schedule);
+    await executeTradeScheduleChange(trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot);
   };
 
   // Ejecutar el auto-completador para el MES COMPLETO
@@ -908,7 +1053,11 @@ export default function App() {
 
   // Si está en dispositivo móvil o vista móvil activada
   if (isMobileView && (showControllerPortal || userRole === 'controller')) {
-    const currentCtrlObj = controllers.find(c => c.email?.toLowerCase() === currentUser.email?.toLowerCase()) || {
+    const currentCtrlObj = controllers.find(c => 
+      (c.email && c.email.toLowerCase() === currentUser.email?.toLowerCase()) || 
+      isSameCtrl(c, currentUser.email?.split('@')[0]) ||
+      isSameCtrl(c, currentUser.displayName)
+    ) || {
       id: currentUser.email?.split('@')[0],
       name: currentUser.displayName || currentUser.email.split('@')[0],
       email: currentUser.email,
@@ -930,7 +1079,8 @@ export default function App() {
         onChangePassword={() => setIsChangePasswordModalOpen(true)}
         onOpenTradeModal={() => setActiveTab('trades')}
         onAddTrade={handleAddTrade}
-        onAcceptTrade={handleApproveTrade}
+        onAcceptTrade={handleAcceptTrade}
+        onApproveTrade={handleApproveTrade}
         onRejectTrade={handleDeleteTrade}
         onUpdateController={handleUpdateController}
       />

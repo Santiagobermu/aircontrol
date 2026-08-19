@@ -49,6 +49,7 @@ import { auth } from '../utils/firebase';
 import { updatePassword } from 'firebase/auth';
 import MonthlyGrid from './MonthlyGrid';
 import { generateICS, uploadCalendarToStorage, triggerCalendarSyncIfEnabled } from '../utils/calendarExport';
+import { isNotamActiveOnDate, formatNotamDateRange, categorizeNotam, getUtcDateString } from '../utils/notamUtils';
 
 export default function ControllerPortal({ 
   userEmail, 
@@ -88,8 +89,9 @@ export default function ControllerPortal({
 
   // Estados y Funcionalidades para NOTAMs y Alertas
   const [syncingNotams, setSyncingNotams] = useState(false);
-  const [activeNotamScopeTab, setActiveNotamScopeTab] = useState('skbo'); // 'skbo' | 'ad_clsd' | 'flow'
-  const [activeNotamSubTab, setActiveNotamSubTab] = useState('today');
+  const [activeNotamScopeTab, setActiveNotamScopeTab] = useState('skbo'); // 'skbo' | 'ad_clsd' | 'flow' | 'ashtam'
+  const todayNotamStr = getUtcDateString(new Date());
+  const [notamQueryDateStr, setNotamQueryDateStr] = useState(todayNotamStr);
   const [notamSearchQuery, setNotamSearchQuery] = useState('');
   const [selectedNotamCategory, setSelectedNotamCategory] = useState('ALL');
   
@@ -126,84 +128,6 @@ export default function ControllerPortal({
     const interval = setInterval(checkExpired, 10000);
     return () => clearInterval(interval);
   }, [manualAlerts]);
-
-  const parseNotamDate = (dateStr) => {
-    if (!dateStr || dateStr === 'PERM' || dateStr === '/') return null;
-    try {
-      if (dateStr.includes('-') || dateStr.includes('T')) {
-        const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? null : d;
-      }
-      const yy = parseInt('20' + dateStr.substring(0, 2));
-      const mm = parseInt(dateStr.substring(2, 4)) - 1;
-      const dd = parseInt(dateStr.substring(4, 6));
-      const hh = parseInt(dateStr.substring(6, 8));
-      const min = parseInt(dateStr.substring(8, 10));
-      return new Date(Date.UTC(yy, mm, dd, hh, min));
-    } catch (e) {
-      return null;
-    }
-  };
-
-  const today = new Date();
-  const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0));
-  const todayEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59));
-
-  const nextDay = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-  const nextDay0500 = new Date(Date.UTC(nextDay.getUTCFullYear(), nextDay.getUTCMonth(), nextDay.getUTCDate(), 5, 0, 0));
-  const nextDay1100 = new Date(Date.UTC(nextDay.getUTCFullYear(), nextDay.getUTCMonth(), nextDay.getUTCDate(), 11, 0, 0));
-
-  const isNotamActiveToday = (n) => {
-    const start = parseNotamDate(n.start_date);
-    if (!start) return false;
-    if (start > todayEnd) return false;
-    
-    if (n.end_date === 'PERM' || n.end_date === '/') return true;
-    const end = parseNotamDate(n.end_date);
-    if (!end) return true;
-    return end >= todayStart;
-  };
-
-  const isNotamActiveTomorrowEarly = (n) => {
-    // Exclude "todo el día" (all-day NOTAMs).
-    if (!n.schedule) return false;
-
-    const start = parseNotamDate(n.start_date);
-    if (!start) return false;
-    if (start > nextDay1100) return false;
-    
-    if (n.end_date === 'PERM' || n.end_date === '/') return true;
-    const end = parseNotamDate(n.end_date);
-    if (!end) return true;
-    return end >= nextDay0500;
-  };
-
-  const categorizeNotam = (n) => {
-    const desc = (n.description || '').toUpperCase();
-    
-    // 1. RWY
-    if (desc.includes('RWY') || desc.includes('RUNWAY') || desc.includes('PISTA')) {
-      return 'RWY';
-    }
-    // 2. TXY
-    if (desc.includes('TWY') || desc.includes('TXY') || desc.includes('TAXIWAY') || desc.includes('CALLE DE RODAJE') || desc.includes('RODAJE') || desc.includes('ROD')) {
-      return 'TXY';
-    }
-    // 3. SID/STAR/APP
-    if (desc.includes('SID') || desc.includes('STAR') || desc.includes('APP') || desc.includes('PROC') || desc.includes('APPROACH') || desc.includes('SALIDA') || desc.includes('LLEGADA')) {
-      return 'SID/STAR/APP';
-    }
-    // 4. Ayudas a la navegación (ILS/ALS)
-    if (desc.includes('ILS') || desc.includes('ALS') || desc.includes('VOR') || desc.includes('DME') || desc.includes('GP') || desc.includes('LLZ') || desc.includes('ATIS') || desc.includes('NDB') || desc.includes('FREQ') || desc.includes('FRECUENCIA')) {
-      return 'NAV_AIDS';
-    }
-    // 5. Procedimientos (LVP)
-    if (desc.includes('LVP') || desc.includes('LOW VISIBILITY') || desc.includes('VISIBILIDAD')) {
-      return 'LVP';
-    }
-    // 6. Misceláneos
-    return 'MISC';
-  };
 
   const handleSyncNotams = async () => {
     setSyncingNotams(true);
@@ -1889,125 +1813,154 @@ export default function ControllerPortal({
                   </div>
 
                   {/* Pestañas de Ámbito Principal (SKBO / Otros Aeropuertos / Control de Flujos / ASHTAMs) */}
-                  <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => { setActiveNotamScopeTab('skbo'); setSelectedNotamCategory('ALL'); }}
-                      style={{
-                        flex: 1,
-                        minWidth: '70px',
-                        padding: '0.35rem 0.2rem',
-                        fontSize: '0.7rem',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '700',
-                        backgroundColor: activeNotamScopeTab === 'skbo' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
-                        color: activeNotamScopeTab === 'skbo' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
-                      }}
-                    >
-                      📌 SKBO ({notamsData.notams?.length || 0})
-                    </button>
-                    <button
-                      onClick={() => { setActiveNotamScopeTab('ad_clsd'); setSelectedNotamCategory('ALL'); }}
-                      style={{
-                        flex: 1,
-                        minWidth: '80px',
-                        padding: '0.35rem 0.2rem',
-                        fontSize: '0.7rem',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '700',
-                        backgroundColor: activeNotamScopeTab === 'ad_clsd' ? 'rgba(244, 63, 94, 0.15)' : 'transparent',
-                        color: activeNotamScopeTab === 'ad_clsd' ? 'var(--status-danger)' : 'var(--text-secondary)'
-                      }}
-                    >
-                      🛫 Otros Aeropuertos ({notamsData.adClosedNotams?.length || 0})
-                    </button>
-                    <button
-                      onClick={() => { setActiveNotamScopeTab('flow'); setSelectedNotamCategory('ALL'); }}
-                      style={{
-                        flex: 1,
-                        minWidth: '80px',
-                        padding: '0.35rem 0.2rem',
-                        fontSize: '0.7rem',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '700',
-                        backgroundColor: activeNotamScopeTab === 'flow' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                        color: activeNotamScopeTab === 'flow' ? 'var(--status-warning)' : 'var(--text-secondary)'
-                      }}
-                    >
-                      ✈️ Control de Flujos ({notamsData.flowNotams?.length || 0})
-                    </button>
-                    <button
-                      onClick={() => { setActiveNotamScopeTab('ashtam'); setSelectedNotamCategory('ALL'); }}
-                      style={{
-                        flex: 1,
-                        minWidth: '85px',
-                        padding: '0.35rem 0.2rem',
-                        fontSize: '0.7rem',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '700',
-                        backgroundColor: activeNotamScopeTab === 'ashtam' ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
-                        color: activeNotamScopeTab === 'ashtam' ? '#ec4899' : 'var(--text-secondary)'
-                      }}
-                    >
-                      🌋 ASHTAMs ({notamsData.ashtamNotams?.length || 0})
-                    </button>
-                  </div>
-
-                  {/* Sub-tabs Temporales y Buscador */}
                   {(() => {
-                    const scopeList = activeNotamScopeTab === 'ad_clsd' 
-                      ? (notamsData.adClosedNotams || [])
-                      : activeNotamScopeTab === 'flow'
-                      ? (notamsData.flowNotams || [])
-                      : activeNotamScopeTab === 'ashtam'
-                      ? (notamsData.ashtamNotams || [])
-                      : (notamsData.notams || []);
+                    const skboCount = (notamsData.notams || []).filter(n => isNotamActiveOnDate(n, notamQueryDateStr)).length;
+                    const adCount = (notamsData.adClosedNotams || []).filter(n => isNotamActiveOnDate(n, notamQueryDateStr)).length;
+                    const flowCount = (notamsData.flowNotams || []).filter(n => isNotamActiveOnDate(n, notamQueryDateStr)).length;
+                    const ashtamCount = (notamsData.ashtamNotams || []).filter(n => isNotamActiveOnDate(n, notamQueryDateStr)).length;
 
-                    const todayCount = scopeList.filter(isNotamActiveToday).length;
-                    const tomorrowCount = scopeList.filter(isNotamActiveTomorrowEarly).length;
+                    return (
+                      <div style={{ display: 'flex', gap: '0.2rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => { setActiveNotamScopeTab('skbo'); setSelectedNotamCategory('ALL'); }}
+                          style={{
+                            flex: 1,
+                            minWidth: '70px',
+                            padding: '0.35rem 0.2rem',
+                            fontSize: '0.7rem',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '700',
+                            backgroundColor: activeNotamScopeTab === 'skbo' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                            color: activeNotamScopeTab === 'skbo' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
+                          }}
+                        >
+                          📌 SKBO ({skboCount})
+                        </button>
+                        <button
+                          onClick={() => { setActiveNotamScopeTab('ad_clsd'); setSelectedNotamCategory('ALL'); }}
+                          style={{
+                            flex: 1,
+                            minWidth: '80px',
+                            padding: '0.35rem 0.2rem',
+                            fontSize: '0.7rem',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '700',
+                            backgroundColor: activeNotamScopeTab === 'ad_clsd' ? 'rgba(244, 63, 94, 0.15)' : 'transparent',
+                            color: activeNotamScopeTab === 'ad_clsd' ? 'var(--status-danger)' : 'var(--text-secondary)'
+                          }}
+                        >
+                          🛫 Otros AD ({adCount})
+                        </button>
+                        <button
+                          onClick={() => { setActiveNotamScopeTab('flow'); setSelectedNotamCategory('ALL'); }}
+                          style={{
+                            flex: 1,
+                            minWidth: '80px',
+                            padding: '0.35rem 0.2rem',
+                            fontSize: '0.7rem',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '700',
+                            backgroundColor: activeNotamScopeTab === 'flow' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                            color: activeNotamScopeTab === 'flow' ? 'var(--status-warning)' : 'var(--text-secondary)'
+                          }}
+                        >
+                          ✈️ Flujo ({flowCount})
+                        </button>
+                        <button
+                          onClick={() => { setActiveNotamScopeTab('ashtam'); setSelectedNotamCategory('ALL'); }}
+                          style={{
+                            flex: 1,
+                            minWidth: '85px',
+                            padding: '0.35rem 0.2rem',
+                            fontSize: '0.7rem',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '700',
+                            backgroundColor: activeNotamScopeTab === 'ashtam' ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
+                            color: activeNotamScopeTab === 'ashtam' ? '#ec4899' : 'var(--text-secondary)'
+                          }}
+                        >
+                          🌋 ASHTAM ({ashtamCount})
+                        </button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Selector de Fecha de Consulta de Vigencia y Buscador */}
+                  {(() => {
+                    const getTomorrowUtc = () => {
+                      const d = new Date();
+                      d.setUTCDate(d.getUTCDate() + 1);
+                      return getUtcDateString(d);
+                    };
+                    const isToday = notamQueryDateStr === todayNotamStr;
+                    const isTomorrow = notamQueryDateStr === getTomorrowUtc();
 
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                        <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'var(--bg-tertiary)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                        <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)', padding: '0.25rem 0.4rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--accent-cyan)', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                            Vigencia:
+                          </span>
+
                           <button
-                            onClick={() => setActiveNotamSubTab('today')}
+                            onClick={() => setNotamQueryDateStr(todayNotamStr)}
                             style={{
                               flex: 1,
-                              padding: '0.3rem',
-                              fontSize: '0.75rem',
+                              padding: '0.25rem 0.4rem',
+                              fontSize: '0.72rem',
                               border: 'none',
-                              borderRadius: '6px',
+                              borderRadius: '5px',
                               cursor: 'pointer',
                               fontWeight: '700',
-                              backgroundColor: activeNotamSubTab === 'today' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                              color: activeNotamSubTab === 'today' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
+                              backgroundColor: isToday ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
+                              color: isToday ? 'var(--accent-cyan)' : 'var(--text-secondary)'
                             }}
                           >
-                            Vigentes Hoy ({todayCount})
+                            Hoy
                           </button>
+
                           <button
-                            onClick={() => setActiveNotamSubTab('tomorrow')}
+                            onClick={() => setNotamQueryDateStr(getTomorrowUtc())}
                             style={{
                               flex: 1,
-                              padding: '0.3rem',
-                              fontSize: '0.75rem',
+                              padding: '0.25rem 0.4rem',
+                              fontSize: '0.72rem',
                               border: 'none',
-                              borderRadius: '6px',
+                              borderRadius: '5px',
                               cursor: 'pointer',
                               fontWeight: '700',
-                              backgroundColor: activeNotamSubTab === 'tomorrow' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                              color: activeNotamSubTab === 'tomorrow' ? 'var(--accent-cyan)' : 'var(--text-secondary)'
+                              backgroundColor: isTomorrow ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
+                              color: isTomorrow ? 'var(--accent-cyan)' : 'var(--text-secondary)'
                             }}
                           >
-                            Mañana (05-11 UTC) ({tomorrowCount})
+                            Mañana
                           </button>
+
+                          <input
+                            type="date"
+                            value={notamQueryDateStr}
+                            onChange={(e) => {
+                              if (e.target.value) setNotamQueryDateStr(e.target.value);
+                            }}
+                            style={{
+                              padding: '0.2rem 0.35rem',
+                              fontSize: '0.72rem',
+                              color: 'var(--text-primary)',
+                              backgroundColor: 'var(--bg-primary)',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: '5px',
+                              fontFamily: 'var(--font-mono)',
+                              outline: 'none'
+                            }}
+                          />
                         </div>
 
                         <input
@@ -2062,7 +2015,7 @@ export default function ControllerPortal({
                     </div>
                   )}
 
-                  {/* Lista de NOTAMs */}
+                  {/* Lista de NOTAMs Vigentes */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.2rem' }}>
                     {(() => {
                       const rawDataset = activeNotamScopeTab === 'ad_clsd' 
@@ -2074,7 +2027,7 @@ export default function ControllerPortal({
                         : (notamsData.notams || []);
 
                       const filteredList = rawDataset
-                        .filter(activeNotamSubTab === 'today' ? isNotamActiveToday : isNotamActiveTomorrowEarly)
+                        .filter(n => isNotamActiveOnDate(n, notamQueryDateStr))
                         .filter(n => {
                           if (activeNotamScopeTab !== 'skbo') return true;
                           if (selectedNotamCategory === 'ALL') return true;
@@ -2116,6 +2069,8 @@ export default function ControllerPortal({
                             badgeCol = 'var(--status-warning)';
                           }
 
+                          const formattedDates = formatNotamDateRange(n);
+
                           return (
                             <div 
                               key={n.id} 
@@ -2149,15 +2104,27 @@ export default function ControllerPortal({
                                     {n.id}
                                   </span>
                                 </div>
-                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                                  {n.schedule ? `Horario: ${n.schedule}` : 'Todo el día'}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span style={{
+                                    fontSize: '0.62rem',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                    color: 'var(--status-success)',
+                                    padding: '0.1rem 0.3rem',
+                                    borderRadius: '4px',
+                                    fontWeight: '700'
+                                  }}>
+                                    Vigente
+                                  </span>
+                                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                    {n.schedule ? `Horario: ${n.schedule}` : 'Todo el día'}
+                                  </span>
+                                </div>
                               </div>
                               <p style={{ fontSize: '0.8rem', margin: 0, color: 'var(--text-primary)', lineHeight: '1.4', whiteSpace: 'pre-line' }}>
                                 {n.description}
                               </p>
                               <div style={{ marginTop: '0.35rem', fontSize: '0.6rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Validez: {n.dates_raw || `${n.start_date || ''} - ${n.end_date || ''}`}</span>
+                                <span style={{ color: 'var(--accent-cyan)', fontWeight: '700' }}>Vigencia: {formattedDates}</span>
                                 {n.source && <span>Fuente: {n.source.includes('AEROCIVIL') ? 'Aerocivil' : 'FAA'}</span>}
                               </div>
                             </div>
@@ -2167,7 +2134,7 @@ export default function ControllerPortal({
 
                       return (
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0, textAlign: 'center', padding: '1.5rem 0' }}>
-                          No hay NOTAMs vigentes en este ámbito que coincidan.
+                          No hay NOTAMs vigentes en este ámbito para la fecha {notamQueryDateStr}.
                         </p>
                       );
                     })()}

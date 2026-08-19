@@ -8,12 +8,16 @@ export default function MobileTradesView({
   controllers = [],
   scheduleMonth = {},
   initialTradeData = null,
+  userRole = 'controller',
   onAddTrade,
   onAcceptTrade,
+  onApproveTrade,
   onRejectTrade 
 }) {
   const [filter, setFilter] = useState('all'); // 'all' | 'pending' | 'approved'
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
 
   // Estados del Formulario de Nuevo Cambio
   const [tradeType, setTradeType] = useState('COVER'); // 'COVER' | 'SWAP'
@@ -170,20 +174,28 @@ export default function MobileTradesView({
       ? 'Abierta a cualquier compañero habilitado' 
       : (targetCtrl ? targetCtrl.name : selectedColleagueSig);
 
+    const targetOtherShiftObj = tradeType === 'SWAP' ? otherAssignedShifts.find(s => s.fullCode === targetShiftToSwap) : null;
+
     const newTradeObj = {
-      id: `trade_${Date.now()}`,
+      id: `trade_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       type: tradeType,
       dateStr: tradeDate,
       date: tradeDate,
+      fromControllerId: currentUser?.id || getCtrlSig(currentUser) || 'ATC',
+      fromControllerSignature: getCtrlSig(currentUser) || 'ATC',
       requesterSignature: getCtrlSig(currentUser) || 'ATC',
       requesterName: currentUser?.name || 'Controlador',
       requesterShift: selectedMyShift,
+      fromSlot: { shift: selectedMyShiftObj.shift, slotKey: selectedMyShiftObj.slotKey },
+      toControllerId: selectedColleagueSig === 'OPEN' ? 'OPEN' : (targetCtrl?.id || targetSig),
+      toControllerSignature: targetSig,
       targetSignature: targetSig,
       targetName: targetName,
       targetShift: tradeType === 'COVER' ? 'Reemplazo' : (targetShiftToSwap || 'Por acordar'),
+      toSlot: tradeType === 'SWAP' && targetOtherShiftObj ? { shift: targetOtherShiftObj.shift, slotKey: targetOtherShiftObj.slotKey } : null,
       isPublic: selectedColleagueSig === 'OPEN',
       comment: tradeComment.trim(),
-      status: 'pending',
+      status: 'PENDIENTE_ACEPTACION',
       createdAt: new Date().toISOString()
     };
 
@@ -204,16 +216,27 @@ export default function MobileTradesView({
   const normalizedTrades = trades.map(t => {
     const fromSig = t.requesterSignature || t.fromControllerSignature || t.fromControllerId || t.requesterId || '';
     const fromName = t.requesterName || t.fromControllerName || controllers.find(c => isSameCtrl(c, fromSig))?.name || (fromSig ? fromSig : 'Solicitante');
-    const fromShift = t.requesterShift || t.fromShiftCode || t.fromShift || 'Turno';
+    
+    let fromShift = t.requesterShift || t.fromShiftCode || t.fromShift || '';
+    if (!fromShift && t.fromSlot) {
+      fromShift = `${t.fromSlot.shift}${getSlotAcronym(t.fromSlot.slotKey, t.fromSlot.shift)}`;
+    }
+    if (!fromShift) fromShift = 'Turno';
 
     const toSig = t.targetSignature || t.toControllerSignature || t.toControllerId || t.targetId || 'OPEN';
     const toName = t.targetName || t.toControllerName || (toSig === 'OPEN' || toSig === 'ALL' || t.isPublic ? 'Abierta a cualquier compañero habilitado' : (controllers.find(c => isSameCtrl(c, toSig))?.name || toSig));
-    const toShift = t.targetShift || t.toShiftCode || t.toShift || (t.type === 'COVER' ? 'Reemplazo' : 'Por acordar');
+    
+    let toShift = t.targetShift || t.toShiftCode || t.toShift || '';
+    if (!toShift && t.toSlot) {
+      toShift = `${t.toSlot.shift}${getSlotAcronym(t.toSlot.slotKey, t.toSlot.shift)}`;
+    }
+    if (!toShift) toShift = (t.type === 'COVER' ? 'Reemplazo' : 'Por acordar');
 
-    const isPublic = Boolean(t.isPublic || toSig === 'OPEN' || toSig === 'ALL' || !t.toControllerId);
+    const isPublic = Boolean(t.isPublic || toSig === 'OPEN' || toSig === 'ALL' || !t.toControllerId || toSig === 'Abierta');
     const dateStr = t.dateStr || t.date || '';
 
-    const isPending = t.status === 'pending' || t.status === 'PENDIENTE_APROBACION' || t.status === 'PENDIENTE_ACEPTACION';
+    const isPendingPeer = t.status === 'pending' || t.status === 'PENDIENTE_ACEPTACION' || !t.status;
+    const isPendingAdmin = t.status === 'PENDIENTE_APROBACION';
     const isApproved = t.status === 'approved' || t.status === 'APROBADO';
     const isRejected = t.status === 'rejected' || t.status === 'RECHAZADO';
 
@@ -230,8 +253,8 @@ export default function MobileTradesView({
       toShift,
       isPublic,
       comment: t.comment || t.comments || '',
-      status: isApproved ? 'approved' : isRejected ? 'rejected' : 'pending',
-      rawStatus: t.status
+      status: isApproved ? 'approved' : isRejected ? 'rejected' : (isPendingAdmin ? 'pending_admin' : 'pending'),
+      rawStatus: t.status || 'PENDIENTE_ACEPTACION'
     };
   }).filter(t => t.fromSig && t.fromSig.trim() !== '');
 
@@ -239,25 +262,28 @@ export default function MobileTradesView({
   const userTrades = normalizedTrades.filter(t => {
     const isMyRequest = isSameCtrl(t.fromSig, currentUser);
     const isTargetingMe = isSameCtrl(t.toSig, currentUser);
-    const isOpenPending = Boolean(t.isPublic && t.status === 'pending');
+    const isOpenPending = Boolean(t.isPublic && (t.status === 'pending' || t.status === 'pending_admin'));
+    const isSupervisorPending = Boolean(isEncargado && t.status === 'pending_admin');
 
-    const isRelevant = isMyRequest || isTargetingMe || isOpenPending;
+    const isRelevant = isMyRequest || isTargetingMe || isOpenPending || isSupervisorPending;
     if (!isRelevant) return false;
 
-    if (filter === 'pending') return t.status === 'pending';
+    if (filter === 'pending') return t.status === 'pending' || t.status === 'pending_admin';
     if (filter === 'approved') return t.status === 'approved';
     return true;
   });
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'approved':
-        return { label: 'Aprobado', color: 'var(--status-success)', bg: 'rgba(16, 185, 129, 0.15)', icon: CheckCircle2 };
-      case 'rejected':
-        return { label: 'Rechazado', color: 'var(--status-danger)', bg: 'rgba(244, 63, 94, 0.15)', icon: XCircle };
-      default:
-        return { label: 'Pendiente', color: 'var(--status-warning)', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock };
+  const getStatusBadge = (trade) => {
+    if (trade.status === 'approved') {
+      return { label: 'Aprobado & Aplicado', color: 'var(--status-success)', bg: 'rgba(16, 185, 129, 0.15)', icon: CheckCircle2 };
     }
+    if (trade.status === 'rejected') {
+      return { label: 'Rechazado', color: 'var(--status-danger)', bg: 'rgba(244, 63, 94, 0.15)', icon: XCircle };
+    }
+    if (trade.status === 'pending_admin' || trade.rawStatus === 'PENDIENTE_APROBACION') {
+      return { label: 'Esperando Jefatura', color: 'var(--accent-cyan)', bg: 'rgba(6, 182, 212, 0.15)', icon: Clock };
+    }
+    return { label: 'Pendiente Aceptación', color: 'var(--status-warning)', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock };
   };
 
   return (
@@ -326,9 +352,10 @@ export default function MobileTradesView({
       {userTrades.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
           {userTrades.map((trade, idx) => {
-            const statusInfo = getStatusBadge(trade.status);
+            const statusInfo = getStatusBadge(trade);
             const StatusIcon = statusInfo.icon;
             const isTarget = isSameCtrl(trade.toSig, currentUser);
+            const isMyRequest = isSameCtrl(trade.fromSig, currentUser);
 
             return (
               <div key={idx} style={{
@@ -399,40 +426,131 @@ export default function MobileTradesView({
                   </p>
                 )}
 
-                {/* Acciones para el receptor */}
-                {isTarget && trade.status === 'pending' && (
+                {/* Acciones según el rol y estado de la solicitud */}
+                
+                {/* 1. Solicitud pendiente de aceptación dirigida a mí */}
+                {isTarget && (trade.status === 'pending' || trade.rawStatus === 'PENDIENTE_ACEPTACION') && (
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
                     <button
                       onClick={() => onAcceptTrade && onAcceptTrade(trade.id)}
                       style={{
                         flex: 1,
-                        background: 'rgba(16, 185, 129, 0.15)',
+                        background: 'rgba(16, 185, 129, 0.18)',
                         border: '1px solid var(--status-success)',
                         color: 'var(--status-success)',
                         borderRadius: '8px',
-                        padding: '0.5rem',
-                        fontWeight: '700',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer'
+                        padding: '0.55rem',
+                        fontWeight: '800',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem'
                       }}
                     >
-                      Aceptar Cambio
+                      <CheckCircle2 size={16} />
+                      Aceptar Solicitud
                     </button>
                     <button
-                      onClick={() => onRejectTrade && onRejectTrade(trade.id)}
+                      onClick={() => {
+                        if (window.confirm('¿Deseas rechazar esta propuesta de cambio?')) {
+                          onRejectTrade && onRejectTrade(trade.id);
+                        }
+                      }}
                       style={{
                         flex: 1,
                         background: 'rgba(244, 63, 94, 0.15)',
                         border: '1px solid var(--status-danger)',
                         color: 'var(--status-danger)',
                         borderRadius: '8px',
-                        padding: '0.5rem',
+                        padding: '0.55rem',
                         fontWeight: '700',
-                        fontSize: '0.78rem',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem'
+                      }}
+                    >
+                      <XCircle size={16} />
+                      Rechazar
+                    </button>
+                  </div>
+                )}
+
+                {/* 2. Solicitud acordada entre compañeros, pendiente de aprobación de jefatura (si soy encargado/admin) */}
+                {isEncargado && (trade.status === 'pending_admin' || trade.rawStatus === 'PENDIENTE_APROBACION') && (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+                    <button
+                      onClick={() => onApproveTrade && onApproveTrade(trade.id)}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(6, 182, 212, 0.2)',
+                        border: '1px solid var(--accent-cyan)',
+                        color: 'var(--accent-cyan)',
+                        borderRadius: '8px',
+                        padding: '0.55rem',
+                        fontWeight: '800',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem'
+                      }}
+                    >
+                      <ShieldCheck size={16} />
+                      Aprobar y Aplicar al Roster
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('¿Deseas rechazar esta propuesta de cambio?')) {
+                          onRejectTrade && onRejectTrade(trade.id);
+                        }
+                      }}
+                      style={{
+                        padding: '0.55rem 0.8rem',
+                        background: 'rgba(244, 63, 94, 0.15)',
+                        border: '1px solid var(--status-danger)',
+                        color: 'var(--status-danger)',
+                        borderRadius: '8px',
+                        fontWeight: '700',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Rechazar propuesta"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                )}
+
+                {/* 3. Solicitud enviada por mí que sigue pendiente: opción para cancelarla */}
+                {isMyRequest && (trade.status === 'pending' || trade.status === 'pending_admin') && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('¿Deseas cancelar esta propuesta de cambio enviada?')) {
+                          onRejectTrade && onRejectTrade(trade.id);
+                        }
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--text-muted)',
+                        color: 'var(--text-muted)',
+                        borderRadius: '8px',
+                        padding: '0.35rem 0.7rem',
+                        fontWeight: '600',
+                        fontSize: '0.72rem',
                         cursor: 'pointer'
                       }}
                     >
-                      Rechazar
+                      Cancelar Solicitud
                     </button>
                   </div>
                 )}

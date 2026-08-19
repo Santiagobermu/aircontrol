@@ -21,18 +21,36 @@ export default function MobileLayout({
   onOpenTradeModal,
   onAddTrade,
   onAcceptTrade,
+  onApproveTrade,
   onRejectTrade,
   onUpdateController
 }) {
   const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'guardia' | 'trades' | 'notams' | 'profile'
   const [tradeInitialData, setTradeInitialData] = useState({ date: '', type: 'COVER' });
 
+  const isSameCtrl = (ctrlA, ctrlB) => {
+    if (!ctrlA || !ctrlB) return false;
+    const sigA = (typeof ctrlA === 'string' ? ctrlA : (ctrlA.signature || ctrlA.id || ctrlA.name || '')).toString().trim().toUpperCase();
+    const sigB = (typeof ctrlB === 'string' ? ctrlB : (ctrlB.signature || ctrlB.id || ctrlB.name || '')).toString().trim().toUpperCase();
+    if (sigA && sigB && sigA === sigB) return true;
+    const idA = (typeof ctrlA === 'object' ? (ctrlA.id || ctrlA.signature) : ctrlA).toString().trim().toUpperCase();
+    const idB = (typeof ctrlB === 'object' ? (ctrlB.id || ctrlB.signature) : ctrlB).toString().trim().toUpperCase();
+    return idA && idB && idA === idB;
+  };
+
+  const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
+
   const handleOpenTradeForDate = (dateStr, type = 'COVER') => {
     setTradeInitialData({ date: dateStr || '', type: type || 'COVER' });
     setActiveTab('trades');
   };
 
-  const pendingTradesCount = trades.filter(t => t.status === 'pending' && (t.targetSignature === currentUser?.signature || t.isPublic)).length;
+  const pendingTradesCount = trades.filter(t => {
+    const isPendingPeer = (t.status === 'pending' || t.status === 'PENDIENTE_ACEPTACION' || !t.status) && 
+      (isSameCtrl(t.targetSignature || t.toControllerSignature || t.toControllerId, currentUser) || t.isPublic);
+    const isPendingAdmin = t.status === 'PENDIENTE_APROBACION' && isEncargado;
+    return isPendingPeer || isPendingAdmin;
+  }).length;
 
   return (
     <div className="mobile-app-wrapper">
@@ -73,8 +91,10 @@ export default function MobileLayout({
             controllers={controllers}
             scheduleMonth={scheduleMonth}
             initialTradeData={tradeInitialData}
+            userRole={userRole}
             onAddTrade={onAddTrade}
             onAcceptTrade={onAcceptTrade}
+            onApproveTrade={onApproveTrade}
             onRejectTrade={onRejectTrade}
           />
         )}

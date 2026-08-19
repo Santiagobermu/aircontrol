@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { AlertTriangle, Search, RefreshCw, Plus, Megaphone, Clock, Check, X, ShieldAlert, Radio } from 'lucide-react';
+import { AlertTriangle, Search, RefreshCw, Plus, Megaphone, Clock, Check, X, ShieldAlert, Radio, Calendar, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { addManualAlertDB } from '../../utils/db';
+import { isNotamActiveOnDate, formatNotamDateRange, categorizeNotam, getUtcDateString } from '../../utils/notamUtils';
 
 export default function MobileNotamsView({ 
   notamsData = { notams: [], adClosedNotams: [], flowNotams: [], ashtamNotams: [] }, 
@@ -14,6 +15,10 @@ export default function MobileNotamsView({
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [newAlertText, setNewAlertText] = useState('');
 
+  // Fecha de consulta actual en UTC
+  const todayStr = getUtcDateString(new Date());
+  const [queryDateStr, setQueryDateStr] = useState(todayStr);
+
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
 
   // NOTAMs de demostración si la base de datos Firestore aún no ha sido poblada
@@ -25,6 +30,8 @@ export default function MobileNotamsView({
       severity: 'WARNING',
       category: 'RWY',
       description: 'PISTA 13L/31R CERRADA POR TRABAJOS DE MANTENIMIENTO PREVENTIVO TODOS LOS MIERCOLES DE 0300 A 0800 UTC.',
+      start_date: '2026-08-01T03:00:00Z',
+      end_date: '2026-08-31T08:00:00Z',
       dates_raw: '2026-08-01 03:00 - 2026-08-31 08:00',
       schedule: '0300 - 0800 UTC'
     },
@@ -35,6 +42,8 @@ export default function MobileNotamsView({
       severity: 'CRITICAL',
       category: 'NAV_AIDS',
       description: 'ILS FREQ 110.3 MHZ CAT II RUNWAY 13R U/S DUE TO UPGRADE OF GROUND TRANSMITTER. USE VOR/DME PROC.',
+      start_date: '2026-08-04T12:00:00Z',
+      end_date: '2026-08-10T23:59:00Z',
       dates_raw: '2026-08-04 12:00 - 2026-08-10 23:59',
       schedule: '24 HORAS'
     },
@@ -45,6 +54,8 @@ export default function MobileNotamsView({
       severity: 'INFO',
       category: 'SID_STAR_APP',
       description: 'PROCEDIMIENTO DE SALIDA NOCTURNA SID BOGOTA OBLIGATORIO DESDE 0300 UTC HASTA 1100 UTC PARA AVIONES JET.',
+      start_date: '2026-08-01T00:00:00Z',
+      end_date: '2026-12-31T23:59:00Z',
       dates_raw: '2026-08-01 00:00 - 2026-12-31 23:59',
       schedule: '0300 - 1100 UTC'
     },
@@ -55,6 +66,8 @@ export default function MobileNotamsView({
       severity: 'CRITICAL',
       category: 'AD_CLSD',
       description: 'AEROPUERTO RIONEGRO (SKRG) CERRADO POR CONDICIONES DE BAJA VISIBILIDAD DE 0500 A 1000 UTC.',
+      start_date: '2026-08-05T05:00:00Z',
+      end_date: '2026-08-05T10:00:00Z',
       dates_raw: '2026-08-05 05:00 - 2026-08-05 10:00',
       schedule: '0500 - 1000 UTC'
     },
@@ -65,10 +78,26 @@ export default function MobileNotamsView({
       severity: 'WARNING',
       category: 'FLOW',
       description: 'CONTROL DE FLUJO (EDCT) EN VIGOR POR ALTA DENSIDAD EN SECTOR TERMINAL BOGOTA. SEPARACION 15 NM.',
-      dates_raw: '2026-08-05 14:00 - 2026-08-05 20:00',
+      start_date: '2026-08-01T00:00:00Z',
+      end_date: 'PERM',
+      dates_raw: '2026-08-01 00:00 - PERM',
       schedule: '1400 - 2000 UTC'
     }
   ];
+
+  // Helpers para navegación de fechas
+  const getTomorrowStr = () => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + 1);
+    return getUtcDateString(d);
+  };
+
+  const changeDateByDays = (days) => {
+    const parts = queryDateStr.split('-');
+    const current = new Date(Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)));
+    current.setUTCDate(current.getUTCDate() + days);
+    setQueryDateStr(getUtcDateString(current));
+  };
 
   // Seleccionar conjunto de NOTAMs según la pestaña activa
   const getRawDataset = () => {
@@ -94,18 +123,27 @@ export default function MobileNotamsView({
 
   const rawDataset = getRawDataset();
 
-  // Categorización de NOTAMs para SKBO
-  const categorizeNotam = (n) => {
-    if (n.category) return n.category;
-    const desc = (n.description || n.text || n.raw_text || n.summary || '').toUpperCase();
-    if (desc.includes('RWY') || desc.includes('RUNWAY') || desc.includes('PISTA')) return 'RWY';
-    if (desc.includes('TWY') || desc.includes('TXY') || desc.includes('TAXIWAY') || desc.includes('RODAJE')) return 'TXY';
-    if (desc.includes('SID') || desc.includes('STAR') || desc.includes('APP') || desc.includes('PROC') || desc.includes('APPROACH') || desc.includes('SALIDA') || desc.includes('LLEGADA')) return 'SID_STAR_APP';
-    return 'MISC';
+  // Calcular conteos de NOTAMs VIGENTES para la fecha de consulta en cada ámbito
+  const getScopeList = (tab) => {
+    if (tab === 'ad_clsd') return notamsData?.adClosedNotams?.length ? notamsData.adClosedNotams : defaultNotams.filter(n => n.scope === 'ad_clsd');
+    if (tab === 'flow') return notamsData?.flowNotams?.length ? notamsData.flowNotams : defaultNotams.filter(n => n.scope === 'flow');
+    if (tab === 'ashtam') return notamsData?.ashtamNotams?.length ? notamsData.ashtamNotams : defaultNotams.filter(n => n.scope === 'ashtam');
+    return notamsData?.notams?.length ? notamsData.notams : defaultNotams.filter(n => n.scope === 'skbo' || !n.scope);
   };
 
-  // Filtrar dataset según categoría SKBO y término de búsqueda
+  const activeSkboCount = getScopeList('skbo').filter(n => isNotamActiveOnDate(n, queryDateStr)).length;
+  const activeAdCount = getScopeList('ad_clsd').filter(n => isNotamActiveOnDate(n, queryDateStr)).length;
+  const activeFlowCount = getScopeList('flow').filter(n => isNotamActiveOnDate(n, queryDateStr)).length;
+  const activeAshtamCount = getScopeList('ashtam').filter(n => isNotamActiveOnDate(n, queryDateStr)).length;
+
+  // Filtrar dataset: 1) SOLO VIGENTES EN FECHA DE CONSULTA, 2) Categoría SKBO, 3) Búsqueda
   const filteredNotams = rawDataset.filter(n => {
+    // 1. Filtrar estrictamente por fecha de vigencia
+    if (!isNotamActiveOnDate(n, queryDateStr)) {
+      return false;
+    }
+
+    // 2. Filtrar por término de búsqueda
     const text = (n.description || n.text || n.raw_text || n.summary || '').toLowerCase();
     const idStr = (n.id || n.number || '').toLowerCase();
     const airportStr = (n.airport || n.location || '').toLowerCase();
@@ -114,6 +152,7 @@ export default function MobileNotamsView({
     const matchesSearch = !query || idStr.includes(query) || airportStr.includes(query) || text.includes(query);
     if (!matchesSearch) return false;
 
+    // 3. Filtrar por subcategoría SKBO
     if (scopeTab === 'skbo') {
       if (skboCategory === 'ALL') return true;
       const cat = categorizeNotam(n);
@@ -157,6 +196,22 @@ export default function MobileNotamsView({
     setNewAlertText('');
     setIsAlertModalOpen(false);
     alert('¡Mensaje/Alerta del Encargado publicado para la guardia!');
+  };
+
+  const isQueryingToday = queryDateStr === todayStr;
+  const isQueryingTomorrow = queryDateStr === getTomorrowStr();
+
+  // Formato de fecha legible para el encabezado
+  const formatQueryDateDisplay = (dateStr) => {
+    try {
+      const parts = dateStr.split('-');
+      const d = new Date(Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)));
+      const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+    } catch (e) {
+      return dateStr;
+    }
   };
 
   return (
@@ -218,6 +273,120 @@ export default function MobileNotamsView({
         )}
       </div>
 
+      {/* SELECTOR DE FECHA DE CONSULTA DE VIGENCIA */}
+      <div style={{
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '12px',
+        padding: '0.65rem 0.75rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+        boxShadow: 'var(--glass-shadow)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Calendar size={14} />
+            Fecha de Consulta (Vigencia UTC):
+          </span>
+          <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+            {formatQueryDateDisplay(queryDateStr)}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <button
+            onClick={() => changeDateByDays(-1)}
+            style={{
+              padding: '0.4rem 0.5rem',
+              borderRadius: '7px',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title="Día anterior"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          <button
+            onClick={() => setQueryDateStr(todayStr)}
+            style={{
+              flex: 1,
+              padding: '0.4rem 0.5rem',
+              borderRadius: '7px',
+              border: isQueryingToday ? '1px solid var(--accent-cyan)' : '1px solid var(--glass-border)',
+              background: isQueryingToday ? 'rgba(6, 182, 212, 0.2)' : 'var(--bg-secondary)',
+              color: isQueryingToday ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+              fontSize: '0.75rem',
+              fontWeight: '800',
+              cursor: 'pointer'
+            }}
+          >
+            Hoy
+          </button>
+
+          <button
+            onClick={() => setQueryDateStr(getTomorrowStr())}
+            style={{
+              flex: 1,
+              padding: '0.4rem 0.5rem',
+              borderRadius: '7px',
+              border: isQueryingTomorrow ? '1px solid var(--accent-cyan)' : '1px solid var(--glass-border)',
+              background: isQueryingTomorrow ? 'rgba(6, 182, 212, 0.2)' : 'var(--bg-secondary)',
+              color: isQueryingTomorrow ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+              fontSize: '0.75rem',
+              fontWeight: '800',
+              cursor: 'pointer'
+            }}
+          >
+            Mañana
+          </button>
+
+          <input
+            type="date"
+            value={queryDateStr}
+            onChange={(e) => {
+              if (e.target.value) setQueryDateStr(e.target.value);
+            }}
+            style={{
+              flex: 1.4,
+              padding: '0.35rem 0.45rem',
+              borderRadius: '7px',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              fontFamily: 'var(--font-mono)',
+              outline: 'none'
+            }}
+          />
+
+          <button
+            onClick={() => changeDateByDays(1)}
+            style={{
+              padding: '0.4rem 0.5rem',
+              borderRadius: '7px',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title="Día siguiente"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+
       {/* Buscador táctil */}
       <div style={{ position: 'relative' }}>
         <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
@@ -239,13 +408,13 @@ export default function MobileNotamsView({
         />
       </div>
 
-      {/* PESTAÑAS PRINCIPALES DE ÁMBITO (Idénticas a la versión web) */}
+      {/* PESTAÑAS PRINCIPALES DE ÁMBITO CON CONTEOS VIGENTES */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.3rem', background: 'var(--bg-secondary)', padding: '0.2rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
         {[
-          { id: 'skbo', label: `SKBO (${notamsData?.notams?.length || 0})` },
-          { id: 'ad_clsd', label: `Otros AD (${notamsData?.adClosedNotams?.length || 0})` },
-          { id: 'flow', label: `Flujo (${notamsData?.flowNotams?.length || 0})` },
-          { id: 'ashtam', label: `ASHTAM (${notamsData?.ashtamNotams?.length || 0})` }
+          { id: 'skbo', label: `SKBO (${activeSkboCount})` },
+          { id: 'ad_clsd', label: `Otros AD (${activeAdCount})` },
+          { id: 'flow', label: `Flujo (${activeFlowCount})` },
+          { id: 'ashtam', label: `ASHTAM (${activeAshtamCount})` }
         ].map(tab => (
           <button
             key={tab.id}
@@ -301,7 +470,7 @@ export default function MobileNotamsView({
         </div>
       )}
 
-      {/* LISTA DE NOTAMS CON CONTENIDO COMPLETO EN JETBRAINS MONO */}
+      {/* LISTA DE NOTAMS VIGENTES CON CONTENIDO COMPLETO */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
         {filteredNotams.length > 0 ? (
           filteredNotams.map((notam, idx) => {
@@ -326,6 +495,8 @@ export default function MobileNotamsView({
               badgeColor = 'var(--status-warning)';
             }
 
+            const formattedDates = formatNotamDateRange(notam);
+
             return (
               <div key={idx} style={{
                 background: 'var(--glass-bg)',
@@ -337,7 +508,7 @@ export default function MobileNotamsView({
                 flexDirection: 'column',
                 gap: '0.6rem'
               }}>
-                {/* Cabecera con Código y Ubicación */}
+                {/* Cabecera con Código, Ubicación y Estado Vigente */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span style={{
@@ -361,17 +532,35 @@ export default function MobileNotamsView({
                     </span>
                   </div>
 
-                  <span style={{
-                    background: badgeBg,
-                    color: badgeColor,
-                    border: `1px solid ${badgeBorder}`,
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '6px',
-                    fontSize: '0.68rem',
-                    fontWeight: '800'
-                  }}>
-                    {notam.category || categorizeNotam(notam)}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span style={{
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: 'var(--status-success)',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: '6px',
+                      fontSize: '0.65rem',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.2rem'
+                    }}>
+                      <CheckCircle2 size={10} />
+                      Vigente
+                    </span>
+
+                    <span style={{
+                      background: badgeBg,
+                      color: badgeColor,
+                      border: `1px solid ${badgeBorder}`,
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '6px',
+                      fontSize: '0.68rem',
+                      fontWeight: '800'
+                    }}>
+                      {notam.category || categorizeNotam(notam)}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Resumen / Título si existe */}
@@ -399,9 +588,19 @@ export default function MobileNotamsView({
                 </div>
 
                 {/* Fechas de Vigencia & Horario */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '0.1rem' }}>
-                  <span>Fuente: {notam.source && notam.source.includes('AEROCIVIL') ? 'Aerocivil' : 'FAA'} | {notam.schedule ? `Horario: ${notam.schedule}` : '24h'}</span>
-                  <span>Vigencia: {notam.dates_raw || `${notam.start_date || ''} - ${notam.end_date || 'PERM'}`}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '0.1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: '700' }}>
+                      Vigencia: {formattedDates}
+                    </span>
+                    <span>Fuente: {notam.source && notam.source.includes('AEROCIVIL') ? 'Aerocivil' : 'FAA'}</span>
+                  </div>
+                  {notam.schedule && (
+                    <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <Clock size={12} color="var(--status-warning)" />
+                      <span>Horario activo: {notam.schedule}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -409,8 +608,11 @@ export default function MobileNotamsView({
         ) : (
           <div style={{ textAlign: 'center', padding: '2rem 1rem', background: 'var(--glass-bg)', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
             <AlertTriangle size={28} color="var(--text-muted)" style={{ marginBottom: '0.5rem' }} />
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              No se encontraron NOTAMs en la clasificación seleccionada.
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '700' }}>
+              No hay NOTAMs vigentes para la fecha consultada ({formatQueryDateDisplay(queryDateStr)})
+            </p>
+            <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Intenta cambiar la fecha de consulta o la subcategoría seleccionada.
             </p>
           </div>
         )}
