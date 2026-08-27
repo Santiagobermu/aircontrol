@@ -3179,7 +3179,7 @@ export default function ControllerPortal({
                   checked={includeOps}
                   onChange={(e) => setIncludeOps(e.target.checked)}
                 />
-                <span>Incluir turnos operativos (Madrugada, Mañana, Tarde, Noche)</span>
+                <span>Incluir turnos operativos (Amanecida, Mañana, Tarde, Noche)</span>
               </label>
 
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>

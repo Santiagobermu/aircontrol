@@ -279,7 +279,7 @@ export const generateICS = (controller, ...args) => {
   const getShiftTimes = (shift, dateStr) => {
     const dStr = formatDateStr(dateStr);
     switch (shift) {
-      case 'A': // Madrugada: 00:00 - 06:00
+      case 'A': // Amanecida: 00:00 - 06:00
         return { start: `${dStr}T000000`, end: `${dStr}T060000` };
       case 'M': // Mañana: 06:00 - 12:00
         return { start: `${dStr}T060000`, end: `${dStr}T120000` };
@@ -314,7 +314,7 @@ export const generateICS = (controller, ...args) => {
       if (item.type === 'SHIFT' && includeOps) {
         const { start, end } = getShiftTimes(item.shift, dateStr);
         const shiftLabel = 
-          item.shift === 'A' ? 'Madrugada' :
+          item.shift === 'A' ? 'Amanecida' :
           item.shift === 'M' ? 'Mañana' :
           item.shift === 'T' ? 'Tarde' : 'Noche';
         

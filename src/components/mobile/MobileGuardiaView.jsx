@@ -11,7 +11,7 @@ export default function MobileGuardiaView({ scheduleMonth, controllers, currentU
   const dateKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
 
   const shiftConfig = {
-    'A': { title: 'Madrugada (A)', hours: '00:00 - 06:00 UTC', color: 'var(--shift-madrugada)', bg: 'rgba(99, 102, 241, 0.12)' },
+    'A': { title: 'Amanecida (A)', hours: '00:00 - 06:00 UTC', color: 'var(--shift-madrugada)', bg: 'rgba(99, 102, 241, 0.12)' },
     'M': { title: 'Mañana (M)', hours: '06:00 - 12:00 UTC', color: 'var(--shift-manana)', bg: 'rgba(6, 182, 212, 0.12)' },
     'T': { title: 'Tarde (T)', hours: '12:00 - 18:00 UTC', color: 'var(--shift-tarde)', bg: 'rgba(245, 158, 11, 0.12)' },
     'N': { title: 'Noche (N)', hours: '18:00 - 24:00 UTC', color: 'var(--shift-noche)', bg: 'rgba(16, 185, 129, 0.12)' },

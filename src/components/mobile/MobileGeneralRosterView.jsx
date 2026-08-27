@@ -316,7 +316,7 @@ export default function MobileGeneralRosterView({
       case 'M': return { bg: 'rgba(6, 182, 212, 0.18)', border: 'rgba(6, 182, 212, 0.4)', color: 'var(--shift-manana)', label: 'MAÑANA (06:00 - 12:00)' };
       case 'T': return { bg: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.4)', color: 'var(--shift-tarde)', label: 'TARDE (12:00 - 18:00)' };
       case 'N': return { bg: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.4)', color: 'var(--shift-noche)', label: 'NOCHE (18:00 - 24:00)' };
-      case 'A': return { bg: 'rgba(99, 102, 241, 0.18)', border: 'rgba(99, 102, 241, 0.4)', color: 'var(--shift-madrugada)', label: 'MADRUGADA (00:00 - 06:00)' };
+      case 'A': return { bg: 'rgba(99, 102, 241, 0.18)', border: 'rgba(99, 102, 241, 0.4)', color: 'var(--shift-madrugada)', label: 'AMANECIDA (00:00 - 06:00)' };
       default: return { bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)', color: 'var(--status-success)', label: 'DESCANSO / LIBRE' };
     }
   };
@@ -735,7 +735,7 @@ export default function MobileGeneralRosterView({
             { id: 'M', label: `☀️ Mañana (${statsCounters.M})` },
             { id: 'T', label: `🌅 Tarde (${statsCounters.T})` },
             { id: 'N', label: `🌙 Noche (${statsCounters.N})` },
-            { id: 'A', label: `🌌 Madrugada (${statsCounters.A})` },
+            { id: 'A', label: `🌌 Amanecida (${statsCounters.A})` },
             { id: 'EXC', label: `Excepciones (${statsCounters.EXC})` }
           ].map(chip => (
             <button
