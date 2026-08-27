@@ -1269,7 +1269,7 @@ export default function MonthlyGrid({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: 'var(--accent-cyan)', display: 'inline-block' }} />
-          <span>A (Madrugada)</span>
+          <span>A (Amanecida)</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: 'var(--accent-indigo)', display: 'inline-block' }} />
@@ -1690,7 +1690,7 @@ export default function MonthlyGrid({
                           const isTraining = position === 'ENT';
                           const isInstruction = position === 'INS';
                           const shiftLabel = 
-                            shift === 'A' ? 'Madrugada (A)' :
+                            shift === 'A' ? 'Amanecida (A)' :
                             shift === 'M' ? 'Mañana (M)' :
                             shift === 'T' ? 'Tarde (T)' : 'Noche (N)';
                           
@@ -1905,7 +1905,7 @@ export default function MonthlyGrid({
                                   }
                                   return list;
                                 }).map(({ shift, slotKey }) => {
-                                  const label = shift === 'A' ? 'Madrugada' : shift === 'M' ? 'Mañana' : shift === 'T' ? 'Tarde' : 'Noche';
+                                  const label = shift === 'A' ? 'Amanecida' : shift === 'M' ? 'Mañana' : shift === 'T' ? 'Tarde' : 'Noche';
                                   return (
                                     <option key={`${shift}|${slotKey}`} value={`${shift}|${slotKey}`}>
                                       {label} - {getSlotDescription(slotKey, shift)} ({getSlotAcronym(slotKey, shift)})

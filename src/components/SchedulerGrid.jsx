@@ -105,7 +105,7 @@ export default function SchedulerGrid({
 
   const getShiftTimeLabel = (shift) => {
     switch (shift) {
-      case 'A': return '00:00 - 06:00 (Madrugada)';
+      case 'A': return '00:00 - 06:00 (Amanecida)';
       case 'M': return '06:00 - 12:00 (Mañana)';
       case 'T': return '12:00 - 18:00 (Tarde)';
       case 'N': return '18:00 - 24:00 (Noche)';
@@ -326,7 +326,7 @@ export default function SchedulerGrid({
                     <option value="M">M (Mañana)</option>
                     <option value="T">T (Tarde)</option>
                     <option value="N">N (Noche)</option>
-                    <option value="A">A (Madrugada)</option>
+                    <option value="A">A (Amanecida)</option>
                     <option value="M+T">M + T (Doble)</option>
                     <option value="T+N">T + N (Doble)</option>
                     <option value="Cualquiera">Cualquiera</option>

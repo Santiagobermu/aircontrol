@@ -362,7 +362,7 @@ export default function TradePanel({
                     <option value="">-- Selecciona el slot a entregar --</option>
                     {ctrlASlots.map(s => (
                       <option key={`${s.shift}|${s.slotKey}`} value={`${s.shift}|${s.slotKey}`}>
-                        {s.shift === 'A' ? 'Madrugada (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotDescription(s.slotKey)} ({getSlotAcronym(s.slotKey)})
+                        {s.shift === 'A' ? 'Amanecida (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotDescription(s.slotKey)} ({getSlotAcronym(s.slotKey)})
                       </option>
                     ))}
                   </select>
@@ -415,7 +415,7 @@ export default function TradePanel({
                     <option value="">-- Selecciona el slot de B para intercambiar --</option>
                     {ctrlBSlots.map(s => (
                       <option key={`${s.shift}|${s.slotKey}`} value={`${s.shift}|${s.slotKey}`}>
-                        {s.shift === 'A' ? 'Madrugada (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotDescription(s.slotKey)} ({getSlotAcronym(s.slotKey)})
+                        {s.shift === 'A' ? 'Amanecida (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotDescription(s.slotKey)} ({getSlotAcronym(s.slotKey)})
                       </option>
                     ))}
                   </select>

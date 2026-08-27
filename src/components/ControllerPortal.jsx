@@ -1614,7 +1614,7 @@ export default function ControllerPortal({
                           }}
                         >
                           <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', color: 'var(--accent-indigo)' }}>
-                            <Clock size={16} /> Turno {shift === 'A' ? 'Madrugada (A)' : shift === 'M' ? 'Mañana (M)' : shift === 'T' ? 'Tarde (T)' : 'Noche (N)'}
+                            <Clock size={16} /> Turno {shift === 'A' ? 'Amanecida (A)' : shift === 'M' ? 'Mañana (M)' : shift === 'T' ? 'Tarde (T)' : 'Noche (N)'}
                           </h4>
 
                           {sortedAssignments.length > 0 ? (
@@ -2316,7 +2316,7 @@ export default function ControllerPortal({
                           <option value="">-- Selecciona el turno --</option>
                           {myShiftsOnSelectedTradeDate.map(s => (
                             <option key={s.fullKey} value={s.fullKey}>
-                              {s.shift === 'A' ? 'Madrugada (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotAcronym(s.slotKey, s.shift)} ({getSlotDescription(s.slotKey, s.shift)}) {s.requiredSkill ? `· Req: ${s.requiredSkill}` : ''}
+                              {s.shift === 'A' ? 'Amanecida (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotAcronym(s.slotKey, s.shift)} ({getSlotDescription(s.slotKey, s.shift)}) {s.requiredSkill ? `· Req: ${s.requiredSkill}` : ''}
                             </option>
                           ))}
                         </select>
@@ -2388,7 +2388,7 @@ export default function ControllerPortal({
                             <option value="">-- Selecciona el turno del receptor para intercambiar --</option>
                             {colleagueShiftsOnSelectedTradeDate.map(s => (
                               <option key={s.fullKey} value={s.fullKey}>
-                                {s.shift === 'A' ? 'Madrugada (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotAcronym(s.slotKey, s.shift)} ({getSlotDescription(s.slotKey, s.shift)}) {s.requiredSkill ? `· Pos: ${s.requiredSkill}` : ''}
+                                {s.shift === 'A' ? 'Amanecida (A)' : s.shift === 'M' ? 'Mañana (M)' : s.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} - {getSlotAcronym(s.slotKey, s.shift)} ({getSlotDescription(s.slotKey, s.shift)}) {s.requiredSkill ? `· Pos: ${s.requiredSkill}` : ''}
                               </option>
                             ))}
                           </select>
@@ -2788,7 +2788,7 @@ export default function ControllerPortal({
                       <option value="M">Mañana (M: 06:00 - 12:00)</option>
                       <option value="T">Tarde (T: 12:00 - 18:00)</option>
                       <option value="N">Noche (N: 18:00 - 24:00)</option>
-                      <option value="A">Madrugada (A: 00:00 - 06:00)</option>
+                      <option value="A">Amanecida (A: 00:00 - 06:00)</option>
                     </select>
                     {requestPosition === 'AVOID' && (
                       <span style={{ fontSize: '0.72rem', color: 'var(--accent-amber)', marginTop: '0.2rem' }}>
@@ -3393,7 +3393,7 @@ export default function ControllerPortal({
             }}>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Turno y Posición:</div>
               <div style={{ fontWeight: '700', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-                Turno {radarChangeModal.shift === 'A' ? 'Madrugada (A)' : radarChangeModal.shift === 'M' ? 'Mañana (M)' : radarChangeModal.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} · {getSlotAcronym(radarChangeModal.slotKey)} ({getSlotDescription(radarChangeModal.slotKey)})
+                Turno {radarChangeModal.shift === 'A' ? 'Amanecida (A)' : radarChangeModal.shift === 'M' ? 'Mañana (M)' : radarChangeModal.shift === 'T' ? 'Tarde (T)' : 'Noche (N)'} · {getSlotAcronym(radarChangeModal.slotKey)} ({getSlotDescription(radarChangeModal.slotKey)})
               </div>
             </div>
 

@@ -187,7 +187,7 @@ export default function RequestPanel({
               <option value="M">Mañana (M: 06:00 - 12:00)</option>
               <option value="T">Tarde (T: 12:00 - 18:00)</option>
               <option value="N">Noche (N: 18:00 - 24:00)</option>
-              <option value="A">Madrugada (A: 00:00 - 06:00)</option>
+              <option value="A">Amanecida (A: 00:00 - 06:00)</option>
             </select>
           </div>
 

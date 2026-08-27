@@ -323,13 +323,14 @@ export const generateICS = (controller, ...args) => {
         icsLines.push('BEGIN:VEVENT');
         icsLines.push(`UID:${uid}`);
         icsLines.push(`DTSTAMP:${nowStr}`);
+        icsLines.push(`LAST-MODIFIED:${nowStr}`);
         icsLines.push(`DTSTART;TZID=America/Bogota:${start}`);
         icsLines.push(`DTEND;TZID=America/Bogota:${end}`);
         icsLines.push(`SUMMARY:Turno ${shiftLabel} - ${item.acronym}`);
         icsLines.push(`DESCRIPTION:Posición: ${escapeText(item.description)}\\nSigla: ${item.acronym}\\nJornada: ${shiftLabel} (${item.shift})\\nTorre de Control SKBO`);
         icsLines.push('LOCATION:Torre de Control Eldorado SKBO');
         icsLines.push('STATUS:CONFIRMED');
-        icsLines.push('SEQUENCE:1');
+        icsLines.push('SEQUENCE:2');
         icsLines.push('END:VEVENT');
       } 
       else if (item.type === 'EXCEPTION' && includeExceptions) {
@@ -341,12 +342,13 @@ export const generateICS = (controller, ...args) => {
         icsLines.push('BEGIN:VEVENT');
         icsLines.push(`UID:${uid}`);
         icsLines.push(`DTSTAMP:${nowStr}`);
+        icsLines.push(`LAST-MODIFIED:${nowStr}`);
         icsLines.push(`DTSTART;VALUE=DATE:${dStr}`);
         icsLines.push(`DTEND;VALUE=DATE:${nextDStr}`);
         icsLines.push(`SUMMARY:${summaryText}`);
         icsLines.push(`DESCRIPTION:Novedad / Estado de personal: ${escapeText(item.status)}`);
         icsLines.push('STATUS:CONFIRMED');
-        icsLines.push('SEQUENCE:1');
+        icsLines.push('SEQUENCE:2');
         icsLines.push('END:VEVENT');
       }
     });

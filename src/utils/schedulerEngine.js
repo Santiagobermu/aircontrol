@@ -73,7 +73,7 @@ export const getSlotDescription = (slotKey, shift) => {
   if (pos === 'SIM') return 'Simulador / Pseudopiloto';
   if (pos === 'ACC') {
     const shiftName =
-      shift === 'A' ? 'Madrugada' :
+      shift === 'A' ? 'Amanecida' :
         shift === 'M' ? 'Mañana' :
           shift === 'T' ? 'Tarde' : 'Noche';
     return `Centro Control Área - ${shiftName} (${shift || ''}ACC)`;
