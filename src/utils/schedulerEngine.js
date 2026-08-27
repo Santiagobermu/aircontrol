@@ -179,7 +179,6 @@ export const getColombianHolidays = (year) => {
   addEmilianiHoliday(10, 12, 'Día de la Raza');
   addEmilianiHoliday(11, 1, 'Todos los Santos');
   addEmilianiHoliday(11, 11, 'Independencia de Cartagena');
-  addEmilianiHoliday(9, 6, 'Nuestra Señora del Rosario de Chiquinquirá')
 
   // 3. Festivos variables basados en la Pascua (Easter)
   const easter = getEasterDate(year);

@@ -48,7 +48,7 @@ import {
 import { auth } from '../utils/firebase';
 import { updatePassword } from 'firebase/auth';
 import MonthlyGrid from './MonthlyGrid';
-import { generateICS, uploadCalendarToStorage, triggerCalendarSyncIfEnabled } from '../utils/calendarExport';
+import { generateICS, uploadCalendarToStorage, triggerCalendarSyncIfEnabled, getAllShiftsForController } from '../utils/calendarExport';
 import { isNotamActiveOnDate, formatNotamDateRange, categorizeNotam, getUtcDateString } from '../utils/notamUtils';
 
 export default function ControllerPortal({ 
@@ -280,9 +280,10 @@ export default function ControllerPortal({
           calendarSyncUrl: null
         });
       } else {
-        // Activar
-        const icsContent = generateICS(currentController, currentYear, currentMonth, myMonthlyShifts, { includeOps, includeExceptions });
-        const downloadUrl = await uploadCalendarToStorage(currentController.id, icsContent);
+        // Activar con todos los meses disponibles
+        const allShifts = getAllShiftsForController(currentController, schedule, exceptions);
+        const icsContent = generateICS(currentController, allShifts, { includeOps, includeExceptions });
+        const downloadUrl = await uploadCalendarToStorage(currentController.id || currentController.signature, icsContent);
         await onUpdateController({
           ...currentController,
           calendarSyncEnabled: true,
@@ -3226,15 +3227,17 @@ export default function ControllerPortal({
                         type="button"
                         className="btn btn-secondary"
                         onClick={async () => {
-                          const icsContent = generateICS(currentController, currentYear, currentMonth, myMonthlyShifts, { includeOps, includeExceptions });
                           setSyncLoading(true);
                           try {
-                            const newUrl = await uploadCalendarToStorage(currentController.id, icsContent);
+                            const allShifts = getAllShiftsForController(currentController, schedule, exceptions);
+                            const totalEvents = Object.values(allShifts).reduce((acc, items) => acc + (items?.length || 0), 0);
+                            const icsContent = generateICS(currentController, allShifts, { includeOps, includeExceptions });
+                            const newUrl = await uploadCalendarToStorage(currentController.id || currentController.signature, icsContent);
                             await onUpdateController({
                               ...currentController,
                               calendarSyncUrl: newUrl
                             });
-                            alert('Sincronización forzada con éxito.');
+                            alert(`¡Sincronización multi-mes completada con éxito!\nSe actualizaron ${totalEvents} turnos y novedades (incluyendo Agosto, Septiembre y meses futuros) en la nube.`);
                           } catch (e) {
                             alert('Error al forzar actualización: ' + e.message);
                           } finally {

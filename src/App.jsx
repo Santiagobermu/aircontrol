@@ -45,7 +45,7 @@ import MobileLayout from './components/mobile/MobileLayout';
 import { db, auth } from './utils/firebase';
 import { onSnapshot, collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword } from 'firebase/auth';
-import { triggerCalendarSyncIfEnabled } from './utils/calendarExport';
+import { triggerCalendarSyncIfEnabled, syncAllEnabledCalendars } from './utils/calendarExport';
 import {
   seedDatabaseIfEmpty,
   addControllerDB,
@@ -495,19 +495,15 @@ export default function App() {
     await Promise.all([...dayPromises, ...exceptionPromises]);
     showNotification("Importación de Excel completada exitosamente.");
 
-    controllers.forEach(c => {
-      if (c.calendarSyncEnabled) {
-        const combinedSchedule = { ...schedule, ...scheduleUpdates };
-        const combinedExceptions = { ...exceptions };
-        Object.keys(exceptionUpdates).forEach(ctrlId => {
-          if (!combinedExceptions[ctrlId]) combinedExceptions[ctrlId] = {};
-          Object.keys(exceptionUpdates[ctrlId]).forEach(dateStr => {
-            combinedExceptions[ctrlId][dateStr] = exceptionUpdates[ctrlId][dateStr];
-          });
-        });
-        triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, combinedSchedule, combinedExceptions);
-      }
+    const combinedSchedule = { ...schedule, ...scheduleUpdates };
+    const combinedExceptions = { ...exceptions };
+    Object.keys(exceptionUpdates).forEach(ctrlId => {
+      if (!combinedExceptions[ctrlId]) combinedExceptions[ctrlId] = {};
+      Object.keys(exceptionUpdates[ctrlId]).forEach(dateStr => {
+        combinedExceptions[ctrlId][dateStr] = exceptionUpdates[ctrlId][dateStr];
+      });
     });
+    syncAllEnabledCalendars(controllers, combinedSchedule, combinedExceptions).catch(console.error);
   };
 
   // Cambiar el estado de publicación oficial de un mes
@@ -527,6 +523,11 @@ export default function App() {
           : `Turnos de ${monthNames[month]} ${year} revertidos a borrador.`,
         newStatus ? 'success' : 'warning'
       );
+
+      // Auto-sincronizar calendarios de todos los controladores suscritos al publicar
+      if (newStatus) {
+        syncAllEnabledCalendars(controllers, schedule, exceptions).catch(console.error);
+      }
     } catch (error) {
       console.error("Error setting publish state:", error);
       showNotification('Error al cambiar el estado de publicación.', 'danger');
@@ -962,11 +963,9 @@ export default function App() {
       }
 
       showNotification(`¡Todo el mes de ${monthNames[currentMonth]} programado con éxito de forma balanceada!`, 'success');
-      controllers.forEach(c => {
-        if (c.calendarSyncEnabled) {
-          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, newSchedule, newExceptions || tempExceptions);
-        }
-      });
+      const combinedSchedule = { ...schedule, ...newSchedule };
+      const combinedExceptions = { ...exceptions, ...(newExceptions || tempExceptions || {}) };
+      syncAllEnabledCalendars(controllers, combinedSchedule, combinedExceptions).catch(console.error);
     } else {
       showNotification('No se pudo generar una malla perfecta para el mes. Revisa que no haya demasiadas excepciones o personal de baja.', 'error');
     }
@@ -988,11 +987,8 @@ export default function App() {
       
       await saveScheduleMonthDB(updatedSchedule);
       showNotification(`Se han vaciado todos los turnos de ${monthNames[currentMonth]}.`, 'warning');
-      controllers.forEach(c => {
-        if (c.calendarSyncEnabled) {
-          triggerCalendarSyncIfEnabled(c.id, controllers, currentYear, currentMonth, updatedSchedule, exceptions);
-        }
-      });
+      const combinedSchedule = { ...schedule, ...updatedSchedule };
+      syncAllEnabledCalendars(controllers, combinedSchedule, exceptions).catch(console.error);
     }
   };
 

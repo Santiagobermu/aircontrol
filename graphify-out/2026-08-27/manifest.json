@@ -55,8 +55,8 @@
     "semantic_hash": "f8a4910550b58cd968de4af61b27bf04"
   },
   "src/App.jsx": {
-    "mtime": 1787846660.6529653,
-    "ast_hash": "1f1f9e7d8424890e26156ab333681ffb",
+    "mtime": 1787165162.4420817,
+    "ast_hash": "11001cfff18e163abe3904663676f821",
     "semantic_hash": ""
   },
   "src/components/AICopilotPanel.jsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": "bf1e38b00bd0c8548004d8effecfb461"
   },
   "src/components/ControllerPortal.jsx": {
-    "mtime": 1787846639.626863,
-    "ast_hash": "5427aa0c67ffe0145a6436bbc53acb77",
+    "mtime": 1787179646.160924,
+    "ast_hash": "8804cff424070dfc36c9682afe78416a",
     "semantic_hash": ""
   },
   "src/components/LoginScreen.jsx": {
@@ -140,9 +140,9 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileProfileView.jsx": {
-    "mtime": 1787846622.5143123,
-    "ast_hash": "9a4612e450fd24addae059d87d6c80be",
-    "semantic_hash": ""
+    "mtime": 1786214021.869602,
+    "ast_hash": "498744adaa0a0d001bceb414c2b6f26a",
+    "semantic_hash": "498744adaa0a0d001bceb414c2b6f26a"
   },
   "src/components/mobile/MobileRosterView.jsx": {
     "mtime": 1787165242.4790828,
@@ -160,9 +160,9 @@
     "semantic_hash": "e13723e2574429d9a6d849727e3ff695"
   },
   "src/utils/calendarExport.js": {
-    "mtime": 1787846713.9634545,
-    "ast_hash": "885932fcf788ebc678ebbd6cdc1ec511",
-    "semantic_hash": ""
+    "mtime": 1785015575.339614,
+    "ast_hash": "3c98438836bc5a6501fe78460de08a81",
+    "semantic_hash": "3c98438836bc5a6501fe78460de08a81"
   },
   "src/utils/db.js": {
     "mtime": 1785797031.533579,

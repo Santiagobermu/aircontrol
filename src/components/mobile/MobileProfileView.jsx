@@ -1,10 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock } from 'lucide-react';
 import { getAuth, updatePassword } from 'firebase/auth';
 import ThemeToggle from '../ThemeToggle';
 import { addManualAlertDB } from '../../utils/db';
-import { generateICS, uploadCalendarToStorage } from '../../utils/calendarExport';
-import { SHIFTS, getSlotAcronym, getSlotDescription } from '../../utils/schedulerEngine';
+import { generateICS, uploadCalendarToStorage, getAllShiftsForController } from '../../utils/calendarExport';
 
 export default function MobileProfileView({ 
   currentUser, 
@@ -35,46 +34,6 @@ export default function MobileProfileView({
   
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
   const roleTitle = isEncargado ? 'Encargado de Turno / CTE Certificado' : 'Controlador Certificado SKBO';
-
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
-
-  const myMonthlyShifts = useMemo(() => {
-    if (!currentUser) return {};
-    const monthlyMap = {};
-    const count = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const monthStr = String(currentMonth + 1).padStart(2, '0');
-
-    for (let i = 1; i <= count; i++) {
-      const dayStr = String(i).padStart(2, '0');
-      const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
-      monthlyMap[dateStr] = [];
-
-      const exc = exceptions[currentUser.id]?.[dateStr];
-      if (exc && exc !== 'OPERATIVO') {
-        monthlyMap[dateStr].push({ type: 'EXCEPTION', status: exc });
-      }
-
-      const daySched = scheduleMonth[dateStr];
-      if (daySched) {
-        SHIFTS.forEach(shift => {
-          const slots = daySched[shift] || {};
-          Object.keys(slots).forEach(slotKey => {
-            if (slots[slotKey] === currentUser.id) {
-              monthlyMap[dateStr].push({
-                type: 'SHIFT',
-                shift,
-                slotKey,
-                acronym: getSlotAcronym(slotKey),
-                description: getSlotDescription(slotKey)
-              });
-            }
-          });
-        });
-      }
-    }
-    return monthlyMap;
-  }, [currentUser, currentYear, currentMonth, scheduleMonth, exceptions]);
 
   const rawUrl = currentUser?.calendarSyncUrl || `https://firebasestorage.googleapis.com/v0/b/aircontrol-skbo-sbg.firebasestorage.app/o/calendars%2F${currentUser?.id || currentUser?.signature}.ics?alt=media`;
   const webcalUrl = rawUrl.replace(/^https:\/\//, 'webcal://');
@@ -114,8 +73,10 @@ export default function MobileProfileView({
           });
         }
       } else {
-        const icsContent = generateICS(currentUser, currentYear, currentMonth, myMonthlyShifts);
-        const downloadUrl = await uploadCalendarToStorage(currentUser.id, icsContent);
+        const allShifts = getAllShiftsForController(currentUser, scheduleMonth, exceptions);
+        const icsContent = generateICS(currentUser, allShifts);
+        const targetId = currentUser.id || currentUser.signature;
+        const downloadUrl = await uploadCalendarToStorage(targetId, icsContent);
         if (onUpdateController) {
           await onUpdateController({
             ...currentUser,
@@ -136,15 +97,18 @@ export default function MobileProfileView({
     if (!currentUser) return;
     setSyncLoading(true);
     try {
-      const icsContent = generateICS(currentUser, currentYear, currentMonth, myMonthlyShifts);
-      const newUrl = await uploadCalendarToStorage(currentUser.id, icsContent);
+      const allShifts = getAllShiftsForController(currentUser, scheduleMonth, exceptions);
+      const totalEvents = Object.values(allShifts).reduce((acc, items) => acc + (items?.length || 0), 0);
+      const icsContent = generateICS(currentUser, allShifts);
+      const targetId = currentUser.id || currentUser.signature;
+      const newUrl = await uploadCalendarToStorage(targetId, icsContent);
       if (onUpdateController) {
         await onUpdateController({
           ...currentUser,
           calendarSyncUrl: newUrl
         });
       }
-      alert('Sincronización forzada con éxito.');
+      alert(`¡Sincronización multi-mes completada con éxito!\nSe actualizaron ${totalEvents} turnos y novedades (incluyendo Agosto, Septiembre y meses futuros) en tu calendario de la nube.`);
     } catch (err) {
       console.error(err);
       alert('Error al forzar actualización: ' + err.message);
