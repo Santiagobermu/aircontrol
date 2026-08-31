@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock } from 'lucide-react';
+import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock, Download, HelpCircle, Smartphone, ExternalLink, Info } from 'lucide-react';
 import { getAuth, updatePassword } from 'firebase/auth';
 import ThemeToggle from '../ThemeToggle';
 import { addManualAlertDB } from '../../utils/db';
-import { generateICS, uploadCalendarToStorage, getAllShiftsForController } from '../../utils/calendarExport';
+import { generateICS, uploadCalendarToStorage, getAllShiftsForController, getGoogleCalendarSubscribeUrl, downloadICSFile, detectUserDevice } from '../../utils/calendarExport';
 
 export default function MobileProfileView({ 
   currentUser, 
@@ -18,6 +18,13 @@ export default function MobileProfileView({
   const [syncing, setSyncing] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   
+  // Plataforma seleccionada para sincronización de calendario ('android' | 'apple')
+  const [calendarPlatform, setCalendarPlatform] = useState(() => {
+    const dev = detectUserDevice();
+    return dev === 'android' ? 'android' : 'apple';
+  });
+  const [isAndroidGuideOpen, setIsAndroidGuideOpen] = useState(false);
+
   // Alertas del Encargado
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertContent, setAlertContent] = useState('');
@@ -37,15 +44,17 @@ export default function MobileProfileView({
 
   const rawUrl = currentUser?.calendarSyncUrl || `https://firebasestorage.googleapis.com/v0/b/aircontrol-skbo-sbg.firebasestorage.app/o/calendars%2F${currentUser?.id || currentUser?.signature}.ics?alt=media`;
   const webcalUrl = rawUrl.replace(/^https:\/\//, 'webcal://');
+  const googleCalendarUrl = getGoogleCalendarSubscribeUrl(rawUrl);
 
-  // Copiar Enlace Webcal (.ics)
-  const handleCopyWebcal = async () => {
+  // Copiar Enlace
+  const handleCopyCalendarLink = async () => {
     try {
+      const linkToCopy = calendarPlatform === 'apple' ? webcalUrl : rawUrl;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(webcalUrl);
+        await navigator.clipboard.writeText(linkToCopy);
       } else {
         const textarea = document.createElement('textarea');
-        textarea.value = webcalUrl;
+        textarea.value = linkToCopy;
         document.body.appendChild(textarea);
         textarea.select();
         document.execCommand('copy');
@@ -53,10 +62,26 @@ export default function MobileProfileView({
       }
       setCopiedWebcal(true);
       setTimeout(() => setCopiedWebcal(false), 2500);
-      alert('¡Enlace Webcal copiado al portapapeles!\nPuedes pegarlo en la app de Calendario (Apple o Google) en tu iPhone.');
+      alert('¡Enlace de suscripción copiado al portapapeles!');
     } catch (err) {
       console.error(err);
-      alert(`Enlace Webcal: ${webcalUrl}`);
+      alert(`Enlace: ${rawUrl}`);
+    }
+  };
+
+  // Descarga directa de archivo .ics (Para Samsung Calendar, Xiaomi, Outlook, etc.)
+  const handleDirectDownloadICS = () => {
+    if (!currentUser) return;
+    try {
+      const allShifts = getAllShiftsForController(currentUser, scheduleMonth, exceptions);
+      const totalCount = Object.values(allShifts).reduce((acc, l) => acc + (l?.length || 0), 0);
+      const icsContent = generateICS(currentUser, allShifts);
+      const fileName = `horario_${currentUser.signature || currentUser.name || 'aircontrol'}`;
+      downloadICSFile(fileName, icsContent);
+      alert(`¡Archivo de horario descargado con éxito (${totalCount} eventos)!\n\nToca "Abrir" en la barra de descargas de tu celular para guardarlos directamente en tu calendario (Samsung, Google, Outlook, etc.).`);
+    } catch (err) {
+      console.error(err);
+      alert('Error al generar la descarga del archivo ICS: ' + err.message);
     }
   };
 
@@ -308,7 +333,7 @@ export default function MobileProfileView({
         </div>
       )}
 
-      {/* Sincronización Webcal Calendario (.ics / iPhone & Mac) */}
+      {/* Sincronización de Calendario (.ics / Google Calendar & Apple) */}
       <div style={{
         background: 'var(--glass-bg)',
         border: '1px solid var(--glass-border)',
@@ -316,7 +341,7 @@ export default function MobileProfileView({
         padding: '1.2rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.8rem'
+        gap: '0.85rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
@@ -339,129 +364,337 @@ export default function MobileProfileView({
         </div>
 
         <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-          Conecta tus turnos de AirControl en tiempo real con Apple Calendar en tu iPhone o Mac, u otros calendarios como Google Calendar.
+          Sincroniza tus turnos y descansos en tiempo real con <strong>Google Calendar en Android</strong> o <strong>Apple Calendar en iPhone</strong>.
         </p>
 
-        {/* Botón Principal Destacado: 1-Clic Suscribirse en iPhone / Mac */}
-        <a
-          href={webcalUrl}
-          className="btn btn-primary"
-          style={{
-            width: '100%',
-            padding: '0.8rem',
-            borderRadius: '12px',
-            fontSize: '0.88rem',
-            fontWeight: '800',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            textDecoration: 'none',
-            background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-            boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
-            color: '#ffffff',
-            boxSizing: 'border-box'
-          }}
-          onClick={async (e) => {
-            if (!currentUser?.calendarSyncEnabled) {
-              e.preventDefault();
-              await handleToggleCloudSync();
-              window.location.href = webcalUrl;
-            }
-          }}
-        >
-          <Calendar size={18} />
-          📅 Suscribirse en iPhone / Mac (Un Clic)
-        </a>
-
-        {/* Acciones Secundarias */}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {/* Selector de Plataforma (Android vs Apple) */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          background: 'var(--bg-tertiary)',
+          padding: '0.25rem',
+          borderRadius: '10px',
+          gap: '0.25rem',
+          border: '1px solid var(--glass-border)'
+        }}>
           <button
-            onClick={handleCopyWebcal}
-            className="btn btn-secondary"
+            type="button"
+            onClick={() => setCalendarPlatform('android')}
             style={{
-              flex: 1,
-              padding: '0.65rem',
-              borderRadius: '10px',
+              padding: '0.45rem',
+              borderRadius: '8px',
+              border: 'none',
               fontSize: '0.78rem',
               fontWeight: '700',
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.35rem'
+              gap: '0.35rem',
+              background: calendarPlatform === 'android' ? 'var(--accent-cyan)' : 'transparent',
+              color: calendarPlatform === 'android' ? '#000' : 'var(--text-secondary)',
+              transition: 'all 0.2s ease'
             }}
           >
-            {copiedWebcal ? <Check size={16} color="var(--status-success)" /> : <Copy size={16} />}
-            {copiedWebcal ? '¡Copiado!' : 'Copiar Enlace'}
+            <Smartphone size={15} />
+            Android / Google
           </button>
+          <button
+            type="button"
+            onClick={() => setCalendarPlatform('apple')}
+            style={{
+              padding: '0.45rem',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '0.78rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              background: calendarPlatform === 'apple' ? 'var(--accent-cyan)' : 'transparent',
+              color: calendarPlatform === 'apple' ? '#000' : 'var(--text-secondary)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <span>🍏</span>
+            iPhone / Mac
+          </button>
+        </div>
 
-          {currentUser?.calendarSyncEnabled ? (
-            <>
+        {/* ACCIONES ESPECÍFICAS SEGÚN LA PLATAFORMA SELECCIONADA */}
+        {calendarPlatform === 'android' ? (
+          /* VISTA ANDROID / GOOGLE CALENDAR & SAMSUNG */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            
+            {/* Botón Principal 1: Descarga Directa 1-Toque */}
+            <button
+              type="button"
+              onClick={handleDirectDownloadICS}
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.85rem 1rem',
+                borderRadius: '12px',
+                fontSize: '0.88rem',
+                fontWeight: '800',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                boxShadow: '0 4px 14px rgba(6, 182, 212, 0.35)',
+                color: '#ffffff',
+                border: 'none',
+                cursor: 'pointer',
+                boxSizing: 'border-box'
+              }}
+            >
+              <Download size={18} />
+              📥 Descargar & Abrir en Calendario (.ICS)
+            </button>
+
+            {/* Botón Principal 2: Asistente Google Calendar Nube */}
+            <button
+              type="button"
+              onClick={() => setIsAndroidGuideOpen(true)}
+              className="btn btn-secondary"
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                borderRadius: '12px',
+                fontSize: '0.82rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                border: '1px solid rgba(26, 115, 232, 0.4)',
+                background: 'rgba(26, 115, 232, 0.12)',
+                color: '#60a5fa',
+                cursor: 'pointer'
+              }}
+            >
+              <ExternalLink size={16} />
+              ☁️ Sincronizar con Google Calendar (Nube)
+            </button>
+
+            {/* Fila de Acciones de Nube */}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
-                onClick={handleForceSync}
-                disabled={syncLoading}
+                onClick={handleCopyCalendarLink}
                 className="btn btn-secondary"
                 style={{
-                  padding: '0.65rem 0.75rem',
+                  flex: 1,
+                  padding: '0.6rem',
+                  borderRadius: '10px',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem'
+                }}
+              >
+                {copiedWebcal ? <Check size={15} color="var(--status-success)" /> : <Copy size={15} />}
+                {copiedWebcal ? '¡Copiado!' : 'Copiar Enlace'}
+              </button>
+
+              {currentUser?.calendarSyncEnabled ? (
+                <>
+                  <button
+                    onClick={handleForceSync}
+                    disabled={syncLoading}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '10px',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    <RefreshCw size={14} className={syncLoading ? 'spin-animation' : ''} />
+                    {syncLoading ? '...' : 'Forzar Sync'}
+                  </button>
+
+                  <button
+                    onClick={handleToggleCloudSync}
+                    disabled={syncLoading}
+                    className="btn btn-danger-outline"
+                    style={{
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '10px',
+                      fontSize: '0.75rem',
+                      fontWeight: '700'
+                    }}
+                  >
+                    Desactivar
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleToggleCloudSync}
+                  disabled={syncLoading}
+                  className="btn btn-secondary"
+                  style={{
+                    flex: 1,
+                    padding: '0.6rem',
+                    borderRadius: '10px',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  ☁️ {syncLoading ? 'Activando...' : 'Activar Nube'}
+                </button>
+              )}
+            </div>
+
+            {/* Indicaciones breves para Android */}
+            <div style={{
+              borderTop: '1px dashed var(--color-border)',
+              paddingTop: '0.55rem',
+              marginTop: '0.1rem',
+              fontSize: '0.72rem',
+              color: 'var(--text-muted)',
+              lineHeight: '1.4'
+            }}>
+              💡 <strong>Recomendación en Android:</strong> Pulsa <em>"Descargar & Abrir"</em> para guardar tus turnos en 1 segundo en tu app de calendario (Samsung, Google, Xiaomi). Para suscripción dinámica que se actualice sola, usa el botón azul de Google Calendar.
+            </div>
+
+          </div>
+        ) : (
+          /* VISTA APPLE / IPHONE & MAC */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {/* Botón Principal Destacado: 1-Clic Suscribirse en iPhone / Mac */}
+            <a
+              href={webcalUrl}
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '0.8rem',
+                borderRadius: '12px',
+                fontSize: '0.88rem',
+                fontWeight: '800',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                textDecoration: 'none',
+                background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
+                color: '#ffffff',
+                boxSizing: 'border-box'
+              }}
+              onClick={async (e) => {
+                if (!currentUser?.calendarSyncEnabled) {
+                  e.preventDefault();
+                  await handleToggleCloudSync();
+                  window.location.href = webcalUrl;
+                }
+              }}
+            >
+              <Calendar size={18} />
+              📅 Suscribirse en iPhone / Mac (Un Clic)
+            </a>
+
+            {/* Acciones Secundarias */}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={handleCopyCalendarLink}
+                className="btn btn-secondary"
+                style={{
+                  flex: 1,
+                  padding: '0.65rem',
                   borderRadius: '10px',
                   fontSize: '0.78rem',
                   fontWeight: '700',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '0.35rem'
                 }}
               >
-                <RefreshCw size={15} className={syncLoading ? 'spin-animation' : ''} />
-                {syncLoading ? 'Actualizando...' : 'Forzar Sync'}
+                {copiedWebcal ? <Check size={16} color="var(--status-success)" /> : <Copy size={16} />}
+                {copiedWebcal ? '¡Copiado!' : 'Copiar Enlace'}
               </button>
 
-              <button
-                onClick={handleToggleCloudSync}
-                disabled={syncLoading}
-                className="btn btn-danger-outline"
-                style={{
-                  padding: '0.65rem 0.75rem',
-                  borderRadius: '10px',
-                  fontSize: '0.78rem',
-                  fontWeight: '700'
-                }}
-              >
-                Desactivar
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleToggleCloudSync}
-              disabled={syncLoading}
-              className="btn btn-secondary"
-              style={{
-                flex: 1,
-                padding: '0.65rem',
-                borderRadius: '10px',
-                fontSize: '0.78rem',
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.35rem'
-              }}
-            >
-              ☁️ {syncLoading ? 'Activando...' : 'Activar Nube'}
-            </button>
-          )}
-        </div>
+              {currentUser?.calendarSyncEnabled ? (
+                <>
+                  <button
+                    onClick={handleForceSync}
+                    disabled={syncLoading}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '0.65rem 0.75rem',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    <RefreshCw size={15} className={syncLoading ? 'spin-animation' : ''} />
+                    {syncLoading ? 'Actualizando...' : 'Forzar Sync'}
+                  </button>
 
-        {/* Indicaciones breves */}
-        <div style={{
-          borderTop: '1px dashed var(--color-border)',
-          paddingTop: '0.6rem',
-          marginTop: '0.2rem',
-          fontSize: '0.72rem',
-          color: 'var(--text-muted)',
-          lineHeight: '1.4'
-        }}>
-          💡 <strong>iPhone / Mac:</strong> Presiona el botón azul para añadir la suscripción directa en tu app de Calendario. Los cambios de turnos (swaps) se actualizarán solos.
-        </div>
+                  <button
+                    onClick={handleToggleCloudSync}
+                    disabled={syncLoading}
+                    className="btn btn-danger-outline"
+                    style={{
+                      padding: '0.65rem 0.75rem',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      fontWeight: '700'
+                    }}
+                  >
+                    Desactivar
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleToggleCloudSync}
+                  disabled={syncLoading}
+                  className="btn btn-secondary"
+                  style={{
+                    flex: 1,
+                    padding: '0.65rem',
+                    borderRadius: '10px',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  ☁️ {syncLoading ? 'Activando...' : 'Activar Nube'}
+                </button>
+              )}
+            </div>
+
+            {/* Indicaciones breves */}
+            <div style={{
+              borderTop: '1px dashed var(--color-border)',
+              paddingTop: '0.6rem',
+              marginTop: '0.2rem',
+              fontSize: '0.72rem',
+              color: 'var(--text-muted)',
+              lineHeight: '1.4'
+            }}>
+              💡 <strong>iPhone / Mac:</strong> Presiona el botón azul para añadir la suscripción directa en tu app de Calendario. Los cambios de turnos (swaps) se actualizarán solos.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Ajustes de Tema y Cuenta */}
@@ -498,7 +731,7 @@ export default function MobileProfileView({
             width: '100%',
             display: 'flex',
             alignItems: 'center',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             padding: '0.7rem 0.8rem',
             background: 'var(--bg-tertiary)',
             border: '1px solid var(--glass-border)',
@@ -540,6 +773,125 @@ export default function MobileProfileView({
         <LogOut size={18} />
         Cerrar Sesión Operativa
       </button>
+
+      {/* MODAL GUÍA DE SINCRONIZACIÓN ANDROID & GOOGLE CALENDAR */}
+      {isAndroidGuideOpen && (
+        <div className="bottom-sheet-backdrop" onClick={() => setIsAndroidGuideOpen(false)}>
+          <div className="bottom-sheet-modal" onClick={e => e.stopPropagation()} style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="bottom-sheet-handle" />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-primary)' }}>
+                <Smartphone size={20} color="var(--accent-cyan)" />
+                Sincronización en Android
+              </h3>
+              <button onClick={() => setIsAndroidGuideOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+              
+              {/* Opción 1: Descarga Directa (Recomendada para celular) */}
+              <div style={{
+                background: 'rgba(6, 182, 212, 0.1)',
+                border: '1px solid var(--accent-cyan)',
+                borderRadius: '12px',
+                padding: '0.9rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', color: 'var(--accent-cyan)', fontSize: '0.88rem' }}>
+                  <span>⚡</span> Opción 1: Descarga Instantánea (1 Toque)
+                </div>
+
+                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                  Es el método más rápido en Android. Descarga tu horario e impórtalo directamente en tu app de calendario favorita (Samsung Calendar, Google Calendar, Xiaomi, Huawei, Outlook).
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleDirectDownloadICS}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '0.65rem',
+                    borderRadius: '10px',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    marginTop: '0.2rem'
+                  }}
+                >
+                  <Download size={16} />
+                  Descargar Horario (.ICS)
+                </button>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  Al descargarse, toca <strong>"Abrir"</strong> en la notificación de tu celular y pulsa <em>"Guardar / Importar todo"</em>.
+                </span>
+              </div>
+
+              {/* Opción 2: Google Calendar (Automático en la nube) */}
+              <div style={{
+                background: 'rgba(26, 115, 232, 0.08)',
+                border: '1px solid rgba(26, 115, 232, 0.3)',
+                borderRadius: '12px',
+                padding: '0.9rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.6rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '800', color: '#60a5fa', fontSize: '0.88rem' }}>
+                  <span>☁️</span> Opción 2: Suscripción Dinámica en Google Calendar
+                </div>
+
+                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                  Google no permite suscribir calendarios por enlace dentro de su app móvil. Debe agregarse a tu cuenta desde la web (una sola vez):
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', lineHeight: '1.45', color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    <strong>Paso 1:</strong>
+                    <button
+                      type="button"
+                      onClick={handleCopyCalendarLink}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                    >
+                      <Copy size={13} />
+                      {copiedWebcal ? '¡Enlace Copiado!' : 'Copiar Enlace'}
+                    </button>
+                  </div>
+
+                  <div>
+                    <strong>Paso 2:</strong> Ve a <a href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl" target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontWeight: '700', textDecoration: 'underline' }}>Google Calendar (Desde URL)</a> o ábrelo en tu computador/navegador.
+                  </div>
+
+                  <div>
+                    <strong>Paso 3:</strong> Pega el enlace en la casilla <em>"URL del calendario"</em> y presiona <strong>"Agregar calendario"</strong>.
+                  </div>
+
+                  <div>
+                    <strong>Paso 4:</strong> En la app Google Calendar de tu celular: Ve a ⚙️ <em>Ajustes</em> → <em>Tu cuenta</em> → Toca <em>Horario AirControl</em> → Activa <strong>Sincronizar</strong>.
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAndroidGuideOpen(false)}
+                className="btn btn-secondary"
+                style={{ width: '100%', padding: '0.7rem', fontWeight: '700', borderRadius: '10px' }}
+              >
+                Entendido, cerrar guía
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL PARA CAMBIAR CONTRASEÑA */}
       {isPassModalOpen && (

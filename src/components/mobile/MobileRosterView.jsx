@@ -14,9 +14,6 @@ export default function MobileRosterView({
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedDayDetail, setSelectedDayDetail] = useState(null);
 
-  const rawUrl = currentUser?.calendarSyncUrl || `https://firebasestorage.googleapis.com/v0/b/aircontrol-skbo-sbg.firebasestorage.app/o/calendars%2F${currentUser?.id || currentUser?.signature}.ics?alt=media`;
-  const webcalUrl = rawUrl.replace(/^https:\/\//, 'webcal://');
-
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -251,24 +248,6 @@ export default function MobileRosterView({
             {monthNames[selectedMonth]} {selectedYear}
           </h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <a
-              href={webcalUrl}
-              style={{
-                background: 'rgba(6, 182, 212, 0.15)',
-                border: '1px solid var(--accent-cyan)',
-                color: 'var(--accent-cyan)',
-                borderRadius: '8px',
-                padding: '0.35rem 0.6rem',
-                fontSize: '0.72rem',
-                fontWeight: '700',
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem'
-              }}
-            >
-              📅 Sync iPhone / Mac
-            </a>
             <button 
               onClick={handlePrevMonth} 
               style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', borderRadius: '8px', padding: '0.35rem', cursor: 'pointer' }}

@@ -241,8 +241,21 @@ export default function MobileGeneralRosterView({
   const statsCounters = useMemo(() => {
     const counts = { total: controllersRosterData.length, DESC: 0, M: 0, T: 0, N: 0, A: 0, EXC: 0 };
     controllersRosterData.forEach(item => {
-      if (counts[item.statusCategory] !== undefined) {
-        counts[item.statusCategory]++;
+      // Si tiene turnos asignados, contar en cada jornada correspondiente
+      if (item.assignedShifts.length > 0) {
+        const shiftsPresent = new Set(item.assignedShifts.map(s => s.shift));
+        shiftsPresent.forEach(sh => {
+          if (counts[sh] !== undefined) {
+            counts[sh]++;
+          }
+        });
+      }
+
+      // Contar descanso o excepciones
+      if (item.exceptionStatus && item.exceptionStatus !== 'DESCANSO') {
+        counts.EXC++;
+      } else if (item.assignedShifts.length === 0) {
+        counts.DESC++;
       }
     });
     return counts;
@@ -262,12 +275,16 @@ export default function MobileGeneralRosterView({
 
       // Filtro por Estado (Descanso / Jornadas / Excepciones)
       if (statusFilter !== 'ALL') {
-        if (statusFilter === 'DESC' && item.statusCategory !== 'DESC') return false;
-        if (statusFilter === 'M' && item.statusCategory !== 'M') return false;
-        if (statusFilter === 'T' && item.statusCategory !== 'T') return false;
-        if (statusFilter === 'N' && item.statusCategory !== 'N') return false;
-        if (statusFilter === 'A' && item.statusCategory !== 'A') return false;
-        if (statusFilter === 'EXC' && item.statusCategory !== 'EXC') return false;
+        if (statusFilter === 'DESC') {
+          const isDescanso = item.assignedShifts.length === 0 && (!item.exceptionStatus || item.exceptionStatus === 'DESCANSO');
+          if (!isDescanso) return false;
+        } else if (statusFilter === 'EXC') {
+          const isException = Boolean(item.exceptionStatus && item.exceptionStatus !== 'DESCANSO');
+          if (!isException) return false;
+        } else if (['M', 'T', 'N', 'A'].includes(statusFilter)) {
+          const hasMatchingShift = item.assignedShifts.some(s => s.shift === statusFilter);
+          if (!hasMatchingShift) return false;
+        }
       }
 
       // Filtro por Habilidad / Certificación
@@ -275,26 +292,33 @@ export default function MobileGeneralRosterView({
         if (!isControllerQualified(item.ctrl, skillFilter)) return false;
       }
 
-      // Filtro del Asistente Inteligente ("Buscar quién puede cubrirme")
+      // Filtro del Asistente Inteligente ("Buscar quién puede cubrirme / cambio de secuencia")
       if (isSmartAssistantActive && selectedMyShiftToCover) {
         // Excluirse a uno mismo
         if (item.isMe) return false;
 
+        // Excluir a quienes están en descanso o con excepciones (para no interrumpir su descanso libre)
+        if (item.assignedShifts.length === 0) return false;
+        if (item.exceptionStatus && item.exceptionStatus !== 'OPERATIVO') return false;
+
+        // Debe tener la habilidad requerida por la posición del turno propio
         const reqSkill = selectedMyShiftToCover.requiredSkill;
-        // Debe tener la habilidad requerida
         if (reqSkill && !isControllerQualified(item.ctrl, reqSkill)) return false;
 
-        // No debe estar trabajando en el mismo turno
+        // No debe estar trabajando en la MISMA jornada (ej. si tengo Mañana, él no puede tener Mañana)
         const isWorkingSameShift = item.assignedShifts.some(s => s.shift === selectedMyShiftToCover.shift);
         if (isWorkingSameShift) return false;
       }
 
       return true;
     }).sort((a, b) => {
-      // Si el asistente inteligente está activo, priorizar los que están en DESCANSO primero
+      // Si el asistente inteligente está activo:
+      // Priorizar controladores con turno sencillo primero (ideales para COVER o SWAP), luego turno doble (para cambio de secuencia)
       if (isSmartAssistantActive) {
-        if (a.statusCategory === 'DESC' && b.statusCategory !== 'DESC') return -1;
-        if (a.statusCategory !== 'DESC' && b.statusCategory === 'DESC') return 1;
+        const aIsSingle = a.assignedShifts.length === 1;
+        const bIsSingle = b.assignedShifts.length === 1;
+        if (aIsSingle && !bIsSingle) return -1;
+        if (!aIsSingle && bIsSingle) return 1;
       }
       // Poner al usuario logueado al inicio en la vista general
       if (a.isMe) return -1;
@@ -605,10 +629,10 @@ export default function MobileGeneralRosterView({
             <Sparkles size={18} color="var(--accent-cyan)" />
             <div>
               <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-primary)' }}>
-                Asistente de Reemplazo
+                Asistente de Reemplazo y Secuencias
               </h4>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                Encuentra colegas habilitados y disponibles para tu turno
+                Colegas con turno sencillo o doble para reemplazo o cambio de secuencia
               </span>
             </div>
           </div>
@@ -669,7 +693,7 @@ export default function MobileGeneralRosterView({
                 </div>
                 {selectedMyShiftToCover && (
                   <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: 'var(--accent-cyan)', fontStyle: 'italic' }}>
-                    💡 Mostrando colegas habilitados en <strong>{selectedMyShiftToCover.requiredSkill || 'General'}</strong> que están en descanso o sin turno simultáneo.
+                    💡 Mostrando colegas habilitados en <strong>{selectedMyShiftToCover.requiredSkill || 'General'}</strong> trabajando hoy en otro horario (compatibles para reemplazo o cambio de secuencia sin interrumpir descansos).
                   </p>
                 )}
               </div>
@@ -827,13 +851,15 @@ export default function MobileGeneralRosterView({
         {filteredControllers.length > 0 ? (
           filteredControllers.map((item, idx) => {
             const isMe = item.isMe;
-            const isDescanso = item.statusCategory === 'DESC';
+            const isDescanso = item.assignedShifts.length === 0 && (!item.exceptionStatus || item.exceptionStatus === 'DESCANSO');
             const hasShift = item.assignedShifts.length > 0;
+            const isSingleShift = item.assignedShifts.length === 1;
+            const isDoubleShift = item.assignedShifts.length > 1;
             const primaryShift = item.assignedShifts[0];
             const badgeStyle = getShiftBadgeStyle(item.statusCategory);
 
-            // Compatibilidad para el asistente inteligente
-            const isIdealCandidate = isSmartAssistantActive && isDescanso;
+            // Compatibilidad para el asistente inteligente (Turno sencillo o doble en horario no simultáneo)
+            const isCandidate = isSmartAssistantActive && hasShift && !item.assignedShifts.some(s => s.shift === selectedMyShiftToCover?.shift);
 
             return (
               <div
@@ -841,14 +867,18 @@ export default function MobileGeneralRosterView({
                 style={{
                   background: isMe 
                     ? 'rgba(6, 182, 212, 0.08)' 
-                    : isIdealCandidate 
+                    : (isCandidate && isSingleShift)
                       ? 'rgba(16, 185, 129, 0.08)' 
-                      : 'var(--glass-bg)',
+                      : (isCandidate && isDoubleShift)
+                        ? 'rgba(245, 158, 11, 0.08)' 
+                        : 'var(--glass-bg)',
                   border: isMe 
                     ? '1.5px solid var(--accent-cyan)' 
-                    : isIdealCandidate 
+                    : (isCandidate && isSingleShift)
                       ? '1.5px solid var(--status-success)' 
-                      : '1px solid var(--glass-border)',
+                      : (isCandidate && isDoubleShift)
+                        ? '1.5px solid var(--status-warning)' 
+                        : '1px solid var(--glass-border)',
                   borderRadius: '14px',
                   padding: '0.85rem',
                   boxShadow: 'var(--glass-shadow)',
@@ -982,7 +1012,7 @@ export default function MobileGeneralRosterView({
                       </span>
                     )}
 
-                    {isIdealCandidate && (
+                    {isCandidate && isSingleShift && (
                       <span style={{
                         fontSize: '0.62rem',
                         fontWeight: '800',
@@ -991,32 +1021,54 @@ export default function MobileGeneralRosterView({
                         alignItems: 'center',
                         gap: '0.2rem'
                       }}>
-                        <Sparkles size={10} /> Ideal para Reemplazo
+                        <Sparkles size={10} /> Turno Sencillo (Cover / Swap)
+                      </span>
+                    )}
+
+                    {isCandidate && isDoubleShift && (
+                      <span style={{
+                        fontSize: '0.62rem',
+                        fontWeight: '800',
+                        color: 'var(--status-warning)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.2rem'
+                      }}>
+                        <ArrowRightLeft size={10} /> Cambio de Secuencia (Doblado)
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Detalle de Posición si está en turno */}
-                {hasShift && primaryShift && (
-                  <div style={{
-                    background: 'var(--bg-tertiary)',
-                    padding: '0.45rem 0.65rem',
-                    borderRadius: '8px',
-                    fontSize: '0.74rem',
-                    color: 'var(--text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem'
-                  }}>
-                    <Clock size={13} color="var(--accent-cyan)" />
-                    <span>{primaryShift.posDescription} · {badgeStyle.label}</span>
+                {hasShift && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    {item.assignedShifts.map((sh, sIdx) => {
+                      const shStyle = getShiftBadgeStyle(sh.shift);
+                      return (
+                        <div key={sIdx} style={{
+                          background: 'var(--bg-tertiary)',
+                          padding: '0.45rem 0.65rem',
+                          borderRadius: '8px',
+                          fontSize: '0.74rem',
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem'
+                        }}>
+                          <Clock size={13} color={shStyle.color} />
+                          <span>
+                            <strong style={{ color: shStyle.color, fontFamily: 'var(--font-mono)' }}>{sh.fullCode}</strong> · {sh.posDescription} ({shStyle.label.split(' ')[0]})
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 {/* BOTÓN DE ACCIÓN DIRECTA (Solo para otros controladores) */}
                 {!isMe && (
-                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.1rem' }}>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.1rem', flexWrap: 'wrap' }}>
                     {isDescanso ? (
                       <button
                         onClick={() => handleRequestCover(item)}
@@ -1037,27 +1089,60 @@ export default function MobileGeneralRosterView({
                         Solicitar Reemplazo (COVER)
                       </button>
                     ) : hasShift ? (
-                      <button
-                        onClick={() => handleRequestSwap(item, primaryShift)}
-                        style={{
-                          flex: 1,
-                          background: 'rgba(245, 158, 11, 0.15)',
-                          border: '1px solid var(--status-warning)',
-                          color: 'var(--status-warning)',
-                          padding: '0.5rem',
-                          borderRadius: '8px',
-                          fontSize: '0.75rem',
-                          fontWeight: '800',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.35rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <ArrowRightLeft size={14} />
-                        Solicitar Permuta (SWAP con {primaryShift?.fullCode})
-                      </button>
+                      <>
+                        {/* Si tiene turno sencillo, está disponible para COVER (doblar) además de permutar */}
+                        {isSingleShift && (
+                          <button
+                            onClick={() => handleRequestCover(item)}
+                            className="btn btn-primary"
+                            style={{
+                              flex: 1,
+                              minWidth: '135px',
+                              padding: '0.5rem',
+                              borderRadius: '8px',
+                              fontSize: '0.75rem',
+                              fontWeight: '800',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem'
+                            }}
+                          >
+                            <Sparkles size={14} />
+                            Solicitar Reemplazo (COVER)
+                          </button>
+                        )}
+
+                        {/* Botones de SWAP / Cambio de Secuencia para cada turno asignado */}
+                        {(statusFilter !== 'ALL' && ['M', 'T', 'N', 'A'].includes(statusFilter)
+                          ? item.assignedShifts.filter(s => s.shift === statusFilter)
+                          : item.assignedShifts
+                        ).map((sh, sIdx) => (
+                          <button
+                            key={sIdx}
+                            onClick={() => handleRequestSwap(item, sh)}
+                            style={{
+                              flex: 1,
+                              minWidth: '135px',
+                              background: 'rgba(245, 158, 11, 0.15)',
+                              border: '1px solid var(--status-warning)',
+                              color: 'var(--status-warning)',
+                              padding: '0.5rem',
+                              borderRadius: '8px',
+                              fontSize: '0.75rem',
+                              fontWeight: '800',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <ArrowRightLeft size={14} />
+                            {isDoubleShift ? `Cambiar Secuencia (${sh.fullCode})` : `Permutar (${sh.fullCode})`}
+                          </button>
+                        ))}
+                      </>
                     ) : null}
                   </div>
                 )}

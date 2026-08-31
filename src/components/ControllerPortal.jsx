@@ -48,7 +48,7 @@ import {
 import { auth } from '../utils/firebase';
 import { updatePassword } from 'firebase/auth';
 import MonthlyGrid from './MonthlyGrid';
-import { generateICS, uploadCalendarToStorage, triggerCalendarSyncIfEnabled, getAllShiftsForController } from '../utils/calendarExport';
+import { generateICS, uploadCalendarToStorage, triggerCalendarSyncIfEnabled, getAllShiftsForController, getGoogleCalendarSubscribeUrl } from '../utils/calendarExport';
 import { isNotamActiveOnDate, formatNotamDateRange, categorizeNotam, getUtcDateString } from '../utils/notamUtils';
 
 export default function ControllerPortal({ 
@@ -3285,24 +3285,32 @@ export default function ControllerPortal({
                           {copiedLink ? 'Copiado!' : 'Copiar'}
                         </button>
                       </div>
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.25rem' }}>
+                        <a
+                          href={currentController.calendarSyncUrl ? getGoogleCalendarSubscribeUrl(currentController.calendarSyncUrl) : '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.72rem', padding: '0.45rem 0.5rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', width: '100%', background: 'linear-gradient(135deg, #1a73e8 0%, #06b6d4 100%)' }}
+                        >
+                          ✨ Google Calendar (1 Clic)
+                        </a>
                         <a
                           href={currentController.calendarSyncUrl ? currentController.calendarSyncUrl.replace(/^https:\/\//, 'webcal://') : '#'}
                           className="btn btn-secondary"
-                          style={{ fontSize: '0.7rem', padding: '0.35rem 0.5rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', width: '100%' }}
+                          style={{ fontSize: '0.72rem', padding: '0.45rem 0.5rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', width: '100%' }}
                         >
-                          📅 Suscribirse en iPhone / Mac (Un Clic)
+                          🍏 iPhone / Mac (1 Clic)
                         </a>
                       </div>
                     </div>
 
                     {/* Instrucciones */}
                     <div style={{ borderTop: '1px dashed var(--color-border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
-                      <strong style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>¿Cómo agregarlo a Google Calendar?</strong>
+                      <strong style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Instrucciones para Android & Google Calendar:</strong>
                       <ol style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 1rem', padding: 0, lineHeight: 1.4 }}>
-                        <li>Copia el enlace de arriba.</li>
-                        <li>En Google Calendar web, ve a "Otros calendarios" (+) &gt; "Desde URL".</li>
-                        <li>Pega el enlace y haz clic en "Agregar calendario".</li>
+                        <li>Haz clic en <strong>Google Calendar (1 Clic)</strong> y confirma con "Agregar".</li>
+                        <li>En la app de tu celular Android: Ve a Ajustes → Tu cuenta → AirControl y activa "Sincronizar".</li>
                       </ol>
                     </div>
                   </div>

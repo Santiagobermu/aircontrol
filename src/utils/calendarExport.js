@@ -419,3 +419,42 @@ export const syncAllEnabledCalendars = async (controllers = [], schedule = {}, e
     .map(c => triggerCalendarSyncIfEnabled(c.id, controllers, schedule, exceptions));
   return await Promise.allSettled(syncPromises);
 };
+
+/**
+ * Genera el enlace directo para suscribirse a un feed .ics en Google Calendar (1 Clic).
+ */
+export const getGoogleCalendarSubscribeUrl = (rawHttpsUrl) => {
+  if (!rawHttpsUrl) return '';
+  // Para Google Calendar, el protocolo en cid puede ser https o webcal
+  const cleanUrl = rawHttpsUrl.trim();
+  return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(cleanUrl)}`;
+};
+
+/**
+ * Descarga directamente un archivo .ics en el navegador del usuario (ideal para Samsung Calendar, Outlook, etc.).
+ */
+export const downloadICSFile = (filename, icsContent) => {
+  if (!icsContent) return;
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename.endsWith('.ics') ? filename : `${filename}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * Detecta si el dispositivo del usuario es Android, iOS o Escritorio.
+ */
+export const detectUserDevice = () => {
+  if (typeof navigator === 'undefined' || !navigator.userAgent) return 'desktop';
+  const ua = navigator.userAgent.toLowerCase();
+  if (/android/i.test(ua)) return 'android';
+  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+  if (/macintosh|mac os x/i.test(ua)) return 'mac';
+  return 'desktop';
+};
+
