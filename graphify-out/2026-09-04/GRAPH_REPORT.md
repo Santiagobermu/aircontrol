@@ -1,11 +1,11 @@
-# Graph Report - Proyecto  (2026-09-04)
+# Graph Report - Proyecto  (2026-08-31)
 
 ## Corpus Check
-- 50 files · ~88,592 words
+- 50 files · ~86,112 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 260 nodes · 570 edges · 21 communities (13 shown, 8 thin omitted)
+- 258 nodes · 564 edges · 20 communities (12 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -20,7 +20,6 @@
 - solve_schedule
 - package.json
 - firebase-messaging-sw.js
-- ControllerPortal.jsx
 - devDependencies
 - storage.js
 - manifest.json
@@ -36,7 +35,7 @@
 - MobileProfileView.jsx
 
 ## God Nodes (most connected - your core abstractions)
-1. `App()` - 28 edges
+1. `App()` - 26 edges
 2. `ControllerPortal()` - 24 edges
 3. `getSlotAcronym()` - 17 edges
 4. `isColombianHoliday()` - 16 edges
@@ -62,15 +61,15 @@
 ## Import Cycles
 - None detected.
 
-## Communities (21 total, 8 thin omitted)
+## Communities (20 total, 8 thin omitted)
 
 ### Community 0 - "App.jsx"
-Cohesion: 0.12
-Nodes (29): App(), ControllerList(), ControllerPortal(), LoginScreen(), MobileHeader(), ThemeToggle(), addControllerDB(), addRequestDB() (+21 more)
+Cohesion: 0.10
+Nodes (46): App(), ControllerList(), ControllerPortal(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary() (+38 more)
 
 ### Community 1 - "MobileLayout.jsx"
-Cohesion: 0.24
-Nodes (9): MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade(), TradePanel() (+1 more)
+Cohesion: 0.17
+Nodes (13): LoginScreen(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileHeader(), MobileLayout(), MobileRosterView(), MobileTradesView() (+5 more)
 
 ### Community 2 - "solve_schedule"
 Cohesion: 0.08
@@ -79,10 +78,6 @@ Nodes (39): health(), solve(), sync_notams(), scheduled_sync_notams(), send_push
 ### Community 3 - "package.json"
 Cohesion: 0.10
 Nodes (20): firebase, lucide-react, dependencies, firebase, lucide-react, react, react-dom, xlsx (+12 more)
-
-### Community 5 - "ControllerPortal.jsx"
-Cohesion: 0.18
-Nodes (23): AICopilotPanel(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), activeRequests, adjustDynamicSlots() (+15 more)
 
 ### Community 6 - "devDependencies"
 Cohesion: 0.11
@@ -106,7 +101,7 @@ Nodes (3): AirControl Stitch Specification, AirControl Design System, AirControl
 
 ### Community 20 - "MobileProfileView.jsx"
 Cohesion: 0.13
-Nodes (30): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+22 more)
+Nodes (30): AICopilotPanel(), MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile() (+22 more)
 
 ## Knowledge Gaps
 - **61 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+56 more)
@@ -118,12 +113,12 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
   _High betweenness centrality (0.016) - this node is a cross-community bridge._
-- **Why does `ControllerPortal()` connect `App.jsx` to `notamUtils.js`, `MobileProfileView.jsx`, `ControllerPortal.jsx`, `MobileLayout.jsx`?**
+- **Why does `ControllerPortal()` connect `App.jsx` to `notamUtils.js`, `MobileProfileView.jsx`, `MobileLayout.jsx`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _61 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.12051282051282051 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09830508474576272 - nodes in this community are weakly interconnected._
 - **Should `solve_schedule` be split into smaller, more focused modules?**
   _Cohesion score 0.07928118393234672 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**

@@ -25,9 +25,9 @@
     "semantic_hash": "f86f68613832c9c725c2257dc6b92219"
   },
   "functions/main.py": {
-    "mtime": 1786210700.154453,
-    "ast_hash": "fe8f1d741182c4908206c1f655e60025",
-    "semantic_hash": "fe8f1d741182c4908206c1f655e60025"
+    "mtime": 1788217655.9682386,
+    "ast_hash": "a484a1b4f1e425a8b98154b2fd82a20b",
+    "semantic_hash": ""
   },
   "functions/notams_parser.py": {
     "mtime": 1786213472.274508,
@@ -50,13 +50,13 @@
     "semantic_hash": "6b35e438e404183ffeedba6a21e42cb7"
   },
   "public/manifest.json": {
-    "mtime": 1785965265.3588128,
-    "ast_hash": "f8a4910550b58cd968de4af61b27bf04",
-    "semantic_hash": "f8a4910550b58cd968de4af61b27bf04"
+    "mtime": 1788217426.937585,
+    "ast_hash": "dfac058d719c68fedff5d7b3da80e0ff",
+    "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787846660.6529653,
-    "ast_hash": "1f1f9e7d8424890e26156ab333681ffb",
+    "mtime": 1788539043.2671635,
+    "ast_hash": "00a462e48c9454783daf8cd31dcd08a6",
     "semantic_hash": ""
   },
   "src/components/AICopilotPanel.jsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": "bf1e38b00bd0c8548004d8effecfb461"
   },
   "src/components/ControllerPortal.jsx": {
-    "mtime": 1788211663.345819,
-    "ast_hash": "196778ca721a147661daa714d70c9027",
+    "mtime": 1788539347.5307167,
+    "ast_hash": "4a574818ad06401edc0d07a8896ca88a",
     "semantic_hash": ""
   },
   "src/components/LoginScreen.jsx": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileLayout.jsx": {
-    "mtime": 1787165234.7298803,
-    "ast_hash": "636f2307fe9d8b1d21ae0c414ddd44c2",
+    "mtime": 1788539067.0544147,
+    "ast_hash": "4274578d9fef76261bb592ff1622bdcf",
     "semantic_hash": ""
   },
   "src/components/mobile/MobileNotamsView.jsx": {
@@ -140,13 +140,13 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileProfileView.jsx": {
-    "mtime": 1788215140.7026596,
-    "ast_hash": "66b771a82a7404d4c261655abfe0fc69",
+    "mtime": 1788539380.8550258,
+    "ast_hash": "a818b4bb483cd5d86093db546cace607",
     "semantic_hash": ""
   },
   "src/components/mobile/MobileRosterView.jsx": {
-    "mtime": 1788213335.0854206,
-    "ast_hash": "3ad5e6dfa2084502e3325971c4aa8665",
+    "mtime": 1788539318.4248173,
+    "ast_hash": "0763322bdefe05c1e0df439832cd8d1e",
     "semantic_hash": ""
   },
   "src/components/mobile/MobileTradesView.jsx": {
@@ -165,9 +165,9 @@
     "semantic_hash": ""
   },
   "src/utils/db.js": {
-    "mtime": 1785797031.533579,
-    "ast_hash": "a03342b1e56262683b7e25389a38c034",
-    "semantic_hash": "a03342b1e56262683b7e25389a38c034"
+    "mtime": 1788538969.9919236,
+    "ast_hash": "d327ffa3b3ae83841bbe9d146da6c458",
+    "semantic_hash": ""
   },
   "src/utils/firebase.js": {
     "mtime": 1783038849.2988262,
@@ -272,6 +272,16 @@
   "src/scripts/sync_all_now.js": {
     "mtime": 1787847385.501274,
     "ast_hash": "f51509b687de565f47277ac01dff52ab",
+    "semantic_hash": ""
+  },
+  "public/firebase-messaging-sw.js": {
+    "mtime": 1788217420.3901472,
+    "ast_hash": "3fe8e3f6bc2804e00fe3aaebfca6a947",
+    "semantic_hash": ""
+  },
+  "src/utils/notifications.js": {
+    "mtime": 1788217518.7988513,
+    "ast_hash": "fbae6eef2a8cb96cef38b4d575e255aa",
     "semantic_hash": ""
   }
 }

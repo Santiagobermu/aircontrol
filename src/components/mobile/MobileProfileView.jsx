@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock, Download, HelpCircle, Smartphone, ExternalLink, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock, Download, HelpCircle, Smartphone, ExternalLink, Info, Bell, BellRing, BellOff } from 'lucide-react';
 import { getAuth, updatePassword } from 'firebase/auth';
 import ThemeToggle from '../ThemeToggle';
 import { addManualAlertDB } from '../../utils/db';
 import { generateICS, uploadCalendarToStorage, getAllShiftsForController, getGoogleCalendarSubscribeUrl, downloadICSFile, detectUserDevice } from '../../utils/calendarExport';
+import { requestPushPermission, disablePushNotifications, getPermissionStatus, triggerLocalTestNotification, checkPushSupport } from '../../utils/notifications';
 
 export default function MobileProfileView({ 
   currentUser, 
@@ -24,6 +25,15 @@ export default function MobileProfileView({
     return dev === 'android' ? 'android' : 'apple';
   });
   const [isAndroidGuideOpen, setIsAndroidGuideOpen] = useState(false);
+
+  // Estado de Notificaciones Push
+  const [pushStatus, setPushStatus] = useState('default');
+  const [pushLoading, setPushLoading] = useState(false);
+
+  useEffect(() => {
+    const status = getPermissionStatus();
+    setPushStatus(status);
+  }, []);
 
   // Alertas del Encargado
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
@@ -425,7 +435,7 @@ export default function MobileProfileView({
 
         {/* ACCIONES ESPECÍFICAS SEGÚN LA PLATAFORMA SELECCIONADA */}
         {calendarPlatform === 'android' ? (
-          /* VISTA ANDROID / GOOGLE CALENDAR & SAMSUNG */
+          /* VISTA ANDROID / GOOGLE CALENDAR &amp; SAMSUNG */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             
             {/* Botón Principal 1: Descarga Directa 1-Toque */}
@@ -452,7 +462,7 @@ export default function MobileProfileView({
               }}
             >
               <Download size={18} />
-              📥 Descargar & Abrir en Calendario (.ICS)
+              📥 Descargar &amp; Abrir en Calendario (.ICS)
             </button>
 
             {/* Botón Principal 2: Asistente Google Calendar Nube */}
@@ -566,7 +576,7 @@ export default function MobileProfileView({
               color: 'var(--text-muted)',
               lineHeight: '1.4'
             }}>
-              💡 <strong>Recomendación en Android:</strong> Pulsa <em>"Descargar & Abrir"</em> para guardar tus turnos en 1 segundo en tu app de calendario (Samsung, Google, Xiaomi). Para suscripción dinámica que se actualice sola, usa el botón azul de Google Calendar.
+              💡 <strong>Recomendación en Android:</strong> Pulsa <em>&quot;Descargar &amp; Abrir&quot;</em> para guardar tus turnos en 1 segundo en tu app de calendario (Samsung, Google, Xiaomi). Para suscripción dinámica que se actualice sola, usa el botón azul de Google Calendar.
             </div>
 
           </div>
@@ -695,6 +705,187 @@ export default function MobileProfileView({
             </div>
           </div>
         )}
+      </div>
+
+      {/* SECCIÓN NOTIFICACIONES PUSH */}
+      <div style={{
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '16px',
+        padding: '1.2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.85rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+            <BellRing size={20} color="var(--accent-cyan)" />
+            Notificaciones Push Web
+          </h3>
+          {pushStatus === 'granted' ? (
+            <span style={{
+              fontSize: '0.68rem',
+              fontWeight: '700',
+              color: 'var(--status-success)',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              padding: '0.2rem 0.55rem',
+              borderRadius: '20px'
+            }}>
+              ✓ Activadas
+            </span>
+          ) : pushStatus === 'denied' ? (
+            <span style={{
+              fontSize: '0.68rem',
+              fontWeight: '700',
+              color: 'var(--status-danger)',
+              background: 'rgba(244, 63, 94, 0.15)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              padding: '0.2rem 0.55rem',
+              borderRadius: '20px'
+            }}>
+              Bloqueadas
+            </span>
+          ) : (
+            <span style={{
+              fontSize: '0.68rem',
+              fontWeight: '700',
+              color: 'var(--text-muted)',
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--glass-border)',
+              padding: '0.2rem 0.55rem',
+              borderRadius: '20px'
+            }}>
+              Inactivas
+            </span>
+          )}
+        </div>
+
+        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+          Recibe alertas instantáneas en tu dispositivo sobre <strong>solicitudes de cambio de turno</strong>, <strong>aprobaciones de guardia</strong> y <strong>avisos operacionales</strong>.
+        </p>
+
+        {/* Botón de activación o desactivación */}
+        {pushStatus === 'granted' ? (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                triggerLocalTestNotification('AirControl SKBO', '¡Notificaciones push operativas en este dispositivo!');
+                alert('Se envió una notificación de prueba. Revisa tu barra de notificaciones.');
+              }}
+              className="btn btn-secondary"
+              style={{
+                flex: 1,
+                padding: '0.65rem',
+                borderRadius: '10px',
+                fontSize: '0.78rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem'
+              }}
+            >
+              <Bell size={15} color="var(--accent-cyan)" />
+              Probar Notificación
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                setPushLoading(true);
+                try {
+                  const targetId = currentUser?.id || currentUser?.signature;
+                  await disablePushNotifications(targetId);
+                  setPushStatus('default');
+                  alert('Notificaciones push desactivadas.');
+                } catch (e) {
+                  alert('Error al desactivar notificaciones: ' + e.message);
+                } finally {
+                  setPushLoading(false);
+                }
+              }}
+              disabled={pushLoading}
+              className="btn btn-danger-outline"
+              style={{
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                fontSize: '0.78rem',
+                fontWeight: '700'
+              }}
+            >
+              {pushLoading ? '...' : 'Desactivar'}
+            </button>
+          </div>
+        ) : pushStatus === 'denied' ? (
+          <div style={{
+            background: 'rgba(244, 63, 94, 0.08)',
+            border: '1px solid rgba(244, 63, 94, 0.3)',
+            borderRadius: '10px',
+            padding: '0.75rem',
+            fontSize: '0.75rem',
+            color: 'var(--text-secondary)',
+            lineHeight: '1.4'
+          }}>
+            ⚠️ Las notificaciones están bloqueadas en tu navegador. Para activarlas, toca el icono de candado o ajustes del sitio junto a la barra de direcciones y cambia el permiso a <strong>"Permitir"</strong>.
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={async () => {
+              setPushLoading(true);
+              try {
+                const targetId = currentUser?.id || currentUser?.signature;
+                const res = await requestPushPermission(targetId);
+                if (res.success) {
+                  setPushStatus('granted');
+                  triggerLocalTestNotification('AirControl SKBO', '¡Notificaciones activadas exitosamente!');
+                  alert('¡Notificaciones Push activadas con éxito! Ahora recibirás avisos de cambios de turnos y alertas.');
+                } else {
+                  setPushStatus(getPermissionStatus());
+                  alert('Aviso: ' + (res.error || 'No se pudieron activar las notificaciones.'));
+                }
+              } catch (e) {
+                alert('Error al solicitar notificaciones: ' + e.message);
+              } finally {
+                setPushLoading(false);
+              }
+            }}
+            disabled={pushLoading}
+            className="btn btn-primary"
+            style={{
+              width: '100%',
+              padding: '0.8rem',
+              borderRadius: '12px',
+              fontSize: '0.85rem',
+              fontWeight: '800',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.45rem',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+              boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
+              color: '#ffffff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <BellRing size={17} />
+            {pushLoading ? 'Solicitando permiso...' : '🔔 Activar Notificaciones Push'}
+          </button>
+        )}
+
+        <div style={{
+          borderTop: '1px dashed var(--color-border)',
+          paddingTop: '0.55rem',
+          marginTop: '0.1rem',
+          fontSize: '0.72rem',
+          color: 'var(--text-muted)',
+          lineHeight: '1.4'
+        }}>
+          ℹ️ <strong>En iPhone / iPad:</strong> Requiere que la aplicación esté añadida a la pantalla de inicio (PWA) con iOS 16.4 o superior.
+        </div>
       </div>
 
       {/* Ajustes de Tema y Cuenta */}

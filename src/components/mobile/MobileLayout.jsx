@@ -18,6 +18,9 @@ export default function MobileLayout({
   publishState = {},
   notamsData = { notams: [], adClosedNotams: [], flowNotams: [], ashtamNotams: [] },
   manualAlerts = [],
+  controllerNotes = {},
+  onSaveNote,
+  onDeleteNote,
   userRole = 'controller',
   onLogout,
   onChangePassword,
@@ -28,7 +31,16 @@ export default function MobileLayout({
   onRejectTrade,
   onUpdateController
 }) {
-  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'guardia' | 'trades' | 'notams' | 'profile'
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab && ['roster', 'guardia', 'trades', 'notams', 'profile'].includes(tab)) {
+        return tab;
+      }
+    }
+    return 'roster';
+  });
   const [rosterSubTab, setRosterSubTab] = useState('personal'); // 'personal' | 'general'
   const [tradeInitialData, setTradeInitialData] = useState({ date: '', type: 'COVER' });
 
@@ -132,6 +144,9 @@ export default function MobileLayout({
                 scheduleMonth={scheduleMonth}
                 exceptions={exceptions}
                 controllers={controllers}
+                controllerNotes={controllerNotes}
+                onSaveNote={onSaveNote}
+                onDeleteNote={onDeleteNote}
                 onOpenTradeModal={handleOpenTradeForDate}
                 onUpdateController={onUpdateController}
               />

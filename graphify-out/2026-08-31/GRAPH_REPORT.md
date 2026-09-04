@@ -1,16 +1,16 @@
 # Graph Report - Proyecto  (2026-08-31)
 
 ## Corpus Check
-- 48 files · ~83,704 words
+- 50 files · ~86,100 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 240 nodes · 522 edges · 19 communities (12 shown, 7 thin omitted)
+- 258 nodes · 563 edges · 20 communities (12 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8ab6e8e3`
+- Built from commit: `8c216af1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,6 +19,7 @@
 - schedulerEngine.js
 - solve_schedule
 - package.json
+- firebase-messaging-sw.js
 - devDependencies
 - storage.js
 - manifest.json
@@ -31,18 +32,18 @@
 - AirControl Hero Image
 - rules/graphify.md
 - workflows/graphify.md
-- calendarExport.js
+- MobileProfileView.jsx
 
 ## God Nodes (most connected - your core abstractions)
-1. `App()` - 24 edges
+1. `App()` - 26 edges
 2. `ControllerPortal()` - 24 edges
 3. `getSlotAcronym()` - 17 edges
 4. `isColombianHoliday()` - 16 edges
-5. `solve_schedule()` - 12 edges
-6. `validateAssignment()` - 12 edges
-7. `getSlotDescription()` - 11 edges
-8. `runAutoSchedulerForMonth()` - 11 edges
-9. `sync_skbo_notams()` - 10 edges
+5. `MobileProfileView()` - 13 edges
+6. `solve_schedule()` - 12 edges
+7. `validateAssignment()` - 12 edges
+8. `getSlotDescription()` - 11 edges
+9. `runAutoSchedulerForMonth()` - 11 edges
 10. `getAllShiftsForController()` - 10 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -60,19 +61,19 @@
 ## Import Cycles
 - None detected.
 
-## Communities (19 total, 7 thin omitted)
+## Communities (20 total, 8 thin omitted)
 
 ### Community 0 - "App.jsx"
-Cohesion: 0.13
-Nodes (29): App(), ControllerList(), ControllerPortal(), LoginScreen(), MobileHeader(), ThemeToggle(), addControllerDB(), addManualAlertDB() (+21 more)
+Cohesion: 0.11
+Nodes (36): App(), ControllerList(), ControllerPortal(), LoginScreen(), MobileHeader(), MonthlyGrid(), RequestPanel(), SchedulerSummary() (+28 more)
 
 ### Community 1 - "schedulerEngine.js"
-Cohesion: 0.12
-Nodes (32): AICopilotPanel(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), MonthlyGrid() (+24 more)
+Cohesion: 0.13
+Nodes (23): MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), getPositionPriority(), SchedulerGrid() (+15 more)
 
 ### Community 2 - "solve_schedule"
 Cohesion: 0.08
-Nodes (38): health(), solve(), sync_notams(), scheduled_sync_notams(), solve_schedule_api(), sync_notams_api(), categorize_notam(), determine_severity() (+30 more)
+Nodes (39): health(), solve(), sync_notams(), scheduled_sync_notams(), send_push_notification_api(), solve_schedule_api(), sync_notams_api(), categorize_notam() (+31 more)
 
 ### Community 3 - "package.json"
 Cohesion: 0.10
@@ -87,40 +88,40 @@ Cohesion: 0.22
 Nodes (5): ControllerForm(), DEFAULT_SEQUENCE, INITIAL_CONTROLLERS, STORAGE_KEYS, validateController()
 
 ### Community 8 - "manifest.json"
-Cohesion: 0.22
-Nodes (8): background_color, display, icons, name, orientation, short_name, start_url, theme_color
+Cohesion: 0.15
+Nodes (12): background_color, description, display, gcm_sender_id, icons, id, name, orientation (+4 more)
 
 ### Community 9 - "notamUtils.js"
-Cohesion: 0.42
-Nodes (9): MobileNotamsView(), categorizeNotam(), extractNotamDates(), filterNotamsByDate(), formatNotamDateRange(), formatShortUtcDate(), getUtcDateString(), isNotamActiveOnDate() (+1 more)
+Cohesion: 0.38
+Nodes (10): MobileNotamsView(), addManualAlertDB(), categorizeNotam(), extractNotamDates(), filterNotamsByDate(), formatNotamDateRange(), formatShortUtcDate(), getUtcDateString() (+2 more)
 
 ### Community 10 - "AirControl Architecture Summary"
 Cohesion: 0.67
 Nodes (3): AirControl Stitch Specification, AirControl Design System, AirControl Architecture Summary
 
-### Community 20 - "calendarExport.js"
-Cohesion: 0.18
-Nodes (21): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+13 more)
+### Community 20 - "MobileProfileView.jsx"
+Cohesion: 0.13
+Nodes (30): AICopilotPanel(), MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile() (+22 more)
 
 ## Knowledge Gaps
-- **55 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+50 more)
+- **61 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+56 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `ControllerPortal()` connect `App.jsx` to `notamUtils.js`, `calendarExport.js`, `schedulerEngine.js`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `ControllerPortal()` connect `App.jsx` to `notamUtils.js`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _55 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _61 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.13048780487804879 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11346938775510204 - nodes in this community are weakly interconnected._
 - **Should `schedulerEngine.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.11627906976744186 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13068181818181818 - nodes in this community are weakly interconnected._
 - **Should `solve_schedule` be split into smaller, more focused modules?**
-  _Cohesion score 0.07862679955703211 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07822410147991543 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._

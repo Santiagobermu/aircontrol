@@ -62,11 +62,23 @@ export default function ControllerPortal({
   userRole = 'controller',
   notamsData = { notams: [], lastUpdated: null, pdfUrl: null },
   manualAlerts = [],
+  controllerNotes = {},
+  onSaveNote,
+  onDeleteNote,
   onLogout,
   onUpdateController,
   onToggleViewMode = null
 }) {
-  const [activeTab, setActiveTab] = useState('roster'); // 'roster' | 'radar' | 'trades' | 'requests'
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab && ['roster', 'radar', 'trades', 'requests', 'notams', 'profile'].includes(tab)) {
+        return tab;
+      }
+    }
+    return 'roster';
+  });
 
   // Adaptabilidad Móvil
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,6 +91,11 @@ export default function ControllerPortal({
   const [passSuccess, setPassSuccess] = useState(null);
 
   const [selectedDayActionDate, setSelectedDayActionDate] = useState(null);
+
+  // Estados para Notas Personales del Turno
+  const [editingNoteKey, setEditingNoteKey] = useState(null);
+  const [noteDraftText, setNoteDraftText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
 
   // Estados para Exportación / Sincronización de Calendario
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -231,6 +248,26 @@ export default function ControllerPortal({
   const currentController = useMemo(() => {
     return controllers.find(c => c.email && c.email.toLowerCase() === userEmail.toLowerCase());
   }, [controllers, userEmail]);
+
+  // Notas personales de este controlador
+  const myNotes = useMemo(() => {
+    if (!currentController?.id) return {};
+    return controllerNotes[currentController.id] || {};
+  }, [controllerNotes, currentController]);
+
+  // Helpers para Notas Personales del Controlador
+  const getNotesForDate = (dateStr) => {
+    if (!myNotes) return [];
+    return Object.entries(myNotes)
+      .filter(([k, v]) => (k === dateStr || k.startsWith(`${dateStr}_`)) && v && v.text)
+      .map(([k, v]) => ({ key: k, ...v }));
+  };
+
+  const getNoteForShift = (dateStr, shiftCode) => {
+    if (!myNotes) return null;
+    const specificKey = `${dateStr}_${shiftCode}`;
+    return myNotes[specificKey] || myNotes[dateStr] || null;
+  };
 
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -1041,6 +1078,12 @@ export default function ControllerPortal({
     );
   }
 
+  const handleCloseDayActionModal = () => {
+    setSelectedDayActionDate(null);
+    setEditingNoteKey(null);
+    setNoteDraftText('');
+  };
+
   return (
     <div className="app-container" style={{ minHeight: '100vh', width: '100vw' }}>
       
@@ -1336,6 +1379,8 @@ export default function ControllerPortal({
                     const shifts = myMonthlyShifts[day.dateStr] || [];
                     const hasShift = shifts.some(s => s.type === 'SHIFT');
                     const hasException = shifts.some(s => s.type === 'EXCEPTION');
+                    const dayNotes = getNotesForDate(day.dateStr);
+                    const hasDayNote = dayNotes.length > 0;
                     
                     let cardBg = 'rgba(255,255,255,0.02)';
                     let borderCol = 'var(--color-border)';
@@ -1369,18 +1414,36 @@ export default function ControllerPortal({
                           position: 'relative',
                           cursor: 'pointer'
                         }}
-                        title="Presiona para proponer cambios o registrar peticiones para este día"
+                        title="Presiona para gestionar notas personales, proponer cambios o peticiones"
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.1rem' }}>
-                          <span style={{ 
-                            fontSize: '0.85rem', 
-                            fontWeight: '700', 
-                            color: day.isHoliday || day.dayOfWeek === 0 ? 'var(--status-danger)' : 'var(--text-primary)' 
-                          }}>
-                            {day.dayNum}
-                          </span>
-                          {day.isHoliday && (
-                            <span style={{ fontSize: '0.55rem', color: 'var(--status-danger)', fontWeight: '800', lineHeight: 1 }}>FEST</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.1rem' }}>
+                            <span style={{ 
+                              fontSize: '0.85rem', 
+                              fontWeight: '700', 
+                              color: day.isHoliday || day.dayOfWeek === 0 ? 'var(--status-danger)' : 'var(--text-primary)' 
+                            }}>
+                              {day.dayNum}
+                            </span>
+                            {day.isHoliday && (
+                              <span style={{ fontSize: '0.55rem', color: 'var(--status-danger)', fontWeight: '800', lineHeight: 1 }}>FEST</span>
+                            )}
+                          </div>
+                          {hasDayNote && (
+                            <span 
+                              title="Tiene nota personal registrada"
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                                color: '#f59e0b',
+                                borderRadius: '6px',
+                                padding: '0.15rem 0.25rem'
+                              }}
+                            >
+                              <MessageSquare size={11} />
+                            </span>
                           )}
                         </div>
 
@@ -1400,6 +1463,7 @@ export default function ControllerPortal({
                                 </span>
                               );
                             } else {
+                              const shiftNote = getNoteForShift(day.dateStr, s.shift);
                               return (
                                 <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                   <span style={{
@@ -1409,9 +1473,14 @@ export default function ControllerPortal({
                                     padding: '0.15rem 0.4rem',
                                     borderRadius: '6px',
                                     fontWeight: '800',
-                                    width: '100%'
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.25rem'
                                   }}>
-                                    Turno {s.shift}
+                                    <span>Turno {s.shift}</span>
+                                    {shiftNote && <MessageSquare size={10} style={{ color: '#f59e0b' }} />}
                                   </span>
                                   <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.1rem', fontWeight: '600' }}>
                                     {s.acronym} · {s.description}
@@ -1430,6 +1499,36 @@ export default function ControllerPortal({
                             }}>
                               {day.dayOfWeek === 0 || day.isHoliday ? 'LIBRE' : 'DESCANSO'}
                             </span>
+                          )}
+
+                          {hasDayNote && (
+                            <div 
+                              title={dayNotes.map(n => (n.shift && n.shift !== 'DAY' ? `[Turno ${n.shift}]: ` : '') + n.text).join('\n')}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                borderRadius: '6px',
+                                padding: '0.15rem 0.35rem',
+                                marginTop: '0.2rem',
+                                fontSize: '0.62rem',
+                                color: '#fbbf24',
+                                fontWeight: '600',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              <MessageSquare size={10} style={{ flexShrink: 0, color: '#f59e0b' }} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {dayNotes[0].text}
+                              </span>
+                              {dayNotes.length > 1 && (
+                                <span style={{ fontSize: '0.55rem', opacity: 0.85, fontWeight: '700' }}>+{dayNotes.length - 1}</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -3013,107 +3112,375 @@ export default function ControllerPortal({
 
       </main>
 
-      {/* MODAL DE ACCIONES PARA DÍA ESPECÍFICO */}
-      {selectedDayActionDate && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          animation: 'fadeIn 0.2s ease'
-        }}>
-          <div className="glass-panel" style={{
-            maxWidth: '380px',
-            width: '90%',
-            padding: '2rem',
-            borderRadius: '20px',
+      {/* MODAL DE ACCIONES Y NOTAS PERSONALES PARA DÍA ESPECÍFICO */}
+      {selectedDayActionDate && (() => {
+        const shiftsOnActionDate = myMonthlyShifts[selectedDayActionDate] || [];
+        const operationalShifts = shiftsOnActionDate.filter(s => s.type === 'SHIFT');
+
+        return (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(10px)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '1.25rem',
-            border: '1px solid var(--color-border)',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)'
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            animation: 'fadeIn 0.2s ease',
+            padding: '1rem'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, color: 'var(--text-primary)' }}>
-                <CalendarIcon size={18} style={{ color: 'var(--accent-cyan)' }} />
-                <span>Fecha: {selectedDayActionDate}</span>
-              </h3>
-              <button 
-                onClick={() => setSelectedDayActionDate(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.2rem', display: 'flex' }}
+            <div className="glass-panel" style={{
+              maxWidth: '460px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '1.75rem',
+              borderRadius: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+              border: '1px solid var(--color-border)',
+              boxShadow: '0 12px 48px rgba(0, 0, 0, 0.6)'
+            }}>
+              {/* Encabezado del Modal */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, color: 'var(--text-primary)' }}>
+                    <CalendarIcon size={18} style={{ color: 'var(--accent-cyan)' }} />
+                    <span>Día {selectedDayActionDate}</span>
+                  </h3>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Gestión de notas personales y solicitudes operativas
+                  </span>
+                </div>
+                <button 
+                  onClick={handleCloseDayActionModal}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.2rem', display: 'flex' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* SECCIÓN 1: NOTAS PERSONALES DEL TURNO */}
+              <div style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.04)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: '14px',
+                padding: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: '800', 
+                    color: '#f59e0b', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.05em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}>
+                    <MessageSquare size={14} />
+                    Notas Personales del Turno
+                  </span>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                    Privadas para ti
+                  </span>
+                </div>
+
+                {/* Items por cada turno o por el día */}
+                {(shiftsOnActionDate.length > 0 ? shiftsOnActionDate : [{ type: 'FREE', status: 'Día Libre / Descanso' }]).map((targetItem, tIdx) => {
+                  const isShift = targetItem.type === 'SHIFT';
+                  const noteKey = isShift ? `${selectedDayActionDate}_${targetItem.shift}` : `${selectedDayActionDate}_DAY`;
+                  const noteItem = myNotes[noteKey];
+                  const isEditing = editingNoteKey === noteKey;
+
+                  return (
+                    <div key={tIdx} style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                      borderRadius: '10px',
+                      padding: '0.75rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          {isShift ? (
+                            <>
+                              <span style={{ 
+                                backgroundColor: 'rgba(99, 102, 241, 0.2)', 
+                                color: 'var(--accent-indigo)', 
+                                padding: '0.1rem 0.35rem', 
+                                borderRadius: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: '800'
+                              }}>
+                                Turno {targetItem.shift}
+                              </span>
+                              <span>{targetItem.acronym} · {targetItem.description}</span>
+                            </>
+                          ) : (
+                            <span style={{ color: targetItem.status === 'VACACIONES' ? 'var(--accent-cyan)' : 'var(--text-muted)', fontSize: '0.75rem' }}>
+                              {targetItem.status || 'Descanso / Libre'}
+                            </span>
+                          )}
+                        </span>
+
+                        {noteItem && !isEditing && (
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            <button
+                              onClick={() => {
+                                setEditingNoteKey(noteKey);
+                                setNoteDraftText(noteItem.text);
+                              }}
+                              className="btn btn-secondary"
+                              style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                              title="Editar nota"
+                            >
+                              <Edit2 size={11} />
+                              Editar
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (window.confirm('¿Deseas eliminar esta nota personal?')) {
+                                  if (onDeleteNote && currentController?.id) {
+                                    await onDeleteNote(currentController.id, noteKey);
+                                  }
+                                }
+                              }}
+                              className="btn btn-danger-outline"
+                              style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                              title="Eliminar nota"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {isEditing ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <textarea
+                            value={noteDraftText}
+                            onChange={(e) => setNoteDraftText(e.target.value)}
+                            placeholder="Escribe una nota personal para este turno (acuerdos, pendientes, material de estudio, NOTAMs)..."
+                            maxLength={300}
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              backgroundColor: 'var(--bg-secondary)',
+                              border: '1px solid rgba(245, 158, 11, 0.4)',
+                              borderRadius: '8px',
+                              padding: '0.5rem',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.8rem',
+                              resize: 'none',
+                              outline: 'none',
+                              fontFamily: 'inherit',
+                              boxSizing: 'border-box'
+                            }}
+                            autoFocus
+                          />
+
+                          {/* Chips de sugerencias rápidas */}
+                          <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                            {['📌 Revisar NOTAM', '🔄 Permuta acordada', '📋 Entrega especial', '🩺 Chequeo/Examen', '✈️ Chequeo OACI'].map((tag) => (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => {
+                                  setNoteDraftText(prev => prev ? `${prev} - ${tag}` : tag);
+                                }}
+                                style={{
+                                  fontSize: '0.65rem',
+                                  background: 'rgba(255, 255, 255, 0.04)',
+                                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                                  color: 'var(--text-secondary)',
+                                  borderRadius: '6px',
+                                  padding: '0.15rem 0.4rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.2rem' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                              {noteDraftText.length}/300 caracteres
+                            </span>
+                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingNoteKey(null);
+                                  setNoteDraftText('');
+                                }}
+                                className="btn btn-secondary"
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={savingNote}
+                                onClick={async () => {
+                                  if (!currentController?.id) return;
+                                  setSavingNote(true);
+                                  try {
+                                    if (onSaveNote) {
+                                      await onSaveNote(currentController.id, noteKey, noteDraftText, {
+                                        shift: isShift ? targetItem.shift : 'DAY',
+                                        date: selectedDayActionDate
+                                      });
+                                    }
+                                    setEditingNoteKey(null);
+                                    setNoteDraftText('');
+                                  } finally {
+                                    setSavingNote(false);
+                                  }
+                                }}
+                                className="btn btn-primary"
+                                style={{ 
+                                  padding: '0.3rem 0.75rem', 
+                                  fontSize: '0.75rem', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  gap: '0.3rem', 
+                                  backgroundColor: '#f59e0b', 
+                                  borderColor: '#f59e0b', 
+                                  color: '#000', 
+                                  fontWeight: '800' 
+                                }}
+                              >
+                                <Check size={13} />
+                                {savingNote ? 'Guardando...' : 'Guardar Nota'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : noteItem ? (
+                        <div style={{
+                          backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                          border: '1px solid rgba(245, 158, 11, 0.25)',
+                          borderRadius: '8px',
+                          padding: '0.55rem 0.75rem',
+                          fontSize: '0.8rem',
+                          color: 'var(--text-primary)',
+                          lineHeight: 1.4
+                        }}>
+                          <p style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{noteItem.text}</p>
+                          {noteItem.updatedAt && (
+                            <span style={{ display: 'block', fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                              Guardado: {new Date(noteItem.updatedAt).toLocaleDateString()} {new Date(noteItem.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNoteKey(noteKey);
+                            setNoteDraftText('');
+                          }}
+                          className="btn btn-secondary"
+                          style={{
+                            padding: '0.4rem 0.6rem',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            border: '1px dashed rgba(245, 158, 11, 0.35)',
+                            color: '#fbbf24',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.35rem',
+                            background: 'transparent',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Plus size={13} />
+                          Añadir nota personal a este turno
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* SECCIÓN 2: ACCIONES OPERATIVAS */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  ⚡ Acciones Operativas de Guardia
+                </span>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => {
+                      setTradeDate(selectedDayActionDate);
+                      setTradeType('SWAP');
+                      setSelectedMyShift('');
+                      setSelectedColleagueShift('');
+                      setActiveTab('trades');
+                      handleCloseDayActionModal();
+                    }}
+                    className="btn btn-secondary"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', fontSize: '0.82rem', fontWeight: '700', border: '1px solid rgba(6, 182, 212, 0.2)' }}
+                  >
+                    <span>🔄 Proponer Intercambio (SWAP)</span>
+                    <ArrowRight size={14} style={{ color: 'var(--accent-cyan)' }} />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setTradeDate(selectedDayActionDate);
+                      setTradeType('COVER');
+                      setSelectedMyShift('');
+                      setSelectedColleagueShift('');
+                      setActiveTab('trades');
+                      handleCloseDayActionModal();
+                    }}
+                    className="btn btn-secondary"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', fontSize: '0.82rem', fontWeight: '700', border: '1px solid rgba(99, 102, 241, 0.2)' }}
+                  >
+                    <span>🙋 Solicitar Reemplazo (COVER)</span>
+                    <ArrowRight size={14} style={{ color: 'var(--accent-indigo)' }} />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setRequestDate(selectedDayActionDate);
+                      setActiveTab('requests');
+                      handleCloseDayActionModal();
+                    }}
+                    className="btn btn-secondary"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', fontSize: '0.82rem', fontWeight: '700', border: '1px solid rgba(168, 85, 247, 0.2)' }}
+                  >
+                    <span>📋 Enviar Petición Especial / Libre</span>
+                    <ArrowRight size={14} style={{ color: 'var(--accent-purple)' }} />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCloseDayActionModal}
+                className="btn btn-danger-outline"
+                style={{ width: '100%', padding: '0.65rem', fontWeight: '700' }}
               >
-                <X size={18} />
+                Cerrar
               </button>
             </div>
-
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-              ¿Qué tipo de solicitud de cambio o petición operativa deseas realizar para este día?
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.25rem' }}>
-              <button
-                onClick={() => {
-                  setTradeDate(selectedDayActionDate);
-                  setTradeType('SWAP');
-                  setSelectedMyShift('');
-                  setSelectedColleagueShift('');
-                  setActiveTab('trades');
-                  setSelectedDayActionDate(null);
-                }}
-                className="btn btn-secondary"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', fontSize: '0.82rem', fontWeight: '700', border: '1px solid rgba(6, 182, 212, 0.15)' }}
-              >
-                <span>🔄 Proponer Intercambio (SWAP)</span>
-                <ArrowRight size={14} style={{ color: 'var(--accent-cyan)' }} />
-              </button>
-
-              <button
-                onClick={() => {
-                  setTradeDate(selectedDayActionDate);
-                  setTradeType('COVER');
-                  setSelectedMyShift('');
-                  setSelectedColleagueShift('');
-                  setActiveTab('trades');
-                  setSelectedDayActionDate(null);
-                }}
-                className="btn btn-secondary"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', fontSize: '0.82rem', fontWeight: '700', border: '1px solid rgba(99, 102, 241, 0.15)' }}
-              >
-                <span>🙋 Solicitar Reemplazo (COVER)</span>
-                <ArrowRight size={14} style={{ color: 'var(--accent-indigo)' }} />
-              </button>
-
-              <button
-                onClick={() => {
-                  setRequestDate(selectedDayActionDate);
-                  setActiveTab('requests');
-                  setSelectedDayActionDate(null);
-                }}
-                className="btn btn-secondary"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1rem', fontSize: '0.82rem', fontWeight: '700', border: '1px solid rgba(168, 85, 247, 0.15)' }}
-              >
-                <span>📋 Enviar Petición Especial / Libre</span>
-                <ArrowRight size={14} style={{ color: 'var(--accent-purple)' }} />
-              </button>
-            </div>
-
-            <button
-              onClick={() => setSelectedDayActionDate(null)}
-              className="btn btn-danger-outline"
-              style={{ width: '100%', padding: '0.65rem', fontWeight: '700', marginTop: '0.5rem' }}
-            >
-              Cancelar
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal de Exportación y Sincronización de Calendario */}
       {isExportModalOpen && (
@@ -3307,10 +3674,10 @@ export default function ControllerPortal({
 
                     {/* Instrucciones */}
                     <div style={{ borderTop: '1px dashed var(--color-border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
-                      <strong style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Instrucciones para Android & Google Calendar:</strong>
+                      <strong style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Instrucciones para Android &amp; Google Calendar:</strong>
                       <ol style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 1rem', padding: 0, lineHeight: 1.4 }}>
-                        <li>Haz clic en <strong>Google Calendar (1 Clic)</strong> y confirma con "Agregar".</li>
-                        <li>En la app de tu celular Android: Ve a Ajustes → Tu cuenta → AirControl y activa "Sincronizar".</li>
+                        <li>Haz clic en <strong>Google Calendar (1 Clic)</strong> y confirma con &quot;Agregar&quot;.</li>
+                        <li>En la app de tu celular Android: Ve a Ajustes → Tu cuenta → AirControl y activa &quot;Sincronizar&quot;.</li>
                       </ol>
                     </div>
                   </div>

@@ -6,6 +6,8 @@ import {
   getDoc, 
   getDocs, 
   deleteDoc, 
+  updateDoc,
+  deleteField,
   writeBatch
 } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -318,4 +320,34 @@ export const addManualAlertDB = async (alertData) => {
 export const deleteManualAlertDB = async (id) => {
   await deleteDoc(doc(db, 'manual_alerts', id));
 };
+
+// Controller Personal Notes CRUD
+export const saveControllerNoteDB = async (ctrlId, noteKey, text, extraData = {}) => {
+  if (!ctrlId || !noteKey) return;
+  const ref = doc(db, 'controller_notes', ctrlId);
+  if (!text || text.trim() === '') {
+    await updateDoc(ref, {
+      [noteKey]: deleteField()
+    }).catch(async () => {
+      // If doc does not exist, nothing to delete
+    });
+  } else {
+    await setDoc(ref, {
+      [noteKey]: {
+        text: text.trim(),
+        updatedAt: new Date().toISOString(),
+        ...extraData
+      }
+    }, { merge: true });
+  }
+};
+
+export const deleteControllerNoteDB = async (ctrlId, noteKey) => {
+  if (!ctrlId || !noteKey) return;
+  const ref = doc(db, 'controller_notes', ctrlId);
+  await updateDoc(ref, {
+    [noteKey]: deleteField()
+  }).catch(console.error);
+};
+
 

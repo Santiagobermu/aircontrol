@@ -1,5 +1,19 @@
 import { useState } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, Users, ArrowRightLeft, ShieldCheck, X } from 'lucide-react';
+import { 
+  Calendar as CalendarIcon, 
+  ChevronLeft, 
+  ChevronRight, 
+  Clock, 
+  Users, 
+  ArrowRightLeft, 
+  ShieldCheck, 
+  X,
+  MessageSquare,
+  Edit2,
+  Trash2,
+  Plus,
+  Check
+} from 'lucide-react';
 import { getSlotAcronym } from '../../utils/schedulerEngine';
 
 export default function MobileRosterView({ 
@@ -7,12 +21,36 @@ export default function MobileRosterView({
   scheduleMonth, 
   exceptions = {},
   controllers, 
+  controllerNotes = {},
+  onSaveNote,
+  onDeleteNote,
   onOpenTradeModal 
 }) {
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedDayDetail, setSelectedDayDetail] = useState(null);
+
+  // Estados para gestión de notas personales
+  const [editingNoteKey, setEditingNoteKey] = useState(null);
+  const [noteDraftText, setNoteDraftText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
+  const ctrlId = currentUser?.id || currentUser?.signature;
+  const myNotes = controllerNotes[ctrlId] || {};
+
+  const getNotesForDate = (dateStr) => {
+    if (!myNotes) return [];
+    return Object.entries(myNotes)
+      .filter(([k, v]) => (k === dateStr || k.startsWith(`${dateStr}_`)) && v && v.text)
+      .map(([k, v]) => ({ key: k, ...v }));
+  };
+
+  const getNoteForShift = (dateStr, shiftCode) => {
+    if (!myNotes) return null;
+    const specificKey = `${dateStr}_${shiftCode}`;
+    return myNotes[specificKey] || myNotes[dateStr] || null;
+  };
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -203,28 +241,51 @@ export default function MobileRosterView({
 
         {nextShiftData ? (
           <div style={{ marginTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {nextShiftData.shifts.map((shiftItem, idx) => (
-              <div key={idx} style={{ 
-                background: 'rgba(255, 255, 255, 0.03)', 
-                border: '1px solid var(--glass-border)', 
-                borderRadius: '10px', 
-                padding: '0.6rem 0.75rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.25rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: '700' }}>
-                  <ShieldCheck size={16} color={getShiftBadgeStyle(shiftItem.shiftCode).color} />
-                  <span>
-                    Código: <strong style={{ color: getShiftBadgeStyle(shiftItem.shiftCode).color, fontFamily: 'var(--font-mono)' }}>{shiftItem.fullCode}</strong> · {getPositionDescription(shiftItem.posAcronym)}
-                  </span>
+            {nextShiftData.shifts.map((shiftItem, idx) => {
+              const heroNote = getNoteForShift(shiftItem.dateKey, shiftItem.shiftCode);
+              return (
+                <div key={idx} style={{ 
+                  background: 'rgba(255, 255, 255, 0.03)', 
+                  border: '1px solid var(--glass-border)', 
+                  borderRadius: '10px', 
+                  padding: '0.6rem 0.75rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: '700' }}>
+                    <ShieldCheck size={16} color={getShiftBadgeStyle(shiftItem.shiftCode).color} />
+                    <span>
+                      Código: <strong style={{ color: getShiftBadgeStyle(shiftItem.shiftCode).color, fontFamily: 'var(--font-mono)' }}>{shiftItem.fullCode}</strong> · {getPositionDescription(shiftItem.posAcronym)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    <Clock size={14} color="var(--accent-cyan)" />
+                    <span>{getShiftBadgeStyle(shiftItem.shiftCode).label}</span>
+                  </div>
+
+                  {heroNote && (
+                    <div style={{
+                      backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      borderRadius: '8px',
+                      padding: '0.35rem 0.6rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      marginTop: '0.25rem',
+                      fontSize: '0.72rem',
+                      color: '#fbbf24'
+                    }}>
+                      <MessageSquare size={13} style={{ flexShrink: 0, color: '#f59e0b' }} />
+                      <span style={{ fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        Nota: {heroNote.text}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                  <Clock size={14} color="var(--accent-cyan)" />
-                  <span>{getShiftBadgeStyle(shiftItem.shiftCode).label}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.5rem 0 0' }}>
@@ -285,11 +346,14 @@ export default function MobileRosterView({
             const dayShifts = getUserShiftsForDay(dayNum);
             const isToday = dayNum === today.getDate() && selectedMonth === today.getMonth() && selectedYear === today.getFullYear();
             const hasMultipleShifts = dayShifts.length > 1;
+            const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+            const dayNotes = getNotesForDate(dateKey);
+            const hasDayNote = dayNotes.length > 0;
 
             return (
               <button
                 key={dayNum}
-                onClick={() => setSelectedDayDetail({ dayNum, dayShifts })}
+                onClick={() => setSelectedDayDetail({ dayNum, dayShifts, dateKey })}
                 style={{
                   minHeight: '62px',
                   width: '100%',
@@ -303,18 +367,36 @@ export default function MobileRosterView({
                   padding: '0.3rem 0.15rem',
                   cursor: 'pointer',
                   gap: '0.2rem',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  position: 'relative'
                 }}
               >
-                {/* Número del Día */}
-                <span style={{ 
-                  fontSize: '0.75rem', 
-                  fontWeight: isToday ? '800' : '700', 
-                  color: isToday ? 'var(--accent-cyan)' : 'var(--text-primary)',
-                  lineHeight: 1
-                }}>
-                  {dayNum}
-                </span>
+                {/* Número del Día e Indicador de Nota */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', position: 'relative' }}>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: isToday ? '800' : '700', 
+                    color: isToday ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                    lineHeight: 1
+                  }}>
+                    {dayNum}
+                  </span>
+                  {hasDayNote && (
+                    <span 
+                      title="Tiene nota personal"
+                      style={{
+                        position: 'absolute',
+                        top: '-1px',
+                        right: '4px',
+                        width: '5px',
+                        height: '5px',
+                        borderRadius: '50%',
+                        backgroundColor: '#f59e0b',
+                        boxShadow: '0 0 5px #f59e0b'
+                      }}
+                    />
+                  )}
+                </div>
 
                 {/* Lista de Turnos Asignados (Renderiza 1 o 2 turnos complementarios) */}
                 <div style={{ 
@@ -491,6 +573,227 @@ export default function MobileRosterView({
                         </div>
                       )}
 
+                      {/* Sección Nota Personal del Turno en Móvil */}
+                      {(() => {
+                        const noteKey = `${shiftItem.dateKey}_${shiftItem.shiftCode}`;
+                        const shiftNote = myNotes[noteKey];
+                        const isEditing = editingNoteKey === noteKey;
+
+                        return (
+                          <div style={{
+                            background: 'rgba(245, 158, 11, 0.04)',
+                            border: '1px solid rgba(245, 158, 11, 0.25)',
+                            borderRadius: '10px',
+                            padding: '0.65rem 0.75rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.4rem'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ 
+                                fontSize: '0.72rem', 
+                                fontWeight: '800', 
+                                color: '#f59e0b', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.35rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em'
+                              }}>
+                                <MessageSquare size={13} />
+                                Nota Personal del Turno
+                              </span>
+                              {shiftNote && !isEditing && (
+                                <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                  <button
+                                    onClick={() => {
+                                      setEditingNoteKey(noteKey);
+                                      setNoteDraftText(shiftNote.text);
+                                    }}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: 'var(--accent-cyan)',
+                                      padding: '0.2rem',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center'
+                                    }}
+                                    title="Editar nota"
+                                  >
+                                    <Edit2 size={13} />
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (window.confirm('¿Eliminar esta nota personal?')) {
+                                        if (onDeleteNote && ctrlId) {
+                                          await onDeleteNote(ctrlId, noteKey);
+                                        }
+                                      }
+                                    }}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: 'var(--status-danger)',
+                                      padding: '0.2rem',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center'
+                                    }}
+                                    title="Eliminar nota"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {isEditing ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <textarea
+                                  value={noteDraftText}
+                                  onChange={(e) => setNoteDraftText(e.target.value)}
+                                  placeholder="Escribe una nota privada para este turno..."
+                                  maxLength={300}
+                                  rows={2}
+                                  style={{
+                                    width: '100%',
+                                    backgroundColor: 'var(--bg-tertiary)',
+                                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                                    borderRadius: '8px',
+                                    padding: '0.45rem',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.78rem',
+                                    resize: 'none',
+                                    outline: 'none',
+                                    fontFamily: 'inherit',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  autoFocus
+                                />
+                                <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                                  {['📌 NOTAM', '🔄 Permuta', '📋 Entrega', '🩺 Chequeo', '✈️ OACI'].map((tag) => (
+                                    <button
+                                      key={tag}
+                                      type="button"
+                                      onClick={() => setNoteDraftText(prev => prev ? `${prev} - ${tag}` : tag)}
+                                      style={{
+                                        fontSize: '0.62rem',
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        color: 'var(--text-secondary)',
+                                        borderRadius: '5px',
+                                        padding: '0.12rem 0.35rem',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      {tag}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.15rem' }}>
+                                  <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>
+                                    {noteDraftText.length}/300
+                                  </span>
+                                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingNoteKey(null);
+                                        setNoteDraftText('');
+                                      }}
+                                      style={{
+                                        padding: '0.25rem 0.55rem',
+                                        fontSize: '0.72rem',
+                                        borderRadius: '6px',
+                                        background: 'var(--bg-tertiary)',
+                                        border: '1px solid var(--glass-border)',
+                                        color: 'var(--text-secondary)',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={savingNote}
+                                      onClick={async () => {
+                                        if (!ctrlId) return;
+                                        setSavingNote(true);
+                                        try {
+                                          if (onSaveNote) {
+                                            await onSaveNote(ctrlId, noteKey, noteDraftText, {
+                                              shift: shiftItem.shiftCode,
+                                              date: shiftItem.dateKey
+                                            });
+                                          }
+                                          setEditingNoteKey(null);
+                                          setNoteDraftText('');
+                                        } finally {
+                                          setSavingNote(false);
+                                        }
+                                      }}
+                                      style={{
+                                        padding: '0.25rem 0.65rem',
+                                        fontSize: '0.72rem',
+                                        borderRadius: '6px',
+                                        background: '#f59e0b',
+                                        border: '1px solid #f59e0b',
+                                        color: '#000',
+                                        fontWeight: '800',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                      }}
+                                    >
+                                      <Check size={12} />
+                                      {savingNote ? '...' : 'Guardar'}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : shiftNote ? (
+                              <div>
+                                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.35 }}>
+                                  {shiftNote.text}
+                                </p>
+                                {shiftNote.updatedAt && (
+                                  <span style={{ display: 'block', fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                    Guardado {new Date(shiftNote.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingNoteKey(noteKey);
+                                  setNoteDraftText('');
+                                }}
+                                style={{
+                                  background: 'transparent',
+                                  border: '1px dashed rgba(245, 158, 11, 0.35)',
+                                  borderRadius: '7px',
+                                  color: '#fbbf24',
+                                  padding: '0.35rem',
+                                  fontSize: '0.72rem',
+                                  fontWeight: '600',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '0.3rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <Plus size={12} />
+                                Añadir nota a este turno
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       {/* Botón Solicitar Permuta (Redirecciona a Reemplazo con la fecha preseleccionada) */}
                       <button
                         onClick={() => {
@@ -521,8 +824,154 @@ export default function MobileRosterView({
 
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No tienes turno asignado para esta fecha (Descanso / Libre).</p>
+              <div style={{ textAlign: 'center', padding: '1rem 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>No tienes turno asignado para esta fecha (Descanso / Libre).</p>
+
+                {/* Nota para día libre */}
+                {(() => {
+                  const dateStr = selectedDayDetail.dateKey || `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDayDetail.dayNum).padStart(2, '0')}`;
+                  const noteKey = `${dateStr}_DAY`;
+                  const dayNote = myNotes[noteKey];
+                  const isEditing = editingNoteKey === noteKey;
+
+                  return (
+                    <div style={{
+                      background: 'rgba(245, 158, 11, 0.04)',
+                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                      borderRadius: '10px',
+                      padding: '0.65rem 0.75rem',
+                      textAlign: 'left',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.4rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ 
+                          fontSize: '0.72rem', 
+                          fontWeight: '800', 
+                          color: '#f59e0b', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.35rem',
+                          textTransform: 'uppercase'
+                        }}>
+                          <MessageSquare size={13} />
+                          Nota Personal del Día
+                        </span>
+                        {dayNote && !isEditing && (
+                          <div style={{ display: 'flex', gap: '0.3rem' }}>
+                            <button
+                              onClick={() => {
+                                setEditingNoteKey(noteKey);
+                                setNoteDraftText(dayNote.text);
+                              }}
+                              style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer' }}
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (window.confirm('¿Eliminar esta nota?')) {
+                                  if (onDeleteNote && ctrlId) {
+                                    await onDeleteNote(ctrlId, noteKey);
+                                  }
+                                }
+                              }}
+                              style={{ background: 'transparent', border: 'none', color: 'var(--status-danger)', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {isEditing ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          <textarea
+                            value={noteDraftText}
+                            onChange={(e) => setNoteDraftText(e.target.value)}
+                            placeholder="Nota personal (cita médica, curso, etc.)..."
+                            maxLength={300}
+                            rows={2}
+                            style={{
+                              width: '100%',
+                              backgroundColor: 'var(--bg-tertiary)',
+                              border: '1px solid rgba(245, 158, 11, 0.4)',
+                              borderRadius: '8px',
+                              padding: '0.45rem',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.78rem',
+                              boxSizing: 'border-box'
+                            }}
+                            autoFocus
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.35rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingNoteKey(null);
+                                setNoteDraftText('');
+                              }}
+                              style={{ padding: '0.25rem 0.55rem', fontSize: '0.72rem', borderRadius: '6px', background: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={savingNote}
+                              onClick={async () => {
+                                if (!ctrlId) return;
+                                setSavingNote(true);
+                                try {
+                                  if (onSaveNote) {
+                                    await onSaveNote(ctrlId, noteKey, noteDraftText, {
+                                      shift: 'DAY',
+                                      date: dateStr
+                                    });
+                                  }
+                                  setEditingNoteKey(null);
+                                  setNoteDraftText('');
+                                } finally {
+                                  setSavingNote(false);
+                                }
+                              }}
+                              style={{ padding: '0.25rem 0.65rem', fontSize: '0.72rem', borderRadius: '6px', background: '#f59e0b', border: '1px solid #f59e0b', color: '#000', fontWeight: '800' }}
+                            >
+                              {savingNote ? '...' : 'Guardar'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : dayNote ? (
+                        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-primary)' }}>{dayNote.text}</p>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNoteKey(noteKey);
+                            setNoteDraftText('');
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: '1px dashed rgba(245, 158, 11, 0.35)',
+                            borderRadius: '7px',
+                            color: '#fbbf24',
+                            padding: '0.35rem',
+                            fontSize: '0.72rem',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.3rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Plus size={12} />
+                          Añadir nota personal a este día
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>

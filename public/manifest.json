@@ -1,16 +1,27 @@
 {
   "short_name": "AirControl",
   "name": "AirControl SKBO - Sistema Roster ATC",
-  "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    }
-  ],
-  "start_url": ".",
+  "description": "Sistema táctico de gestión y optimización de turnos ATC SKBO",
+  "id": "/?source=pwa",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#090d16",
   "background_color": "#090d16",
-  "orientation": "portrait"
+  "gcm_sender_id": "103953800507",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

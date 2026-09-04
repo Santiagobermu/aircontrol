@@ -62,8 +62,11 @@ import {
   deleteTradeDB,
   registerUserInAuth,
   addManualAlertDB,
-  deleteManualAlertDB
+  deleteManualAlertDB,
+  saveControllerNoteDB,
+  deleteControllerNoteDB
 } from './utils/db';
+import { registerMessagingServiceWorker, subscribeToForegroundMessages } from './utils/notifications';
 
 export default function App() {
   const [controllers, setControllers] = useState([]);
@@ -126,6 +129,7 @@ export default function App() {
   const [publishState, setPublishState] = useState({});
   const [notamsData, setNotamsData] = useState({ notams: [], lastUpdated: null, pdfUrl: null });
   const [manualAlerts, setManualAlerts] = useState([]);
+  const [controllerNotes, setControllerNotes] = useState({});
   const [viewAsController, setViewAsController] = useState(false);
 
   // Calcular dinámicamente los 7 días de la semana de la fecha seleccionada en el planificador
@@ -142,6 +146,7 @@ export default function App() {
     let unsubPublishState = () => {};
     let unsubNotams = () => {};
     let unsubManualAlerts = () => {};
+    let unsubControllerNotes = () => {};
 
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -244,10 +249,29 @@ export default function App() {
         setManualAlerts(alertList);
       });
 
+      // 11. Set up real-time listener for Controller Personal Notes
+      unsubControllerNotes = onSnapshot(collection(db, 'controller_notes'), (snapshot) => {
+        const notesMap = {};
+        snapshot.forEach(docSnap => {
+          notesMap[docSnap.id] = docSnap.data();
+        });
+        setControllerNotes(notesMap);
+      });
+
       setLoading(false);
+
+      // Registrar Service Worker de Push Notifications
+      registerMessagingServiceWorker().catch(console.error);
     };
 
     init();
+
+    // Listener de notificaciones push en primer plano (Foreground)
+    const unsubForeground = subscribeToForegroundMessages((payload) => {
+      const title = payload.notification?.title || payload.data?.title || 'AirControl';
+      const body = payload.notification?.body || payload.data?.body || 'Nueva actualización disponible.';
+      showNotification(`🔔 ${title}: ${body}`, 'success');
+    });
 
     return () => {
       unsubAuth();
@@ -260,6 +284,8 @@ export default function App() {
       unsubPublishState();
       unsubNotams();
       unsubManualAlerts();
+      unsubControllerNotes();
+      if (typeof unsubForeground === 'function') unsubForeground();
     };
   }, []);
 
@@ -1045,6 +1071,26 @@ export default function App() {
 
   const userRole = isUserAdmin ? 'admin' : 'controller';
 
+  const handleSaveControllerNote = async (ctrlId, noteKey, text, extraData) => {
+    try {
+      await saveControllerNoteDB(ctrlId, noteKey, text, extraData);
+      showNotification('Nota personal guardada con éxito.', 'success');
+    } catch (err) {
+      console.error('Error al guardar nota:', err);
+      showNotification('Error al guardar la nota personal.', 'danger');
+    }
+  };
+
+  const handleDeleteControllerNote = async (ctrlId, noteKey) => {
+    try {
+      await deleteControllerNoteDB(ctrlId, noteKey);
+      showNotification('Nota personal eliminada.', 'success');
+    } catch (err) {
+      console.error('Error al eliminar nota:', err);
+      showNotification('Error al eliminar la nota personal.', 'danger');
+    }
+  };
+
   const showControllerPortal = userRole === 'controller' || (viewAsController && userRole === 'admin');
 
   // Si está en dispositivo móvil o vista móvil activada
@@ -1071,6 +1117,9 @@ export default function App() {
         publishState={publishState}
         notamsData={notamsData}
         manualAlerts={manualAlerts}
+        controllerNotes={controllerNotes}
+        onSaveNote={handleSaveControllerNote}
+        onDeleteNote={handleDeleteControllerNote}
         userRole={userRole}
         onLogout={handleLogout}
         onChangePassword={() => setIsChangePasswordModalOpen(true)}
@@ -1097,6 +1146,9 @@ export default function App() {
         userRole={userRole}
         notamsData={notamsData}
         manualAlerts={manualAlerts}
+        controllerNotes={controllerNotes}
+        onSaveNote={handleSaveControllerNote}
+        onDeleteNote={handleDeleteControllerNote}
         onLogout={handleLogout}
         onUpdateController={handleUpdateController}
         onToggleViewMode={userRole === 'admin' ? () => setViewAsController(false) : null}

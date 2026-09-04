@@ -178,7 +178,7 @@
       "label": "send_push_notification_api()",
       "file_type": "code",
       "source_file": "functions/main.py",
-      "source_location": "L130",
+      "source_location": "L133",
       "_callable": true,
       "_origin": "ast",
       "id": "functions_main_send_push_notification_api",
@@ -1258,8 +1258,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_loginscreen",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "loginscreen.jsx"
     },
     {
@@ -1270,8 +1270,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_loginscreen_loginscreen",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "loginscreen()"
     },
     {
@@ -1327,8 +1327,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_schedulergrid",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "schedulergrid.jsx"
     },
     {
@@ -1339,8 +1339,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_schedulergrid_getpositionpriority",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "getpositionpriority()"
     },
     {
@@ -1351,8 +1351,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_schedulergrid_schedulergrid",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "schedulergrid()"
     },
     {
@@ -1385,8 +1385,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_themetoggle",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "themetoggle.jsx"
     },
     {
@@ -1397,8 +1397,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_themetoggle_themetoggle",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "themetoggle()"
     },
     {
@@ -1409,7 +1409,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "tradepanel.jsx"
     },
     {
@@ -1421,7 +1421,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel_generatesettletrade",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "generatesettletrade()"
     },
     {
@@ -1433,7 +1433,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel_tradepanel",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "tradepanel()"
     },
     {
@@ -1444,7 +1444,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilebottomnav.jsx"
     },
     {
@@ -1456,7 +1456,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav_mobilebottomnav",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilebottomnav()"
     },
     {
@@ -1467,7 +1467,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilegeneralrosterview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilegeneralrosterview.jsx"
     },
     {
@@ -1479,7 +1479,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilegeneralrosterview()"
     },
     {
@@ -1490,7 +1490,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileguardiaview.jsx"
     },
     {
@@ -1502,7 +1502,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview_mobileguardiaview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileguardiaview()"
     },
     {
@@ -1512,8 +1512,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileheader.jsx"
     },
     {
@@ -1524,8 +1524,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader_mobileheader",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 1,
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobileheader()"
     },
     {
@@ -1536,7 +1536,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilelayout.jsx"
     },
     {
@@ -1548,7 +1548,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout_mobilelayout",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilelayout()"
     },
     {
@@ -1605,7 +1605,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilerosterview.jsx"
     },
     {
@@ -1617,7 +1617,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview_mobilerosterview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobilerosterview()"
     },
     {
@@ -1628,7 +1628,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobiletradesview.jsx"
     },
     {
@@ -1640,7 +1640,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview_mobiletradesview",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "mobiletradesview()"
     },
     {
@@ -2446,8 +2446,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_ortoolsscheduler",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "ortoolsscheduler.js"
     },
     {
@@ -2469,8 +2469,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_schedulerengine",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "schedulerengine.js"
     },
     {
@@ -2480,8 +2480,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_utils_schedulerengine_days_of_week",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "days_of_week"
     },
     {
@@ -2502,8 +2502,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_utils_schedulerengine_shift_requirements",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "shift_requirements"
     },
     {
@@ -2513,8 +2513,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_utils_schedulerengine_activerequests",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "activerequests"
     },
     {
@@ -2526,7 +2526,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotacronym",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "getslotacronym()"
     },
     {
@@ -2538,7 +2538,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotdescription",
       "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community_name": "MobileLayout.jsx",
       "norm_label": "getslotdescription()"
     },
     {
@@ -2549,8 +2549,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_shufflearray",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "shufflearray()"
     },
     {
@@ -2561,8 +2561,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_geteasterdate",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "geteasterdate()"
     },
     {
@@ -2573,8 +2573,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getcolombianholidays",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "getcolombianholidays()"
     },
     {
@@ -2584,8 +2584,8 @@
       "source_location": "L214",
       "_origin": "ast",
       "id": "src_utils_schedulerengine_holidayscache",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "holidayscache"
     },
     {
@@ -2608,8 +2608,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getdayselapsed",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "getdayselapsed()"
     },
     {
@@ -2632,8 +2632,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getsequencedayindex",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "getsequencedayindex()"
     },
     {
@@ -2680,8 +2680,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_runautoschedulerforweek",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "runautoschedulerforweek()"
     },
     {
@@ -2692,8 +2692,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_runautoschedulerformonth",
-      "community": 1,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "runautoschedulerformonth()"
     },
     {
@@ -3136,7 +3136,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "functions/main.py",
-      "source_location": "L130",
+      "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
       "source": "functions_main",
@@ -3205,7 +3205,7 @@
       "relation": "references",
       "confidence": "EXTRACTED",
       "source_file": "functions/main.py",
-      "source_location": "L129",
+      "source_location": "L132",
       "weight": 1.0,
       "context": "decorator",
       "_origin": "ast",
@@ -3278,7 +3278,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "functions/main.py",
-      "source_location": "L130",
+      "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
       "source": "functions_main_send_push_notification_api",
@@ -3302,7 +3302,7 @@
       "context": "return_type",
       "confidence": "EXTRACTED",
       "source_file": "functions/main.py",
-      "source_location": "L130",
+      "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
       "source": "functions_main_send_push_notification_api",
@@ -3344,6 +3344,18 @@
       "source": "functions_main_scheduled_sync_notams",
       "target": "on_schedule",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "functions/main.py",
+      "source_location": "L127",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "functions_main_scheduled_sync_notams",
+      "target": "functions_notams_parser_sync_skbo_notams"
     },
     {
       "relation": "references",
