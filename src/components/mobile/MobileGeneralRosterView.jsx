@@ -16,7 +16,7 @@ import {
   Clock, 
   AlertCircle 
 } from 'lucide-react';
-import { getSlotAcronym, getSlotDescription } from '../../utils/schedulerEngine';
+import { getSlotAcronym, getSlotDescription, isSameCtrl as isSameCtrlEngine, getCtrlSig as getCtrlSigEngine } from '../../utils/schedulerEngine';
 
 export default function MobileGeneralRosterView({
   currentUser,
@@ -94,15 +94,7 @@ export default function MobileGeneralRosterView({
   };
 
   // Helper para comparar controladores
-  const isSameCtrl = (ctrlA, ctrlB) => {
-    if (!ctrlA || !ctrlB) return false;
-    const sigA = (typeof ctrlA === 'string' ? ctrlA : (ctrlA.signature || ctrlA.id || ctrlA.name || '')).toString().trim().toUpperCase();
-    const sigB = (typeof ctrlB === 'string' ? ctrlB : (ctrlB.signature || ctrlB.id || ctrlB.name || '')).toString().trim().toUpperCase();
-    if (sigA && sigB && sigA === sigB) return true;
-    const idA = (typeof ctrlA === 'object' ? (ctrlA.id || ctrlA.signature) : ctrlA).toString().trim().toUpperCase();
-    const idB = (typeof ctrlB === 'object' ? (ctrlB.id || ctrlB.signature) : ctrlB).toString().trim().toUpperCase();
-    return idA && idB && idA === idB;
-  };
+  const isSameCtrl = (ctrlA, ctrlB) => isSameCtrlEngine(ctrlA, ctrlB, controllers);
 
   // Helper para determinar la habilidad requerida por una posición
   const getRequiredSkillForSlot = (slotKey, shift) => {

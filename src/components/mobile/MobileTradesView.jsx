@@ -45,18 +45,102 @@ export default function MobileTradesView({
     }
   }, [initialTradeData]);
 
+  // Helper para buscar el controlador canónico en controllers
+  const findController = (ctrlRef) => {
+    if (!ctrlRef) return null;
+    if (typeof ctrlRef === 'object') {
+      const match = controllers.find(c => 
+        (c.id && (c.id === ctrlRef.id || c.id === ctrlRef.ctrlId)) ||
+        (c.signature && (c.signature === ctrlRef.signature || c.signature === ctrlRef.sig || c.signature === ctrlRef.ctrlSig)) ||
+        (c.email && ctrlRef.email && c.email.toLowerCase() === ctrlRef.email.toLowerCase())
+      );
+      return match || ctrlRef;
+    }
+    const clean = ctrlRef.toString().trim().toUpperCase();
+    return controllers.find(c => 
+      (c.id && c.id.toUpperCase() === clean) ||
+      (c.signature && c.signature.toUpperCase() === clean) ||
+      (c.name && c.name.toUpperCase() === clean) ||
+      (c.email && c.email.toUpperCase() === clean) ||
+      (c.documentId && c.documentId === clean)
+    ) || null;
+  };
+
   // Helper para obtener la firma / iniciales de un controlador de forma segura
   const getCtrlSig = (ctrl) => {
     if (!ctrl) return '';
-    return (ctrl.signature || ctrl.id || ctrl.name || '').toString().trim();
+    const obj = findController(ctrl);
+    if (obj) {
+      return (obj.signature || obj.name || obj.id || '').toString().trim();
+    }
+    if (typeof ctrl === 'object') {
+      return (ctrl.signature || ctrl.sig || ctrl.ctrlSig || ctrl.name || ctrl.id || '').toString().trim();
+    }
+    return ctrl.toString().trim();
   };
 
-  // Helper para comparar si dos objetos o siglas pertenecen al mismo controlador
+  // Helper para comparar si dos objetos o siglas pertenecen al mismo controlador de manera omnisciente
   const isSameCtrl = (ctrlA, ctrlB) => {
     if (!ctrlA || !ctrlB) return false;
-    const sigA = (typeof ctrlA === 'string' ? ctrlA : getCtrlSig(ctrlA)).toUpperCase();
-    const sigB = (typeof ctrlB === 'string' ? ctrlB : getCtrlSig(ctrlB)).toUpperCase();
-    return sigA && sigB && sigA === sigB;
+    if (ctrlA === ctrlB) return true;
+
+    const getIdentifiers = (item) => {
+      const set = new Set();
+      if (!item) return set;
+
+      if (typeof item === 'string') {
+        const clean = item.trim().toUpperCase();
+        if (clean) {
+          set.add(clean);
+          if (clean.includes('@')) set.add(clean.split('@')[0]);
+        }
+        const found = controllers.find(c => 
+          (c.id && c.id.toUpperCase() === clean) ||
+          (c.signature && c.signature.toUpperCase() === clean) ||
+          (c.name && c.name.toUpperCase() === clean) ||
+          (c.email && c.email.toUpperCase() === clean)
+        );
+        if (found) {
+          if (found.id) set.add(found.id.toString().trim().toUpperCase());
+          if (found.signature) set.add(found.signature.toString().trim().toUpperCase());
+          if (found.name) set.add(found.name.toString().trim().toUpperCase());
+          if (found.email) set.add(found.email.toString().trim().toUpperCase());
+        }
+      } else if (typeof item === 'object') {
+        if (item.id) set.add(item.id.toString().trim().toUpperCase());
+        if (item.ctrlId) set.add(item.ctrlId.toString().trim().toUpperCase());
+        if (item.signature) set.add(item.signature.toString().trim().toUpperCase());
+        if (item.sig) set.add(item.sig.toString().trim().toUpperCase());
+        if (item.ctrlSig) set.add(item.ctrlSig.toString().trim().toUpperCase());
+        if (item.name) set.add(item.name.toString().trim().toUpperCase());
+        if (item.ctrlName) set.add(item.ctrlName.toString().trim().toUpperCase());
+        if (item.email) set.add(item.email.toString().trim().toUpperCase());
+        if (item.ctrl && typeof item.ctrl === 'object') {
+          const nested = getIdentifiers(item.ctrl);
+          nested.forEach(v => set.add(v));
+        }
+        const found = controllers.find(c => 
+          (c.id && (c.id === item.id || c.id === item.ctrlId)) ||
+          (c.signature && (c.signature === item.signature || c.signature === item.sig || c.signature === item.ctrlSig)) ||
+          (c.email && c.email === item.email)
+        );
+        if (found) {
+          if (found.id) set.add(found.id.toString().trim().toUpperCase());
+          if (found.signature) set.add(found.signature.toString().trim().toUpperCase());
+          if (found.name) set.add(found.name.toString().trim().toUpperCase());
+          if (found.email) set.add(found.email.toString().trim().toUpperCase());
+        }
+      }
+      return set;
+    };
+
+    const setA = getIdentifiers(ctrlA);
+    const setB = getIdentifiers(ctrlB);
+
+    for (const valA of setA) {
+      if (setB.has(valA)) return true;
+    }
+    return false;
   };
 
   // Helper para determinar la habilidad / certificación requerida por una posición
@@ -65,31 +149,39 @@ export default function MobileTradesView({
     const code = slotKey.toUpperCase();
     const acronym = getSlotAcronym(slotKey, shift);
 
-    if (code.startsWith('TWR') || ['LNT', 'LST', 'LPT'].includes(acronym) || code.includes('TWR')) return 'TWR';
-    if (code.startsWith('GND') || ['GNT', 'GST', 'GPT'].includes(acronym) || code.includes('GND')) return 'GND';
-    if (code.startsWith('DEL') || ['DPT', 'DPR'].includes(acronym) || code.includes('DEL')) return 'DEL';
-    if (code.startsWith('FIC') || ['FPT', 'FPR', 'FPA'].includes(acronym) || code.includes('FIC')) return 'FIC';
+    if (code.startsWith('TWR') || ['LNT', 'LST', 'LPT'].includes(acronym) || code.includes('TWR') || code.includes('LNT') || code.includes('LST') || code.includes('LPT')) return 'TWR';
+    if (code.startsWith('GND') || ['GNT', 'GST', 'GPT'].includes(acronym) || code.includes('GND') || code.includes('GNT') || code.includes('GST') || code.includes('GPT')) return 'GND';
+    if (code.startsWith('DEL') || ['DPT', 'DPR'].includes(acronym) || code.includes('DEL') || code.includes('DPT') || code.includes('DPR')) return 'DEL';
+    if (code.startsWith('FIC') || ['FPT', 'FPR', 'FPA'].includes(acronym) || code.includes('FIC') || code.includes('FPT') || code.includes('FPR') || code.includes('FPA')) return 'FIC';
     if (code.startsWith('CTE') || acronym === 'CTE' || code.includes('CTE')) return 'CTE';
     if (code.startsWith('ACC') || acronym.includes('ACC') || code.includes('ACC')) return 'ACC';
     if (code.startsWith('SIM') || acronym.includes('SIM') || code.includes('SIM')) return 'SIM';
-    if (code.startsWith('ENT') || acronym === 'ENT') return 'ENT';
+    if (code.startsWith('ENT') || acronym === 'ENT' || code.includes('ENT')) return 'ENT';
     return null;
   };
 
   // Helper para verificar si un controlador tiene la certificación requerida
-  const isControllerQualified = (ctrl, requiredSkill) => {
-    if (!ctrl) return false;
+  const isControllerQualified = (ctrlRef, requiredSkill) => {
+    if (!ctrlRef) return false;
     if (!requiredSkill) return true; // Si no hay restricción de posición, está habilitado
     
+    const ctrl = (typeof ctrlRef === 'object' && ctrlRef.skills) ? ctrlRef : (findController(ctrlRef) || ctrlRef);
+    if (!ctrl) return true;
+
     if (requiredSkill === 'ENT') {
       return Boolean(ctrl.trainingPreferred);
     }
 
     const skills = ctrl.skills || [];
     if (requiredSkill === 'CTE') {
-      return Boolean(ctrl.isSupervisor || ctrl.isAdmin || skills.includes('CTE'));
+      return Boolean(ctrl.isSupervisor || ctrl.isAdmin || skills.includes('CTE') || skills.includes('cte'));
     }
-    return skills.includes(requiredSkill) || skills.includes(requiredSkill.toUpperCase());
+
+    if (skills.length === 0 && !ctrl.isAdmin && !ctrl.isSupervisor) {
+      return true;
+    }
+
+    return skills.some(s => s && s.toString().toUpperCase() === requiredSkill.toUpperCase());
   };
 
   // Turnos propios asignados el día seleccionado
@@ -127,8 +219,8 @@ export default function MobileTradesView({
       const slots = daySched[shift] || {};
       Object.entries(slots).forEach(([slotKey, assignedId]) => {
         if (assignedId && !isSameCtrl(assignedId, currentUser)) {
-          const ctrlObj = controllers.find(c => isSameCtrl(c, assignedId)) || { name: assignedId, signature: assignedId };
-          const name = ctrlObj.name || assignedId;
+          const ctrlObj = findController(assignedId) || controllers.find(c => isSameCtrl(c, assignedId)) || { name: assignedId, signature: assignedId, id: assignedId };
+          const name = ctrlObj.fullName || ctrlObj.name || assignedId;
           const sig = getCtrlSig(ctrlObj);
           const acronym = getSlotAcronym(slotKey, shift);
           const fullCode = `${shift}${acronym}`;
@@ -154,6 +246,13 @@ export default function MobileTradesView({
   const myAvailableShifts = getMyShiftsForDate(tradeDate);
   const otherAssignedShifts = getOtherAssignedShiftsOnDate(tradeDate);
 
+  // Auto-seleccionar mi turno si solo hay 1 disponible en la fecha seleccionada
+  useEffect(() => {
+    if (tradeDate && myAvailableShifts.length === 1 && !selectedMyShift) {
+      setSelectedMyShift(myAvailableShifts[0].fullCode);
+    }
+  }, [tradeDate, myAvailableShifts, selectedMyShift]);
+
   // Determinar el turno propio seleccionado y su habilidad requerida
   const selectedMyShiftObj = myAvailableShifts.find(s => s.fullCode === selectedMyShift) || (selectedMyShift ? {
     shift: selectedMyShift?.slice(0, 1) || 'M',
@@ -177,6 +276,13 @@ export default function MobileTradesView({
   const availableColleagueShifts = selectedColleagueSig && selectedColleagueSig !== 'OPEN'
     ? otherAssignedShifts.filter(s => isSameCtrl(s.ctrlObj || s.ctrlSig, selectedColleagueSig) && isControllerQualified(currentUser, s.requiredSkill))
     : [];
+
+  // Auto-seleccionar el turno del receptor si solo hay 1 disponible para ese receptor en la fecha
+  useEffect(() => {
+    if (tradeType === 'SWAP' && selectedColleagueSig && selectedColleagueSig !== 'OPEN' && availableColleagueShifts.length === 1 && !targetShiftToSwap) {
+      setTargetShiftToSwap(availableColleagueShifts[0].fullCode);
+    }
+  }, [tradeType, selectedColleagueSig, availableColleagueShifts, targetShiftToSwap]);
 
   // Al enviar la solicitud
   const handleFormSubmit = async (e) => {
@@ -781,9 +887,10 @@ export default function MobileTradesView({
                     <option value="OPEN">📢 Solicitud Abierta a cualquier compañero habilitado</option>
                     {displayedColleagues.map(c => {
                       const sig = getCtrlSig(c);
+                      const displayName = c.fullName ? `${c.fullName} (${sig})` : (c.name && c.name !== sig ? `${c.name} (${sig})` : sig);
                       return (
                         <option key={sig} value={sig}>
-                          {c.name || sig} ({sig}) {requiredSkillForMyShift ? `· Habilitado ${requiredSkillForMyShift}` : ''}
+                          {displayName} {requiredSkillForMyShift ? `· Habilitado ${requiredSkillForMyShift}` : ''}
                         </option>
                       );
                     })}

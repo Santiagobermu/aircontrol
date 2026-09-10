@@ -1,11 +1,11 @@
 # Graph Report - Proyecto  (2026-09-10)
 
 ## Corpus Check
-- 56 files · ~100,324 words
+- 56 files · ~100,389 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 288 nodes · 639 edges · 21 communities (13 shown, 8 thin omitted)
+- 288 nodes · 642 edges · 21 communities (13 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -38,7 +38,7 @@
 ## God Nodes (most connected - your core abstractions)
 1. `App()` - 28 edges
 2. `ControllerPortal()` - 25 edges
-3. `getSlotAcronym()` - 17 edges
+3. `getSlotAcronym()` - 19 edges
 4. `isColombianHoliday()` - 16 edges
 5. `MobileProfileView()` - 13 edges
 6. `solve_schedule()` - 12 edges
@@ -97,7 +97,7 @@ Cohesion: 0.15
 Nodes (12): background_color, description, display, gcm_sender_id, icons, id, name, orientation (+4 more)
 
 ### Community 9 - "MobileLayout.jsx"
-Cohesion: 0.14
+Cohesion: 0.15
 Nodes (20): BoletaPreviewModal(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade() (+12 more)
 
 ### Community 10 - "AirControl Architecture Summary"
@@ -116,10 +116,12 @@ Nodes (29): MobileProfileView(), controllers, exceptions, schedule, syncControll
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+- **Why does `getSlotAcronym()` connect `MobileLayout.jsx` to `ControllerPortal.jsx`, `schedulerEngine.js`?**
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+- **Why does `ControllerPortal()` connect `ControllerPortal.jsx` to `App.jsx`, `MobileLayout.jsx`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `ControllerPortal()` connect `ControllerPortal.jsx` to `App.jsx`, `MobileLayout.jsx`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _63 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
@@ -128,5 +130,3 @@ _Questions this graph is uniquely positioned to answer:_
   _Cohesion score 0.07928118393234672 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected._
-- **Should `devDependencies` be split into smaller, more focused modules?**
-  _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._

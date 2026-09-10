@@ -145,13 +145,13 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileRosterView.jsx": {
-    "mtime": 1788539318.4248173,
-    "ast_hash": "0763322bdefe05c1e0df439832cd8d1e",
+    "mtime": 1789076467.8947303,
+    "ast_hash": "52c7bdc4ebcfd9eb457a613601c898b9",
     "semantic_hash": ""
   },
   "src/components/mobile/MobileTradesView.jsx": {
-    "mtime": 1789073792.0311809,
-    "ast_hash": "81f72cb0d9995a13805c830ba748f925",
+    "mtime": 1789076458.2825053,
+    "ast_hash": "b2b03aa5db4e433d55bb858437030108",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -180,8 +180,8 @@
     "semantic_hash": "c22cb7792032c1072e3e810d4281f0ad"
   },
   "src/utils/schedulerEngine.js": {
-    "mtime": 1787847451.7948353,
-    "ast_hash": "67d5488bd9a7aa17a76c592abdc8269b",
+    "mtime": 1789076386.1869721,
+    "ast_hash": "676b1a9e7383927d2ffa55b9661f63a2",
     "semantic_hash": ""
   },
   "src/utils/storage.js": {
@@ -265,8 +265,8 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileGeneralRosterView.jsx": {
-    "mtime": 1788216448.7055552,
-    "ast_hash": "b207e2ff9e390aa6452f61c78c5d51b5",
+    "mtime": 1789076965.5209777,
+    "ast_hash": "abb7a34c1e451c49ae00f4573642ba93",
     "semantic_hash": ""
   },
   "src/scripts/sync_all_now.js": {
@@ -327,11 +327,6 @@
   "public/templates/boleta_cambio_turno.pdf": {
     "mtime": 1789073452.624987,
     "ast_hash": "af8b57fe5fc1885c16f88cac0d2440ce",
-    "semantic_hash": ""
-  },
-  "scratch/test_boleta.pdf": {
-    "mtime": 1789065322.608152,
-    "ast_hash": "0a701f536f968596226925b4c49bf6ca",
     "semantic_hash": ""
   }
 }

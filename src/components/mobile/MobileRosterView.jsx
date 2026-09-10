@@ -799,7 +799,9 @@ export default function MobileRosterView({
                         onClick={() => {
                           const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDayDetail.dayNum).padStart(2, '0')}`;
                           setSelectedDayDetail(null);
-                          if (onOpenTradeModal) onOpenTradeModal(dateStr, 'COVER');
+                          if (onOpenTradeModal) onOpenTradeModal(dateStr, 'COVER', {
+                            selectedMyShift: shiftItem.fullCode
+                          });
                         }}
                         className="btn btn-primary"
                         style={{

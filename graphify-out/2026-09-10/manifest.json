@@ -305,13 +305,13 @@
     "semantic_hash": ""
   },
   "src/components/BoletaPreviewModal.jsx": {
-    "mtime": 1789073524.3274527,
-    "ast_hash": "dc3f2ec87f4864dde13308453c6a5410",
+    "mtime": 1789074336.2195444,
+    "ast_hash": "98490a601529dd1dc8be3da711417b83",
     "semantic_hash": ""
   },
   "src/utils/boletaGenerator.js": {
-    "mtime": 1789073506.8628728,
-    "ast_hash": "b00d331e25fa903d1eae1602bdca708b",
+    "mtime": 1789074318.733372,
+    "ast_hash": "6df8b1148e8a1c500fcb984e2b9c5c4f",
     "semantic_hash": ""
   },
   "Boleta de cambio de turno.pdf": {

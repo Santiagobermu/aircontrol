@@ -60,6 +60,108 @@ export const getSlotAcronym = (slotKey, shift) => {
 };
 
 /**
+ * Obtiene la firma / iniciales canónicas de un controlador de forma segura.
+ * Admite objeto o string (ID, firma, nombre, email) y resuelve contra el listado de controllers si está disponible.
+ */
+export const getCtrlSig = (ctrl, controllers = []) => {
+  if (!ctrl) return '';
+  if (typeof ctrl === 'object') {
+    const raw = (ctrl.signature || ctrl.sig || ctrl.ctrlSig || ctrl.name || ctrl.id || '').toString().trim();
+    if (raw && raw !== ctrl.id) return raw;
+    if (Array.isArray(controllers) && controllers.length > 0 && ctrl.id) {
+      const found = controllers.find(c => c.id === ctrl.id);
+      if (found) return (found.signature || found.name || found.id).toString().trim();
+    }
+    return raw;
+  }
+  const clean = ctrl.toString().trim();
+  if (Array.isArray(controllers) && controllers.length > 0) {
+    const upper = clean.toUpperCase();
+    const found = controllers.find(c => 
+      (c.id && c.id.toUpperCase() === upper) ||
+      (c.signature && c.signature.toUpperCase() === upper) ||
+      (c.name && c.name.toUpperCase() === upper) ||
+      (c.email && c.email.toUpperCase() === upper)
+    );
+    if (found) {
+      return (found.signature || found.name || found.id || clean).toString().trim();
+    }
+  }
+  return clean;
+};
+
+/**
+ * Compara dos controladores o identificadores de forma omnisciente y bidireccional.
+ * Soporta cualquier combinación de id, signature, sig, name, email o referencias en schedule.
+ */
+export const isSameCtrl = (ctrlA, ctrlB, controllers = []) => {
+  if (!ctrlA || !ctrlB) return false;
+  if (ctrlA === ctrlB) return true;
+
+  const getIdentifiers = (item) => {
+    const set = new Set();
+    if (!item) return set;
+    
+    if (typeof item === 'string') {
+      const clean = item.trim().toUpperCase();
+      if (clean) {
+        set.add(clean);
+        if (clean.includes('@')) set.add(clean.split('@')[0]);
+      }
+      if (Array.isArray(controllers) && controllers.length > 0) {
+        const found = controllers.find(c => 
+          (c.id && c.id.toUpperCase() === clean) ||
+          (c.signature && c.signature.toUpperCase() === clean) ||
+          (c.name && c.name.toUpperCase() === clean) ||
+          (c.email && c.email.toUpperCase() === clean)
+        );
+        if (found) {
+          if (found.id) set.add(found.id.toString().trim().toUpperCase());
+          if (found.signature) set.add(found.signature.toString().trim().toUpperCase());
+          if (found.name) set.add(found.name.toString().trim().toUpperCase());
+          if (found.email) set.add(found.email.toString().trim().toUpperCase());
+        }
+      }
+    } else if (typeof item === 'object') {
+      if (item.id) set.add(item.id.toString().trim().toUpperCase());
+      if (item.ctrlId) set.add(item.ctrlId.toString().trim().toUpperCase());
+      if (item.signature) set.add(item.signature.toString().trim().toUpperCase());
+      if (item.sig) set.add(item.sig.toString().trim().toUpperCase());
+      if (item.ctrlSig) set.add(item.ctrlSig.toString().trim().toUpperCase());
+      if (item.name) set.add(item.name.toString().trim().toUpperCase());
+      if (item.ctrlName) set.add(item.ctrlName.toString().trim().toUpperCase());
+      if (item.email) set.add(item.email.toString().trim().toUpperCase());
+      if (item.ctrl && typeof item.ctrl === 'object') {
+        const nested = getIdentifiers(item.ctrl);
+        nested.forEach(v => set.add(v));
+      }
+      if (Array.isArray(controllers) && controllers.length > 0) {
+        const found = controllers.find(c => 
+          (c.id && (c.id === item.id || c.id === item.ctrlId)) ||
+          (c.signature && (c.signature === item.signature || c.signature === item.sig || c.signature === item.ctrlSig)) ||
+          (c.email && c.email === item.email)
+        );
+        if (found) {
+          if (found.id) set.add(found.id.toString().trim().toUpperCase());
+          if (found.signature) set.add(found.signature.toString().trim().toUpperCase());
+          if (found.name) set.add(found.name.toString().trim().toUpperCase());
+          if (found.email) set.add(found.email.toString().trim().toUpperCase());
+        }
+      }
+    }
+    return set;
+  };
+
+  const setA = getIdentifiers(ctrlA);
+  const setB = getIdentifiers(ctrlB);
+
+  for (const valA of setA) {
+    if (setB.has(valA)) return true;
+  }
+  return false;
+};
+
+/**
  * Retorna la descripción operativa en Eldorado a partir del slotKey (ej. 'TWR-1' -> 'Torre Norte')
  */
 export const getSlotDescription = (slotKey, shift) => {

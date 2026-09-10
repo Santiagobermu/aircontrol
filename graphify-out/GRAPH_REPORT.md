@@ -1,16 +1,16 @@
 # Graph Report - Proyecto  (2026-09-10)
 
 ## Corpus Check
-- 56 files · ~100,389 words
+- 56 files · ~101,224 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 288 nodes · 642 edges · 21 communities (13 shown, 8 thin omitted)
+- 290 nodes · 649 edges · 21 communities (13 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `fb261e2f`
+- Built from commit: `5e70aae2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -24,7 +24,7 @@
 - devDependencies
 - storage.js
 - manifest.json
-- MobileLayout.jsx
+- getSlotAcronym
 - AirControl Architecture Summary
 - AirControl HTML Entrypoint
 - Firebase Functions Dependencies
@@ -56,7 +56,7 @@
   PROJECT_SUMMARY.md → DESIGN.md
 - `run_test()` --calls--> `solve_schedule()`  [EXTRACTED]
   functions/test_solver.py → functions/solver_engine.py
-- `App()` --calls--> `isSameCtrl()`  [EXTRACTED]
+- `App()` --calls--> `syncAllEnabledCalendars()`  [EXTRACTED]
   src/App.jsx → src/utils/calendarExport.js
 
 ## Import Cycles
@@ -81,8 +81,8 @@ Cohesion: 0.09
 Nodes (22): firebase, lucide-react, dependencies, firebase, lucide-react, pdf-lib, react, react-dom (+14 more)
 
 ### Community 5 - "schedulerEngine.js"
-Cohesion: 0.16
-Nodes (23): AICopilotPanel(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), activeRequests, adjustDynamicSlots() (+15 more)
+Cohesion: 0.15
+Nodes (24): AICopilotPanel(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), app, activeRequests (+16 more)
 
 ### Community 6 - "devDependencies"
 Cohesion: 0.11
@@ -96,17 +96,17 @@ Nodes (8): ControllerForm(), SignatureModal(), generateOfficialSeal(), uploadSig
 Cohesion: 0.15
 Nodes (12): background_color, description, display, gcm_sender_id, icons, id, name, orientation (+4 more)
 
-### Community 9 - "MobileLayout.jsx"
-Cohesion: 0.15
-Nodes (20): BoletaPreviewModal(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade() (+12 more)
+### Community 9 - "getSlotAcronym"
+Cohesion: 0.14
+Nodes (22): BoletaPreviewModal(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade() (+14 more)
 
 ### Community 10 - "AirControl Architecture Summary"
 Cohesion: 0.67
 Nodes (3): AirControl Stitch Specification, AirControl Design System, AirControl Architecture Summary
 
 ### Community 20 - "MobileProfileView.jsx"
-Cohesion: 0.13
-Nodes (29): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+21 more)
+Cohesion: 0.14
+Nodes (28): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+20 more)
 
 ## Knowledge Gaps
 - **63 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+58 more)
@@ -116,12 +116,12 @@ Nodes (29): MobileProfileView(), controllers, exceptions, schedule, syncControll
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `getSlotAcronym()` connect `MobileLayout.jsx` to `ControllerPortal.jsx`, `schedulerEngine.js`?**
+- **Why does `getSlotAcronym()` connect `getSlotAcronym` to `ControllerPortal.jsx`, `schedulerEngine.js`?**
   _High betweenness centrality (0.022) - this node is a cross-community bridge._
-- **Why does `ControllerPortal()` connect `ControllerPortal.jsx` to `App.jsx`, `MobileLayout.jsx`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
+- **Why does `ControllerPortal()` connect `ControllerPortal.jsx` to `App.jsx`, `getSlotAcronym`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _63 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
