@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock, Download, HelpCircle, Smartphone, ExternalLink, Info, Bell, BellRing, BellOff } from 'lucide-react';
+import { User, ShieldCheck, Calendar, Sun, Moon, LogOut, Key, Copy, Check, RefreshCw, Plus, Megaphone, X, Lock, Download, HelpCircle, Smartphone, ExternalLink, Info, Bell, BellRing, BellOff, Hash, FileText, Mail, Phone, BadgeCheck, PenTool } from 'lucide-react';
 import { getAuth, updatePassword } from 'firebase/auth';
 import ThemeToggle from '../ThemeToggle';
+import SignatureModal from '../SignatureModal';
 import { addManualAlertDB } from '../../utils/db';
 import { generateICS, uploadCalendarToStorage, getAllShiftsForController, getGoogleCalendarSubscribeUrl, downloadICSFile, detectUserDevice } from '../../utils/calendarExport';
 import { requestPushPermission, disablePushNotifications, getPermissionStatus, triggerLocalTestNotification, checkPushSupport } from '../../utils/notifications';
@@ -25,6 +26,7 @@ export default function MobileProfileView({
     return dev === 'android' ? 'android' : 'apple';
   });
   const [isAndroidGuideOpen, setIsAndroidGuideOpen] = useState(false);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
 
   // Estado de Notificaciones Push
   const [pushStatus, setPushStatus] = useState('default');
@@ -45,8 +47,8 @@ export default function MobileProfileView({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passLoading, setPassLoading] = useState(false);
 
-  const signature = currentUser?.signature || 'ATC';
-  const name = currentUser?.name || 'Controlador Aéreo';
+  const signature = currentUser?.signature || currentUser?.name || 'ATC';
+  const name = currentUser?.fullName || currentUser?.name || 'Controlador Aéreo';
   const email = currentUser?.email || 'controlador@aircontrol.com';
   
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
@@ -281,6 +283,255 @@ export default function MobileProfileView({
             </span>
           ))}
         </div>
+      </div>
+
+      {/* FICHA INSTITUCIONAL OFICIAL */}
+      <div style={{
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--color-border)',
+        borderRadius: '16px',
+        padding: '1.2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.85rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+            <BadgeCheck size={20} color="var(--accent-cyan)" />
+            Ficha Institucional Oficial
+          </h3>
+          <span style={{
+            fontSize: '0.68rem',
+            fontWeight: '700',
+            color: 'var(--accent-cyan)',
+            background: 'rgba(6, 182, 212, 0.1)',
+            border: '1px solid rgba(6, 182, 212, 0.25)',
+            padding: '0.2rem 0.55rem',
+            borderRadius: '20px'
+          }}>
+            Registrado por Admin
+          </span>
+        </div>
+
+        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+          Información oficial utilizada para la gestión y notificación formal de turnos, coberturas y permutas.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.55rem' }}>
+          {/* Nombre Completo */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'var(--bg-tertiary)',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '10px',
+            border: '1px solid var(--glass-border)'
+          }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <User size={14} color="var(--accent-cyan)" />
+              Nombre Completo
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: currentUser?.fullName ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+              {currentUser?.fullName || 'Sin registrar'}
+            </span>
+          </div>
+
+          {/* SIGLAS y Licencia */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.55rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.15rem',
+              background: 'var(--bg-tertiary)',
+              padding: '0.55rem 0.75rem',
+              borderRadius: '10px',
+              border: '1px solid var(--glass-border)'
+            }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                SIGLAS / Firma
+              </span>
+              <span style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+                {currentUser?.name || currentUser?.signature || 'ATC'}
+              </span>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.15rem',
+              background: 'var(--bg-tertiary)',
+              padding: '0.55rem 0.75rem',
+              borderRadius: '10px',
+              border: '1px solid var(--glass-border)'
+            }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                Licencia / ID Único
+              </span>
+              <span style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                {currentUser?.id || 'ATC'}
+              </span>
+            </div>
+          </div>
+
+          {/* Ref Interna */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'var(--bg-tertiary)',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '10px',
+            border: '1px solid var(--glass-border)'
+          }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Hash size={14} color="var(--accent-cyan)" />
+              No. Referencia Interno
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: currentUser?.referenceNumber ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              {currentUser?.referenceNumber || 'Sin asignar'}
+            </span>
+          </div>
+
+          {/* Documento */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'var(--bg-tertiary)',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '10px',
+            border: '1px solid var(--glass-border)'
+          }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <FileText size={14} color="var(--accent-cyan)" />
+              Documento de Identidad
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: currentUser?.documentId ? 'var(--text-primary)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              {currentUser?.documentId || 'Sin registrar'}
+            </span>
+          </div>
+
+          {/* Correo Institucional */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.2rem',
+            background: 'var(--bg-tertiary)',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '10px',
+            border: '1px solid var(--glass-border)'
+          }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Mail size={14} color="var(--accent-cyan)" />
+              Correo Institucional
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: currentUser?.institutionalEmail ? 'var(--accent-cyan)' : 'var(--text-muted)', wordBreak: 'break-all' }}>
+              {currentUser?.institutionalEmail || 'Sin configurar (notificaciones por correo de acceso)'}
+            </span>
+          </div>
+
+          {/* Teléfono */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'var(--bg-tertiary)',
+            padding: '0.65rem 0.85rem',
+            borderRadius: '10px',
+            border: '1px solid var(--glass-border)'
+          }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Phone size={14} color="var(--accent-cyan)" />
+              Contacto / Celular
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: '700', color: currentUser?.phone ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+              {currentUser?.phone || 'Sin registrar'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* TARJETA DE FIRMA HÍBRIDA & PIN OPERATIVO */}
+      <div style={{
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--color-border)',
+        borderRadius: '16px',
+        padding: '1.2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.85rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+            <PenTool size={18} color="var(--accent-cyan)" />
+            Firma Digital y PIN Operativo
+          </h3>
+          <span style={{
+            fontSize: '0.68rem',
+            fontWeight: '700',
+            color: (currentUser?.signatureUrl || currentUser?.signatureDataUrl) ? 'var(--status-success)' : 'var(--status-warning)',
+            background: (currentUser?.signatureUrl || currentUser?.signatureDataUrl) ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+            border: (currentUser?.signatureUrl || currentUser?.signatureDataUrl) ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+            padding: '0.2rem 0.55rem',
+            borderRadius: '20px'
+          }}>
+            {(currentUser?.signatureUrl || currentUser?.signatureDataUrl) ? '✓ Firma Activa' : '⚠️ Pendiente'}
+          </span>
+        </div>
+
+        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+          Tu firma manuscrita y PIN de 4 dígitos permiten autorizar y certificar electrónicamente tus cambios de turno y cubrimientos.
+        </p>
+
+        {/* Vista previa si ya tiene firma */}
+        {(currentUser?.signatureUrl || currentUser?.signatureDataUrl) && (
+          <div style={{
+            background: '#090d16',
+            border: '1px solid #1e293b',
+            borderRadius: '10px',
+            padding: '0.75rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Firma registrada:</span>
+              <span style={{ fontSize: '0.7rem', color: currentUser?.signaturePin ? 'var(--status-success)' : 'var(--status-warning)', fontWeight: '600' }}>
+                {currentUser?.signaturePin ? '✓ PIN de 4 dígitos configurado' : '⚠️ Falta configurar PIN'}
+              </span>
+            </div>
+            <img 
+              src={currentUser.signatureDataUrl || currentUser.signatureUrl} 
+              alt="Mi Firma" 
+              style={{ maxHeight: '42px', maxWidth: '140px', objectFit: 'contain' }} 
+            />
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setIsSignatureModalOpen(true)}
+          className="btn btn-primary"
+          style={{
+            width: '100%',
+            padding: '0.8rem',
+            borderRadius: '12px',
+            fontSize: '0.85rem',
+            fontWeight: '800',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.4rem'
+          }}
+        >
+          <PenTool size={16} />
+          {(currentUser?.signatureUrl || currentUser?.signatureDataUrl) ? 'Actualizar Mi Firma y PIN' : '✍️ Registrar Mi Firma y PIN'}
+        </button>
       </div>
 
       {/* SECCIÓN HERRAMIENTAS DE ENCARGADO (CTE / SUPERVISOR / ADMIN) */}
@@ -1187,6 +1438,26 @@ export default function MobileProfileView({
             </form>
           </div>
         </div>
+      )}
+
+      {/* MODAL DE FIRMA HÍBRIDA DEL CONTROLADOR */}
+      {isSignatureModalOpen && currentUser && (
+        <SignatureModal
+          isOpen={isSignatureModalOpen}
+          onClose={() => setIsSignatureModalOpen(false)}
+          controller={currentUser}
+          onSaveSignature={async (sigData) => {
+            if (onUpdateController) {
+              await onUpdateController({
+                ...currentUser,
+                signatureUrl: sigData.signatureUrl,
+                signatureDataUrl: sigData.signatureDataUrl,
+                ...(sigData.signaturePin ? { signaturePin: sigData.signaturePin } : {})
+              });
+            }
+          }}
+          isAdmin={false}
+        />
       )}
 
     </div>

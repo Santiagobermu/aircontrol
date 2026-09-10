@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Edit3, Trash2, Users, AlertCircle, GraduationCap, Shield } from 'lucide-react';
+import { Search, Edit3, Trash2, Users, AlertCircle, GraduationCap, Shield, Hash, FileText, Mail, Phone, Lock } from 'lucide-react';
 
 export default function ControllerList({ controllers, onEditController, onDeleteController, userRole }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,8 +15,16 @@ export default function ControllerList({ controllers, onEditController, onDelete
 
   // Filtrado lógico de los controladores
   const filteredControllers = controllers.filter(controller => {
-    const matchesSearch = controller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          controller.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = !q || 
+      (controller.fullName && controller.fullName.toLowerCase().includes(q)) ||
+      (controller.name && controller.name.toLowerCase().includes(q)) ||
+      (controller.id && controller.id.toLowerCase().includes(q)) ||
+      (controller.referenceNumber && controller.referenceNumber.toLowerCase().includes(q)) ||
+      (controller.documentId && controller.documentId.toLowerCase().includes(q)) ||
+      (controller.phone && controller.phone.toLowerCase().includes(q)) ||
+      (controller.institutionalEmail && controller.institutionalEmail.toLowerCase().includes(q)) ||
+      (controller.email && controller.email.toLowerCase().includes(q));
     
     const matchesFilter = selectedFilter === 'ALL' || (controller.skills && controller.skills.includes(selectedFilter));
 
@@ -62,7 +70,7 @@ export default function ControllerList({ controllers, onEditController, onDelete
           <input
             type="text"
             className="form-input search-input"
-            placeholder="Buscar por nombre o ID de licencia..."
+            placeholder="Buscar por nombre, siglas, licencia, ref, documento o correo..."
             value={searchQuery}
             onChange={handleSearchChange}
           />
@@ -88,9 +96,23 @@ export default function ControllerList({ controllers, onEditController, onDelete
             filteredControllers.map((controller) => (
               <div key={controller.id} className="controller-card">
                 <div className="controller-header">
-                  <div className="controller-info">
+                  <div className="controller-info" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <span className="controller-name">{controller.name}</span>
+                      <span className="controller-name">
+                        {controller.fullName || controller.name}
+                      </span>
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: '800',
+                        color: 'var(--accent-cyan)',
+                        backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                        border: '1px solid rgba(6, 182, 212, 0.25)',
+                        padding: '0.1rem 0.45rem',
+                        borderRadius: '4px',
+                        fontFamily: 'var(--font-mono)'
+                      }} title="SIGLAS / Firma Operativa">
+                        {controller.name}
+                      </span>
                       {controller.trainingPreferred && (
                         <GraduationCap size={15} style={{ color: 'var(--accent-indigo)', flexShrink: 0 }} title="Entrenamiento Preferente" />
                       )}
@@ -101,19 +123,71 @@ export default function ControllerList({ controllers, onEditController, onDelete
                         <Shield size={14} style={{ color: 'var(--accent-purple)', flexShrink: 0 }} title="Encargado de Turno (CTE)" />
                       )}
                     </div>
-                    <span className="controller-id">{controller.id}</span>
-                    {controller.email && (
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem', display: 'block', wordBreak: 'break-all' }}>
-                        {controller.email}
-                      </span>
-                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
+                      <span className="controller-id">{controller.id}</span>
+                      {controller.referenceNumber && (
+                        <span style={{
+                          fontSize: '0.65rem',
+                          background: 'rgba(6, 182, 212, 0.1)',
+                          border: '1px solid rgba(6, 182, 212, 0.25)',
+                          color: 'var(--accent-cyan)',
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '4px',
+                          fontWeight: '600',
+                          fontFamily: 'var(--font-mono)'
+                        }}>
+                          Ref: {controller.referenceNumber}
+                        </span>
+                      )}
+                      {controller.documentId && (
+                        <span style={{
+                          fontSize: '0.65rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--color-border)',
+                          color: 'var(--text-secondary)',
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '4px',
+                          fontWeight: '500'
+                        }}>
+                          Doc: {controller.documentId}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Datos de contacto y correos */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '0.4rem' }}>
+                      {controller.institutionalEmail && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: 'var(--accent-cyan)' }} title="Correo institucional oficial">
+                          <Mail size={12} style={{ flexShrink: 0 }} />
+                          <span style={{ wordBreak: 'break-all', fontWeight: '500' }}>{controller.institutionalEmail}</span>
+                        </div>
+                      )}
+                      {controller.phone && (
+                        <a 
+                          href={`tel:${controller.phone}`}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: 'var(--text-secondary)', textDecoration: 'none' }}
+                          title="Llamar o contactar"
+                        >
+                          <Phone size={12} style={{ flexShrink: 0, color: 'var(--status-success)' }} />
+                          <span>{controller.phone}</span>
+                        </a>
+                      )}
+                      {controller.email && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.68rem', color: 'var(--text-muted)' }} title="Correo de acceso al sistema">
+                          <Lock size={11} style={{ flexShrink: 0 }} />
+                          <span style={{ wordBreak: 'break-all' }}>Acceso: {controller.email}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div 
                     className="controller-status-dot" 
                     title={controller.active ? "Activo para programación" : "Inactivo"}
                     style={{
                       backgroundColor: controller.active ? 'var(--status-success)' : 'var(--status-danger)',
-                      boxShadow: controller.active ? '0 0 8px var(--status-success)' : '0 0 8px var(--status-danger)'
+                      boxShadow: controller.active ? '0 0 8px var(--status-success)' : '0 0 8px var(--status-danger)',
+                      flexShrink: 0
                     }}
                   />
                 </div>

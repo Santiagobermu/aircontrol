@@ -25,7 +25,14 @@ import {
   Shield,
   ShieldCheck,
   Edit2,
-  MessageSquare
+  MessageSquare,
+  BadgeCheck,
+  Hash,
+  FileText,
+  Mail,
+  Phone,
+  Award,
+  PenTool
 } from 'lucide-react';
 import { 
   getSlotAcronym, 
@@ -50,6 +57,9 @@ import { updatePassword } from 'firebase/auth';
 import MonthlyGrid from './MonthlyGrid';
 import { generateICS, uploadCalendarToStorage, triggerCalendarSyncIfEnabled, getAllShiftsForController, getGoogleCalendarSubscribeUrl } from '../utils/calendarExport';
 import { isNotamActiveOnDate, formatNotamDateRange, categorizeNotam, getUtcDateString } from '../utils/notamUtils';
+import NotificationCenterModal from './NotificationCenterModal';
+import { useNotifications } from '../utils/useNotifications';
+import SignatureModal from './SignatureModal';
 
 export default function ControllerPortal({ 
   userEmail, 
@@ -89,6 +99,11 @@ export default function ControllerPortal({
   const [passLoading, setPassLoading] = useState(false);
   const [passError, setPassError] = useState(null);
   const [passSuccess, setPassSuccess] = useState(null);
+
+  // Estados para Firma Digital y PIN de Autorización
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [signatureSuccess, setSignatureSuccess] = useState(null);
+  const [signatureError, setSignatureError] = useState(null);
 
   const [selectedDayActionDate, setSelectedDayActionDate] = useState(null);
 
@@ -234,6 +249,46 @@ export default function ControllerPortal({
       setPassLoading(false);
     }
   };
+
+  const handleSaveSignature = async (signatureData) => {
+    if (!currentController) return;
+    try {
+      if (onUpdateController) {
+        await onUpdateController({
+          ...currentController,
+          ...signatureData
+        });
+      }
+      setSignatureSuccess('Firma digital y PIN operativo actualizados correctamente.');
+      setTimeout(() => setSignatureSuccess(null), 4500);
+    } catch (err) {
+      console.error('Error al guardar firma:', err);
+      setSignatureError('No se pudo guardar la firma: ' + err.message);
+      setTimeout(() => setSignatureError(null), 4500);
+    }
+  };
+
+  const handleDeleteSignature = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar tu firma digital registrada y tu PIN de autorización?')) return;
+    if (!currentController) return;
+    try {
+      if (onUpdateController) {
+        await onUpdateController({
+          ...currentController,
+          signatureUrl: null,
+          signatureDataUrl: null,
+          signaturePin: null,
+          signatureUpdatedAt: null
+        });
+      }
+      setSignatureSuccess('Firma digital y PIN eliminados con éxito.');
+      setTimeout(() => setSignatureSuccess(null), 4500);
+    } catch (err) {
+      console.error('Error al eliminar firma:', err);
+      setSignatureError('No se pudo eliminar la firma: ' + err.message);
+      setTimeout(() => setSignatureError(null), 4500);
+    }
+  };
   
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -248,6 +303,15 @@ export default function ControllerPortal({
   const currentController = useMemo(() => {
     return controllers.find(c => c.email && c.email.toLowerCase() === userEmail.toLowerCase());
   }, [controllers, userEmail]);
+
+  // Centro de Notificaciones Operativas
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
+  const notificationsState = useNotifications({
+    currentUser: currentController,
+    manualAlerts,
+    trades,
+    userRole
+  });
 
   // Notas personales de este controlador
   const myNotes = useMemo(() => {
@@ -1146,11 +1210,28 @@ export default function ControllerPortal({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                {currentController.name}
+                {currentController.fullName || currentController.name}
               </span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                Licencia: {currentController.id}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontWeight: '700', fontFamily: 'var(--font-mono)' }}>
+                  {currentController.name}
+                </span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  • {currentController.id}
+                </span>
+                {currentController.referenceNumber && (
+                  <span style={{
+                    fontSize: '0.62rem',
+                    color: 'var(--accent-cyan)',
+                    background: 'rgba(6, 182, 212, 0.1)',
+                    padding: '0.05rem 0.35rem',
+                    borderRadius: '4px',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    Ref: {currentController.referenceNumber}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1201,8 +1282,8 @@ export default function ControllerPortal({
               </li>
               <li className={`nav-item ${activeTab === 'security' ? 'active' : ''}`}>
                 <button onClick={() => handleTabClick('security')}>
-                  <Lock size={18} />
-                  Cambiar Contraseña
+                  <User size={18} />
+                  Mi Perfil y Seguridad
                 </button>
               </li>
             </ul>
@@ -1289,6 +1370,44 @@ export default function ControllerPortal({
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Campana de Notificaciones */}
+            <button 
+              onClick={() => setIsAlertsModalOpen(true)}
+              style={{
+                position: 'relative',
+                background: 'var(--bg-secondary)',
+                border: notificationsState.unreadCount > 0 ? '1px solid var(--status-warning)' : '1px solid var(--color-border)',
+                borderRadius: '10px',
+                padding: '0.5rem',
+                color: notificationsState.unreadCount > 0 ? 'var(--status-warning)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              title={notificationsState.unreadCount > 0 ? `${notificationsState.unreadCount} notificaciones sin leer` : 'Centro de Notificaciones'}
+            >
+              <Bell size={18} />
+              {notificationsState.unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  background: 'var(--status-warning)',
+                  color: '#000',
+                  fontSize: '0.62rem',
+                  fontWeight: '800',
+                  borderRadius: '99px',
+                  padding: '0.05rem 0.35rem',
+                  lineHeight: 1,
+                  boxShadow: '0 0 8px rgba(245, 158, 11, 0.5)'
+                }}>
+                  {notificationsState.unreadCount}
+                </span>
+              )}
+            </button>
+
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -3017,9 +3136,283 @@ export default function ControllerPortal({
             </div>
           );
         })()}
-        {/* Tab 5: SEGURIDAD Y CREDENCIALES */}
+        {/* Tab 5: MI PERFIL Y SEGURIDAD */}
         {activeTab === 'security' && (
-          <div style={{ maxWidth: '480px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
+          <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
+            {/* Panel de Ficha Institucional Oficial */}
+            <div className="glass-panel" style={{ padding: '2rem' }}>
+              <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BadgeCheck size={22} style={{ color: 'var(--accent-cyan)' }} />
+                  <h3 style={{ fontSize: '1.15rem', margin: 0 }}>Ficha Institucional Oficial</h3>
+                </div>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  color: 'var(--accent-cyan)',
+                  background: 'rgba(6, 182, 212, 0.1)',
+                  border: '1px solid rgba(6, 182, 212, 0.25)',
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '20px'
+                }}>
+                  Gestión Administrativa
+                </span>
+              </div>
+
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginTop: 0, marginBottom: '1.25rem' }}>
+                Esta es tu información oficial registrada por la Jefatura. Se utiliza para la validación de habilitaciones y para el envío de notificaciones oficiales al formalizar permutas y coberturas.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.85rem' }}>
+                {/* Nombre Completo */}
+                <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <User size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    Nombre Completo
+                  </span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginTop: '0.2rem' }}>
+                    {currentController?.fullName || currentController?.name || 'No registrado'}
+                  </span>
+                </div>
+
+                {/* SIGLAS (Firma Operativa) */}
+                <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Award size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    SIGLAS (Firma Operativa)
+                  </span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--accent-cyan)', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>
+                    {currentController?.name || currentController?.signature || 'ATC'}
+                  </span>
+                </div>
+
+                {/* Licencia ATC */}
+                <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Shield size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    Licencia / ID Único
+                  </span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '800', color: 'var(--text-primary)', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>
+                    {currentController?.id || 'ATC'}
+                  </span>
+                </div>
+
+                {/* No. Referencia Interno */}
+                <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Hash size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    No. Referencia Interno
+                  </span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '700', color: currentController?.referenceNumber ? 'var(--text-primary)' : 'var(--text-muted)', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>
+                    {currentController?.referenceNumber || 'Sin asignar'}
+                  </span>
+                </div>
+
+                {/* Documento de Identidad */}
+                <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <FileText size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    Documento de Identidad
+                  </span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '700', color: currentController?.documentId ? 'var(--text-primary)' : 'var(--text-muted)', display: 'block', marginTop: '0.2rem' }}>
+                    {currentController?.documentId || 'Sin registrar'}
+                  </span>
+                </div>
+
+                {/* Correo Institucional */}
+                <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Mail size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    Correo Institucional (Notificaciones)
+                  </span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '700', color: currentController?.institutionalEmail ? 'var(--accent-cyan)' : 'var(--text-muted)', display: 'block', marginTop: '0.2rem', wordBreak: 'break-all' }}>
+                    {currentController?.institutionalEmail || 'Sin configurar'}
+                  </span>
+                </div>
+
+                {/* Contacto Celular */}
+                <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Phone size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    Número de Contacto
+                  </span>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '700', color: currentController?.phone ? 'var(--text-primary)' : 'var(--text-muted)', display: 'block', marginTop: '0.2rem' }}>
+                    {currentController?.phone || 'Sin registrar'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Habilitaciones Certificadas */}
+              <div style={{ marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem' }}>
+                  Habilitaciones Operativas Certificadas:
+                </span>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {(currentController?.skills || ['TWR', 'GND', 'DEL']).map(skill => (
+                    <span key={skill} className={`skill-chip ${skill.toLowerCase()}`}>
+                      ✓ {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic', margin: '1rem 0 0 0' }}>
+                ℹ️ Si requieres actualizar tu información institucional, comunícate con el Administrador o Encargado de Torre.
+              </p>
+            </div>
+
+            {/* Panel de Firma Digital & PIN de Autorización */}
+            <div className="glass-panel" style={{ padding: '2rem' }}>
+              <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <PenTool size={22} style={{ color: 'var(--accent-cyan)' }} />
+                  <h3 style={{ fontSize: '1.15rem', margin: 0 }}>Firma Digital y PIN de Autorización</h3>
+                </div>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  color: (currentController?.signatureUrl || currentController?.signatureDataUrl) ? 'var(--status-success)' : 'var(--status-warning)',
+                  background: (currentController?.signatureUrl || currentController?.signatureDataUrl) ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                  border: (currentController?.signatureUrl || currentController?.signatureDataUrl) ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+                  padding: '0.2rem 0.65rem',
+                  borderRadius: '20px'
+                }}>
+                  {(currentController?.signatureUrl || currentController?.signatureDataUrl) ? '✓ Firma Registrada' : '⚠️ Pendiente de Firma'}
+                </span>
+              </div>
+
+              {signatureSuccess && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  borderRadius: '10px',
+                  padding: '0.75rem 1rem',
+                  color: 'var(--status-success)',
+                  fontSize: '0.82rem',
+                  fontWeight: '500',
+                  marginBottom: '1rem'
+                }}>
+                  <Check size={16} style={{ flexShrink: 0 }} />
+                  <span>{signatureSuccess}</span>
+                </div>
+              )}
+
+              {signatureError && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: 'rgba(244, 63, 94, 0.08)',
+                  border: '1px solid rgba(244, 63, 94, 0.2)',
+                  borderRadius: '10px',
+                  padding: '0.75rem 1rem',
+                  color: 'var(--status-danger)',
+                  fontSize: '0.82rem',
+                  fontWeight: '500',
+                  marginBottom: '1rem'
+                }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{signatureError}</span>
+                </div>
+              )}
+
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginTop: 0, marginBottom: '1.25rem' }}>
+                Tu rúbrica manuscrita digital y tu PIN personal de 4 dígitos te permitirán certificar y oficializar de forma legal y operativa tus permutas (swaps) y cubrimientos (covers) en AirControl SKBO.
+              </p>
+
+              {(currentController?.signatureUrl || currentController?.signatureDataUrl) ? (
+                <div style={{
+                  background: '#090d16',
+                  border: '1px solid #1e293b',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rúbrica Manuscrita Activa:</span>
+                    <div style={{
+                      height: '55px',
+                      width: '160px',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px dashed rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px'
+                    }}>
+                      <img 
+                        src={currentController.signatureDataUrl || currentController.signatureUrl} 
+                        alt="Firma Registrada" 
+                        style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} 
+                      />
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: currentController?.signaturePin ? 'var(--status-success)' : 'var(--status-warning)', fontWeight: '600', marginTop: '0.2rem' }}>
+                      {currentController?.signaturePin ? '✓ PIN de 4 dígitos configurado' : '⚠️ Sin PIN de firma'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsSignatureModalOpen(true)}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.82rem', padding: '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    >
+                      <Edit2 size={14} /> Modificar Firma o PIN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteSignature}
+                      className="btn btn-outline-danger"
+                      style={{ fontSize: '0.82rem', padding: '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      title="Eliminar Firma"
+                    >
+                      <Trash2 size={14} /> Eliminar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.05)',
+                  border: '1px dashed rgba(245, 158, 11, 0.25)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--status-warning)' }}>
+                    <PenTool size={22} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem' }}>No has registrado tu firma digital aún</h4>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', maxWidth: '420px' }}>
+                      Dibuja tu trazo a mano alzada o sube una imagen con tu rúbrica, y asigna un PIN de seguridad de 4 dígitos.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSignatureModalOpen(true)}
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.85rem', padding: '0.6rem 1.25rem', marginTop: '0.25rem' }}
+                  >
+                    ✍️ Registrar mi Firma y PIN
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Panel de Actualización de Contraseña */}
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Lock size={20} style={{ color: 'var(--accent-cyan)' }} />
@@ -3835,6 +4228,22 @@ export default function ControllerPortal({
           </div>
         </div>
       )}
+
+      {/* Modal del Centro de Notificaciones */}
+      <NotificationCenterModal
+        isOpen={isAlertsModalOpen}
+        onClose={() => setIsAlertsModalOpen(false)}
+        notificationsState={notificationsState}
+        onTabSelect={setActiveTab}
+      />
+
+      {/* Modal de Firma Digital y PIN */}
+      <SignatureModal
+        isOpen={isSignatureModalOpen}
+        onClose={() => setIsSignatureModalOpen(false)}
+        controller={currentController}
+        onSaveSignature={handleSaveSignature}
+      />
 
     </div>
   );

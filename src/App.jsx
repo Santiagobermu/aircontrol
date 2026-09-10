@@ -43,7 +43,7 @@ import MobileLayout from './components/mobile/MobileLayout';
 
 // Firebase & Firestore Sync
 import { db, auth } from './utils/firebase';
-import { onSnapshot, collection, doc, getDoc, setDoc } from 'firebase/firestore';
+import { onSnapshot, collection, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword } from 'firebase/auth';
 import { triggerCalendarSyncIfEnabled, syncAllEnabledCalendars } from './utils/calendarExport';
 import {
@@ -398,12 +398,51 @@ export default function App() {
       if (updatedController.email && updatedController.password) {
         await registerUserInAuth(updatedController.email, updatedController.password);
       }
-      // Stripear el password antes de persistir en base de datos por seguridad
+      // Stripear el password y campos de control antes de persistir
       const firestoreData = { ...updatedController };
       delete firestoreData.password;
-      await updateControllerDB(firestoreData);
+      delete firestoreData.originalId;
+
+      const oldId = editingController?.id;
+      const newId = updatedController.id;
+
+      if (oldId && oldId !== newId) {
+        // ID / Licencia cambió: registrar con nuevo ID y dar de baja el anterior
+        await addControllerDB(firestoreData);
+        await deleteControllerDB(oldId);
+
+        // Migrar asignaciones de turnos en schedule de oldId a newId
+        const updatedSchedule = { ...schedule };
+        const changedDates = [];
+        Object.keys(updatedSchedule).forEach(date => {
+          let changed = false;
+          Object.keys(updatedSchedule[date] || {}).forEach(shift => {
+            Object.keys(updatedSchedule[date][shift] || {}).forEach(slot => {
+              if (updatedSchedule[date][shift][slot] === oldId) {
+                updatedSchedule[date][shift][slot] = newId;
+                changed = true;
+              }
+            });
+          });
+          if (changed) changedDates.push(date);
+        });
+
+        for (const date of changedDates) {
+          await saveScheduleDayDB(date, updatedSchedule[date]);
+        }
+
+        // Migrar documento de excepciones si existe
+        if (exceptions && exceptions[oldId]) {
+          await setDoc(doc(db, 'exceptions', newId), exceptions[oldId]);
+          await deleteDoc(doc(db, 'exceptions', oldId));
+        }
+      } else {
+        await updateControllerDB(firestoreData);
+      }
+
       setEditingController(null);
-      showNotification(`Datos del controlador ${updatedController.name} actualizados.`);
+      const displayLabel = updatedController.fullName ? `${updatedController.fullName} (${updatedController.name})` : updatedController.name;
+      showNotification(`Datos del controlador ${displayLabel} actualizados.`);
     } catch (err) {
       console.error(err);
       alert(`Error al actualizar el controlador en Firebase: ${err.message}`);

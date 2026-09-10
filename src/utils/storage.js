@@ -113,11 +113,27 @@ export const validateController = (controller, existingControllers, isEditing = 
   }
   // Habilidades vacías permitidas para que personal en entrenamiento (sin habilitaciones) pueda ser registrado
 
-  // Verificar IDs duplicados al crear
-  if (!isEditing) {
-    const duplicate = existingControllers.find(c => c.id.toLowerCase() === controller.id.trim().toLowerCase());
-    if (duplicate) {
-      return { isValid: false, error: `Ya existe un controlador registrado con la licencia: ${controller.id}` };
+  // Verificar IDs duplicados (tanto al crear como al editar con cambio de ID)
+  const targetId = controller.id.trim().toLowerCase();
+  const originalId = (controller.originalId || (isEditing ? controller.id : '')).trim().toLowerCase();
+  
+  const duplicate = existingControllers.find(c => {
+    const existingId = c.id.toLowerCase();
+    if (existingId !== targetId) return false;
+    // Si estamos editando y el ID coincide con el original de este controlador, no es duplicado
+    if (isEditing && existingId === originalId) return false;
+    return true;
+  });
+
+  if (duplicate) {
+    return { isValid: false, error: `Ya existe otro controlador registrado con la licencia: ${controller.id}` };
+  }
+
+  // Validar correo institucional si se ingresó
+  if (controller.institutionalEmail && controller.institutionalEmail.trim() !== '') {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(controller.institutionalEmail.trim())) {
+      return { isValid: false, error: 'El formato del correo electrónico institucional no es válido.' };
     }
   }
 

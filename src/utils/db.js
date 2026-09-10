@@ -8,7 +8,9 @@ import {
   deleteDoc, 
   updateDoc,
   deleteField,
-  writeBatch
+  writeBatch,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -350,4 +352,57 @@ export const deleteControllerNoteDB = async (ctrlId, noteKey) => {
   }).catch(console.error);
 };
 
+// User Read Notifications CRUD
+export const getUserReadNotificationsDB = async (userId) => {
+  if (!userId) return [];
+  try {
+    const ref = doc(db, 'user_notifications_read', String(userId).trim());
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      return snap.data()?.readIds || [];
+    }
+    return [];
+  } catch (err) {
+    console.warn('Error obteniendo notificaciones leídas de Firestore:', err);
+    return [];
+  }
+};
 
+export const markNotificationAsReadDB = async (userId, notificationId) => {
+  if (!userId || !notificationId) return;
+  try {
+    const ref = doc(db, 'user_notifications_read', String(userId).trim());
+    await setDoc(ref, {
+      readIds: arrayUnion(String(notificationId)),
+      lastUpdated: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Error marcando notificación leída en Firestore:', err);
+  }
+};
+
+export const markAllNotificationsAsReadDB = async (userId, notificationIds = []) => {
+  if (!userId || !notificationIds || notificationIds.length === 0) return;
+  try {
+    const ref = doc(db, 'user_notifications_read', String(userId).trim());
+    await setDoc(ref, {
+      readIds: arrayUnion(...notificationIds.map(String)),
+      lastUpdated: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Error marcando todas como leídas en Firestore:', err);
+  }
+};
+
+export const markNotificationAsUnreadDB = async (userId, notificationId) => {
+  if (!userId || !notificationId) return;
+  try {
+    const ref = doc(db, 'user_notifications_read', String(userId).trim());
+    await updateDoc(ref, {
+      readIds: arrayRemove(String(notificationId)),
+      lastUpdated: new Date().toISOString()
+    }).catch(console.error);
+  } catch (err) {
+    console.warn('Error desmarcando notificación leída en Firestore:', err);
+  }
+};
