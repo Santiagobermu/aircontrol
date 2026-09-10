@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1788980438.5223203,
-    "ast_hash": "880367ceeb5aa78294c50b0c203a8702",
+    "mtime": 1789077765.9091785,
+    "ast_hash": "906a56d71048e3398a4a8064f8e57d0c",
     "semantic_hash": ""
   },
   "src/components/AICopilotPanel.jsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "src/components/ControllerPortal.jsx": {
-    "mtime": 1789063692.9490042,
-    "ast_hash": "f8a7096fc0e2ab1716e232c1af9497b1",
+    "mtime": 1789077774.2040212,
+    "ast_hash": "0e662e1e295a035f732b9a19eda26c44",
     "semantic_hash": ""
   },
   "src/components/LoginScreen.jsx": {
@@ -110,8 +110,8 @@
     "semantic_hash": "052c73f280d967d437af72eaa8a6da11"
   },
   "src/components/TradePanel.jsx": {
-    "mtime": 1789073639.4809585,
-    "ast_hash": "44709f8da85591bfd135a54002aa42a1",
+    "mtime": 1789078029.9795058,
+    "ast_hash": "504ba751586c0555aa281b2e538ba488",
     "semantic_hash": ""
   },
   "src/components/mobile/MobileBottomNav.jsx": {
@@ -150,8 +150,8 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileTradesView.jsx": {
-    "mtime": 1789076458.2825053,
-    "ast_hash": "b2b03aa5db4e433d55bb858437030108",
+    "mtime": 1789078025.1737378,
+    "ast_hash": "50f69b2f7932aa72ebd061421bae8bc9",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -305,13 +305,13 @@
     "semantic_hash": ""
   },
   "src/components/BoletaPreviewModal.jsx": {
-    "mtime": 1789074336.2195444,
-    "ast_hash": "98490a601529dd1dc8be3da711417b83",
+    "mtime": 1789077755.589763,
+    "ast_hash": "2b9e63c494da899772fec29e82a893cc",
     "semantic_hash": ""
   },
   "src/utils/boletaGenerator.js": {
-    "mtime": 1789074318.733372,
-    "ast_hash": "6df8b1148e8a1c500fcb984e2b9c5c4f",
+    "mtime": 1789077726.0879102,
+    "ast_hash": "18b68d1c97c9a11501e2cc892b8a79bd",
     "semantic_hash": ""
   },
   "Boleta de cambio de turno.pdf": {

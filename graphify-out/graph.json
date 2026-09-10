@@ -1188,8 +1188,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_aicopilotpanel",
-      "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community": 20,
+      "community_name": "MobileProfileView.jsx",
       "norm_label": "aicopilotpanel.jsx"
     },
     {
@@ -1200,8 +1200,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_aicopilotpanel_aicopilotpanel",
-      "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community": 20,
+      "community_name": "MobileProfileView.jsx",
       "norm_label": "aicopilotpanel()"
     },
     {
@@ -1280,7 +1280,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_controllerportal",
-      "community": 1,
+      "community": 5,
       "community_name": "ControllerPortal.jsx",
       "norm_label": "controllerportal.jsx"
     },
@@ -1292,8 +1292,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_controllerportal_controllerportal",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "controllerportal()"
     },
     {
@@ -1304,7 +1304,7 @@
       "_origin": "ast",
       "id": "src_components_loginscreen",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "loginscreen.jsx"
     },
     {
@@ -1316,7 +1316,7 @@
       "_origin": "ast",
       "id": "src_components_loginscreen_loginscreen",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "loginscreen()"
     },
     {
@@ -1327,7 +1327,7 @@
       "_origin": "ast",
       "id": "src_components_monthlygrid",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "monthlygrid.jsx"
     },
     {
@@ -1339,7 +1339,7 @@
       "_origin": "ast",
       "id": "src_components_monthlygrid_monthlygrid",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "monthlygrid()"
     },
     {
@@ -1350,7 +1350,7 @@
       "_origin": "ast",
       "id": "src_components_notificationcentermodal",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "notificationcentermodal.jsx"
     },
     {
@@ -1362,7 +1362,7 @@
       "_origin": "ast",
       "id": "src_components_notificationcentermodal_notificationcentermodal",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "notificationcentermodal()"
     },
     {
@@ -1373,7 +1373,7 @@
       "_origin": "ast",
       "id": "src_components_requestpanel",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "requestpanel.jsx"
     },
     {
@@ -1385,7 +1385,7 @@
       "_origin": "ast",
       "id": "src_components_requestpanel_requestpanel",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "requestpanel()"
     },
     {
@@ -1396,7 +1396,7 @@
       "_origin": "ast",
       "id": "src_components_schedulergrid",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "schedulergrid.jsx"
     },
     {
@@ -1408,7 +1408,7 @@
       "_origin": "ast",
       "id": "src_components_schedulergrid_getpositionpriority",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "getpositionpriority()"
     },
     {
@@ -1420,7 +1420,7 @@
       "_origin": "ast",
       "id": "src_components_schedulergrid_schedulergrid",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "schedulergrid()"
     },
     {
@@ -1431,7 +1431,7 @@
       "_origin": "ast",
       "id": "src_components_schedulersummary",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "schedulersummary.jsx"
     },
     {
@@ -1443,7 +1443,7 @@
       "_origin": "ast",
       "id": "src_components_schedulersummary_schedulersummary",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "schedulersummary()"
     },
     {
@@ -1477,7 +1477,7 @@
       "_origin": "ast",
       "id": "src_components_themetoggle",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "themetoggle.jsx"
     },
     {
@@ -1489,7 +1489,7 @@
       "_origin": "ast",
       "id": "src_components_themetoggle_themetoggle",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "themetoggle()"
     },
     {
@@ -1604,7 +1604,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "mobileheader.jsx"
     },
     {
@@ -1616,7 +1616,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileheader_mobileheader",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "mobileheader()"
     },
     {
@@ -1649,8 +1649,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobilenotamsview",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "mobilenotamsview.jsx"
     },
     {
@@ -1661,8 +1661,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobilenotamsview_mobilenotamsview",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "mobilenotamsview()"
     },
     {
@@ -2340,8 +2340,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_db_addmanualalertdb",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "addmanualalertdb()"
     },
     {
@@ -2352,8 +2352,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_db_deletemanualalertdb",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "deletemanualalertdb()"
     },
     {
@@ -2389,7 +2389,7 @@
       "_origin": "ast",
       "id": "src_utils_db_getuserreadnotificationsdb",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "getuserreadnotificationsdb()"
     },
     {
@@ -2401,7 +2401,7 @@
       "_origin": "ast",
       "id": "src_utils_db_marknotificationasreaddb",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "marknotificationasreaddb()"
     },
     {
@@ -2413,7 +2413,7 @@
       "_origin": "ast",
       "id": "src_utils_db_markallnotificationsasreaddb",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "markallnotificationsasreaddb()"
     },
     {
@@ -2425,7 +2425,7 @@
       "_origin": "ast",
       "id": "src_utils_db_marknotificationasunreaddb",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "marknotificationasunreaddb()"
     },
     {
@@ -2457,8 +2457,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_utils_firebase_app",
-      "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community": 20,
+      "community_name": "MobileProfileView.jsx",
       "norm_label": "app"
     },
     {
@@ -2468,8 +2468,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_utils_firebase_db",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "MobileProfileView.jsx",
       "norm_label": "db"
     },
     {
@@ -2501,8 +2501,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_notamutils",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "notamutils.js"
     },
     {
@@ -2513,8 +2513,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_parsenotamdate",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "parsenotamdate()"
     },
     {
@@ -2525,8 +2525,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_extractnotamdates",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "extractnotamdates()"
     },
     {
@@ -2537,8 +2537,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_isnotamactiveondate",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "isnotamactiveondate()"
     },
     {
@@ -2549,8 +2549,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_filternotamsbydate",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "filternotamsbydate()"
     },
     {
@@ -2561,8 +2561,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_categorizenotam",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "categorizenotam()"
     },
     {
@@ -2573,8 +2573,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_formatshortutcdate",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "formatshortutcdate()"
     },
     {
@@ -2585,8 +2585,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_formatnotamdaterange",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "formatnotamdaterange()"
     },
     {
@@ -2597,8 +2597,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_notamutils_getutcdatestring",
-      "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community": 21,
+      "community_name": "notamUtils.js",
       "norm_label": "getutcdatestring()"
     },
     {
@@ -2728,7 +2728,7 @@
       "_origin": "ast",
       "id": "src_utils_ortoolsscheduler",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "ortoolsscheduler.js"
     },
     {
@@ -2751,7 +2751,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "schedulerengine.js"
     },
     {
@@ -2762,7 +2762,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_days_of_week",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "days_of_week"
     },
     {
@@ -2773,7 +2773,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_shifts",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "shifts"
     },
     {
@@ -2784,7 +2784,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_shift_requirements",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "shift_requirements"
     },
     {
@@ -2795,7 +2795,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_activerequests",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "activerequests"
     },
     {
@@ -2842,8 +2842,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotdescription",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "getslotdescription()"
     },
     {
@@ -2855,7 +2855,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_shufflearray",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "shufflearray()"
     },
     {
@@ -2867,7 +2867,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_geteasterdate",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "geteasterdate()"
     },
     {
@@ -2879,7 +2879,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getcolombianholidays",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "getcolombianholidays()"
     },
     {
@@ -2890,7 +2890,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_holidayscache",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "holidayscache"
     },
     {
@@ -2902,7 +2902,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_iscolombianholiday",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "iscolombianholiday()"
     },
     {
@@ -2914,7 +2914,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getdayselapsed",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "getdayselapsed()"
     },
     {
@@ -2926,7 +2926,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getweekdaysofdate",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "getweekdaysofdate()"
     },
     {
@@ -2938,7 +2938,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getsequencedayindex",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "getsequencedayindex()"
     },
     {
@@ -2950,7 +2950,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_adjustdynamicslots",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "adjustdynamicslots()"
     },
     {
@@ -2961,8 +2961,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_createemptydayschedule",
-      "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "createemptydayschedule()"
     },
     {
@@ -2974,7 +2974,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_validateassignment",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "validateassignment()"
     },
     {
@@ -2986,7 +2986,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_runautoschedulerforweek",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "runautoschedulerforweek()"
     },
     {
@@ -2998,7 +2998,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_runautoschedulerformonth",
       "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community_name": "ControllerPortal.jsx",
       "norm_label": "runautoschedulerformonth()"
     },
     {
@@ -3148,7 +3148,7 @@
       "_origin": "ast",
       "id": "src_utils_usenotifications",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "usenotifications.js"
     },
     {
@@ -3160,7 +3160,7 @@
       "_origin": "ast",
       "id": "src_utils_usenotifications_issamectrl",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "issamectrl()"
     },
     {
@@ -3172,7 +3172,7 @@
       "_origin": "ast",
       "id": "src_utils_usenotifications_usenotifications",
       "community": 1,
-      "community_name": "ControllerPortal.jsx",
+      "community_name": "useNotifications",
       "norm_label": "usenotifications()"
     },
     {
@@ -5663,7 +5663,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1125",
+      "source_location": "L1148",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5711,7 +5711,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1115",
+      "source_location": "L1138",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5735,7 +5735,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1000",
+      "source_location": "L1023",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5795,7 +5795,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L880",
+      "source_location": "L903",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5831,7 +5831,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L995",
+      "source_location": "L1018",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6032,7 +6032,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/BoletaPreviewModal.jsx",
-      "source_location": "L14",
+      "source_location": "L13",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_boletapreviewmodal",
@@ -6044,11 +6044,35 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/components/BoletaPreviewModal.jsx",
-      "source_location": "L14",
+      "source_location": "L13",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_boletapreviewmodal",
       "target": "src_utils_boletagenerator_generateboletapdf",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BoletaPreviewModal.jsx",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_boletapreviewmodal",
+      "target": "src_utils_schedulerengine",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/BoletaPreviewModal.jsx",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_boletapreviewmodal",
+      "target": "src_utils_schedulerengine_issamectrl",
       "confidence_score": 1.0
     },
     {
@@ -6081,11 +6105,23 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/BoletaPreviewModal.jsx",
-      "source_location": "L89",
+      "source_location": "L36",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_boletapreviewmodal_boletapreviewmodal",
       "target": "src_utils_boletagenerator_generateboletapdf"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/BoletaPreviewModal.jsx",
+      "source_location": "L64",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_boletapreviewmodal_boletapreviewmodal",
+      "target": "src_utils_schedulerengine_issamectrl"
     },
     {
       "relation": "imports",
@@ -6702,7 +6738,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L4050",
+      "source_location": "L4065",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6750,7 +6786,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L1094",
+      "source_location": "L1109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6786,7 +6822,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L1112",
+      "source_location": "L1127",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6834,7 +6870,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L2331",
+      "source_location": "L2346",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6846,7 +6882,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L2369",
+      "source_location": "L2384",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6870,7 +6906,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L2114",
+      "source_location": "L2129",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -7754,6 +7790,18 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/TradePanel.jsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_tradepanel",
+      "target": "src_utils_schedulerengine_issamectrl",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
@@ -7771,7 +7819,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/TradePanel.jsx",
-      "source_location": "L385",
+      "source_location": "L373",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_tradepanel_tradepanel",
@@ -7783,11 +7831,23 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/TradePanel.jsx",
-      "source_location": "L385",
+      "source_location": "L373",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_tradepanel_tradepanel",
       "target": "src_utils_schedulerengine_getslotdescription"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/TradePanel.jsx",
+      "source_location": "L706",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_tradepanel_tradepanel",
+      "target": "src_utils_schedulerengine_issamectrl"
     },
     {
       "relation": "contains",
@@ -9064,11 +9124,23 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/boletaGenerator.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_boletagenerator",
+      "target": "src_utils_schedulerengine_issamectrl",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L203",
+      "source_location": "L235",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9080,7 +9152,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L204",
+      "source_location": "L236",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9092,7 +9164,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L197",
+      "source_location": "L229",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9104,7 +9176,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L262",
+      "source_location": "L291",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9116,7 +9188,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L248",
+      "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9140,7 +9212,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L223",
+      "source_location": "L252",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9152,12 +9224,24 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L222",
+      "source_location": "L251",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
       "target": "src_utils_boletagenerator_parsedateparts",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/utils/boletaGenerator.js",
+      "source_location": "L181",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_boletagenerator_generateboletapdf",
+      "target": "src_utils_schedulerengine_issamectrl"
     },
     {
       "relation": "contains",
@@ -10943,5 +11027,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "5e70aae29142fda0f4e2021a5a8e86050053c47e"
+  "built_at_commit": "3447796219164f82ce24f4a20852df728d200246"
 }

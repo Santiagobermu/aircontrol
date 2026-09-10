@@ -1,5 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { getSlotAcronym } from './schedulerEngine';
+import { getSlotAcronym, isSameCtrl } from './schedulerEngine';
 
 /**
  * Escala y factores de calibración geométrica sobre la plantilla 'Boleta de cambio de turno.pdf'
@@ -178,21 +178,53 @@ export async function generateBoletaPdf({
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   // 3. Obtener información de controladores
-  const ctrlA = controllers.find(c => c.id === trade.fromControllerId) || {
+  const ctrlA = controllers.find(c => isSameCtrl(c, trade.fromControllerId, controllers)) || {
     id: trade.fromControllerId,
     name: trade.fromControllerId,
     referenceNumber: ''
   };
 
-  const ctrlB = controllers.find(c => c.id === trade.toControllerId) || {
+  const ctrlB = controllers.find(c => isSameCtrl(c, trade.toControllerId, controllers)) || {
     id: trade.toControllerId,
     name: trade.toControllerId,
     referenceNumber: ''
   };
 
+  const isSwap = trade.type === 'SWAP';
+  const isApproved = trade.status === 'APROBADO' || trade.status === 'approved';
+
+  // Resolver supervisor que dio la última aprobación
+  let supervisorCtrl = null;
+  const supIdentifier = trade.supervisorId || trade.approvedById || trade.approvedBy;
+  if (supIdentifier) {
+    supervisorCtrl = controllers.find(c => isSameCtrl(c, supIdentifier, controllers));
+  }
+  if (!supervisorCtrl && supervisor) {
+    supervisorCtrl = controllers.find(c => isSameCtrl(c, supervisor, controllers)) || supervisor;
+  }
+  // Si está aprobado y aún no encontramos controller con firma, buscar en controllers a un supervisor/admin con firma
+  if (!supervisorCtrl && isApproved) {
+    supervisorCtrl = controllers.find(c => 
+      (c.isSupervisor || c.isAdmin || c.role === 'admin' || c.role === 'supervisor' || (c.skills && c.skills.includes('CTE'))) &&
+      (c.signatureDataUrl || c.signatureUrl)
+    );
+  }
+
   const sigA = trade.solicitanteSignature || ctrlA.signatureDataUrl || ctrlA.signatureUrl;
   const sigB = trade.receptorSignature || ctrlB.signatureDataUrl || ctrlB.signatureUrl;
-  const sigSupervisor = trade.supervisorSignature || supervisor?.signatureDataUrl || supervisor?.signatureUrl;
+  const sigSupervisor = trade.supervisorSignature || 
+                        supervisorCtrl?.signatureDataUrl || 
+                        supervisorCtrl?.signatureUrl || 
+                        supervisor?.signatureDataUrl || 
+                        supervisor?.signatureUrl;
+
+  const supervisorName = trade.supervisorName || 
+                         trade.approvedBy || 
+                         supervisorCtrl?.fullName || 
+                         supervisorCtrl?.name || 
+                         supervisor?.fullName || 
+                         supervisor?.name || 
+                         'Encargado de Turno';
 
   const imgSigA = await embedSignatureImage(pdfDoc, sigA);
   const imgSigB = await embedSignatureImage(pdfDoc, sigB);
@@ -214,9 +246,6 @@ export async function generateBoletaPdf({
     font: fontBold,
     color: rgb(0.05, 0.15, 0.4)
   });
-
-  const isSwap = trade.type === 'SWAP';
-  const isApproved = trade.status === 'APROBADO';
 
   // Fechas y turnos
   const dateObj1 = parseDateParts(trade.date);
@@ -338,16 +367,16 @@ export async function generateBoletaPdf({
     x: toPdfX(597),
     y: toPdfY(732),
     w: (885 - 597) * CALIBRATION.scaleX, // ~122 pt
-    h: 24
+    h: 26
   };
 
   if (isApproved && imgSigSupervisor) {
     drawImageContained(page, imgSigSupervisor, firmaSupBox.x, firmaSupBox.y, firmaSupBox.w, firmaSupBox.h);
   } else if (isApproved) {
-    page.drawText('APROBADO - JEFATURA ATC', {
-      x: firmaSupBox.x + 10,
+    page.drawText(`APROBADO - ${supervisorName.toUpperCase()}`, {
+      x: firmaSupBox.x + 5,
       y: firmaSupBox.y + 8,
-      size: 7.5,
+      size: 7,
       font: fontBold,
       color: rgb(0.1, 0.55, 0.2)
     });

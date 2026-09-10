@@ -1212,7 +1212,7 @@
       "_origin": "ast",
       "id": "src_components_boletapreviewmodal",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "boletapreviewmodal.jsx"
     },
     {
@@ -1224,7 +1224,7 @@
       "_origin": "ast",
       "id": "src_components_boletapreviewmodal_boletapreviewmodal",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "boletapreviewmodal()"
     },
     {
@@ -1500,7 +1500,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "tradepanel.jsx"
     },
     {
@@ -1512,7 +1512,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel_generatesettletrade",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "generatesettletrade()"
     },
     {
@@ -1524,7 +1524,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel_tradepanel",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "tradepanel()"
     },
     {
@@ -1535,7 +1535,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilebottomnav.jsx"
     },
     {
@@ -1547,7 +1547,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav_mobilebottomnav",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilebottomnav()"
     },
     {
@@ -1558,7 +1558,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilegeneralrosterview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilegeneralrosterview.jsx"
     },
     {
@@ -1570,7 +1570,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilegeneralrosterview()"
     },
     {
@@ -1581,7 +1581,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobileguardiaview.jsx"
     },
     {
@@ -1593,7 +1593,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview_mobileguardiaview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobileguardiaview()"
     },
     {
@@ -1627,7 +1627,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilelayout.jsx"
     },
     {
@@ -1639,7 +1639,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout_mobilelayout",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilelayout()"
     },
     {
@@ -1696,7 +1696,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilerosterview.jsx"
     },
     {
@@ -1708,7 +1708,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview_mobilerosterview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobilerosterview()"
     },
     {
@@ -1719,7 +1719,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobiletradesview.jsx"
     },
     {
@@ -1731,7 +1731,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview_mobiletradesview",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "mobiletradesview()"
     },
     {
@@ -1808,7 +1808,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "boletagenerator.js"
     },
     {
@@ -1819,7 +1819,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_calibration",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "calibration"
     },
     {
@@ -1831,7 +1831,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_topdfx",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "topdfx()"
     },
     {
@@ -1843,7 +1843,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_topdfy",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "topdfy()"
     },
     {
@@ -1855,7 +1855,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_embedsignatureimage",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "embedsignatureimage()"
     },
     {
@@ -1867,7 +1867,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_drawimagecontained",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "drawimagecontained()"
     },
     {
@@ -1879,7 +1879,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_drawtextcentered",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "drawtextcentered()"
     },
     {
@@ -1891,7 +1891,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_formatshiftlabel",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "formatshiftlabel()"
     },
     {
@@ -1903,7 +1903,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_parsedateparts",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "parsedateparts()"
     },
     {
@@ -1915,7 +1915,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_generateboletapdf",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "generateboletapdf()"
     },
     {
@@ -2457,8 +2457,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_utils_firebase_app",
-      "community": 20,
-      "community_name": "MobileProfileView.jsx",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "app"
     },
     {
@@ -2807,26 +2807,50 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotacronym",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "getslotacronym()"
+    },
+    {
+      "label": "getCtrlSig()",
+      "file_type": "code",
+      "source_file": "src/utils/schedulerEngine.js",
+      "source_location": "L66",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_schedulerengine_getctrlsig",
+      "community": 9,
+      "community_name": "getSlotAcronym",
+      "norm_label": "getctrlsig()"
+    },
+    {
+      "label": "isSameCtrl()",
+      "file_type": "code",
+      "source_file": "src/utils/schedulerEngine.js",
+      "source_location": "L97",
+      "_callable": true,
+      "_origin": "ast",
+      "id": "src_utils_schedulerengine_issamectrl",
+      "community": 9,
+      "community_name": "getSlotAcronym",
+      "norm_label": "issamectrl()"
     },
     {
       "label": "getSlotDescription()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L65",
+      "source_location": "L167",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotdescription",
       "community": 9,
-      "community_name": "MobileLayout.jsx",
+      "community_name": "getSlotAcronym",
       "norm_label": "getslotdescription()"
     },
     {
       "label": "shuffleArray()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L104",
+      "source_location": "L206",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_shufflearray",
@@ -2838,7 +2862,7 @@
       "label": "getEasterDate()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L116",
+      "source_location": "L218",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_geteasterdate",
@@ -2850,7 +2874,7 @@
       "label": "getColombianHolidays()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L137",
+      "source_location": "L239",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getcolombianholidays",
@@ -2862,7 +2886,7 @@
       "label": "holidaysCache",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L214",
+      "source_location": "L316",
       "_origin": "ast",
       "id": "src_utils_schedulerengine_holidayscache",
       "community": 5,
@@ -2873,7 +2897,7 @@
       "label": "isColombianHoliday()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L219",
+      "source_location": "L321",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_iscolombianholiday",
@@ -2885,7 +2909,7 @@
       "label": "getDaysElapsed()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L236",
+      "source_location": "L338",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getdayselapsed",
@@ -2897,7 +2921,7 @@
       "label": "getWeekDaysOfDate()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L246",
+      "source_location": "L348",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getweekdaysofdate",
@@ -2909,7 +2933,7 @@
       "label": "getSequenceDayIndex()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L267",
+      "source_location": "L369",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getsequencedayindex",
@@ -2921,7 +2945,7 @@
       "label": "adjustDynamicSlots()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L277",
+      "source_location": "L379",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_adjustdynamicslots",
@@ -2933,7 +2957,7 @@
       "label": "createEmptyDaySchedule()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L322",
+      "source_location": "L424",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_createemptydayschedule",
@@ -2945,7 +2969,7 @@
       "label": "validateAssignment()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L343",
+      "source_location": "L445",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_validateassignment",
@@ -2957,7 +2981,7 @@
       "label": "runAutoSchedulerForWeek()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L603",
+      "source_location": "L705",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_runautoschedulerforweek",
@@ -2969,7 +2993,7 @@
       "label": "runAutoSchedulerForMonth()",
       "file_type": "code",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L612",
+      "source_location": "L714",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_runautoschedulerformonth",
@@ -5567,18 +5591,6 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L746",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_app_app",
-      "target": "src_utils_calendarexport_issamectrl"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/App.jsx",
       "source_location": "L571",
       "weight": 1.0,
       "_origin": "ast",
@@ -5848,6 +5860,18 @@
       "_origin": "ast",
       "source": "src_app_app",
       "target": "src_utils_schedulerengine_createemptydayschedule"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/App.jsx",
+      "source_location": "L717",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_app_app",
+      "target": "src_utils_schedulerengine_getctrlsig"
     },
     {
       "relation": "calls",
@@ -7832,6 +7856,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine_getctrlsig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview",
       "target": "src_utils_schedulerengine_getslotacronym",
       "confidence_score": 1.0
     },
@@ -7845,6 +7881,18 @@
       "_origin": "ast",
       "source": "src_components_mobile_mobilegeneralrosterview",
       "target": "src_utils_schedulerengine_getslotdescription",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine_issamectrl",
       "confidence_score": 1.0
     },
     {
@@ -7865,7 +7913,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
-      "source_location": "L111",
+      "source_location": "L103",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
@@ -7877,11 +7925,23 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
-      "source_location": "L195",
+      "source_location": "L187",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
       "target": "src_utils_schedulerengine_getslotdescription"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileGeneralRosterView.jsx",
+      "source_location": "L135",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
+      "target": "src_utils_schedulerengine_issamectrl"
     },
     {
       "relation": "imports",
@@ -8710,11 +8770,35 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/mobile/MobileTradesView.jsx",
-      "source_location": "L66",
+      "source_location": "L224",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobiletradesview_mobiletradesview",
+      "target": "src_utils_schedulerengine_getctrlsig"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileTradesView.jsx",
+      "source_location": "L150",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_mobile_mobiletradesview_mobiletradesview",
       "target": "src_utils_schedulerengine_getslotacronym"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/mobile/MobileTradesView.jsx",
+      "source_location": "L196",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_mobile_mobiletradesview_mobiletradesview",
+      "target": "src_utils_schedulerengine_issamectrl"
     },
     {
       "relation": "contains",
@@ -10298,7 +10382,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L277",
+      "source_location": "L379",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10309,7 +10393,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L322",
+      "source_location": "L424",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10331,7 +10415,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L137",
+      "source_location": "L239",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10342,7 +10426,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L236",
+      "source_location": "L66",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_schedulerengine",
+      "target": "src_utils_schedulerengine_getctrlsig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/schedulerEngine.js",
+      "source_location": "L338",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10353,7 +10448,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L116",
+      "source_location": "L218",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10364,7 +10459,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L267",
+      "source_location": "L369",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10386,7 +10481,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L65",
+      "source_location": "L167",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10397,7 +10492,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L246",
+      "source_location": "L348",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10408,7 +10503,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L214",
+      "source_location": "L316",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10419,7 +10514,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L219",
+      "source_location": "L321",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10430,7 +10525,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L612",
+      "source_location": "L97",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_schedulerengine",
+      "target": "src_utils_schedulerengine_issamectrl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/schedulerEngine.js",
+      "source_location": "L714",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10441,7 +10547,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L603",
+      "source_location": "L705",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10474,7 +10580,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L104",
+      "source_location": "L206",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10485,7 +10591,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L343",
+      "source_location": "L445",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine",
@@ -10497,7 +10603,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L686",
+      "source_location": "L788",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_runautoschedulerformonth",
@@ -10509,7 +10615,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L184",
+      "source_location": "L286",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_getcolombianholidays",
@@ -10521,7 +10627,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L224",
+      "source_location": "L326",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_iscolombianholiday",
@@ -10533,7 +10639,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L637",
+      "source_location": "L739",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_runautoschedulerformonth",
@@ -10545,7 +10651,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L437",
+      "source_location": "L539",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_validateassignment",
@@ -10557,7 +10663,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L268",
+      "source_location": "L370",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_getsequencedayindex",
@@ -10569,7 +10675,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L506",
+      "source_location": "L608",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_validateassignment",
@@ -10581,7 +10687,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L645",
+      "source_location": "L747",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_runautoschedulerformonth",
@@ -10593,7 +10699,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L958",
+      "source_location": "L1060",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_runautoschedulerformonth",
@@ -10605,7 +10711,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L618",
+      "source_location": "L720",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_runautoschedulerformonth",
@@ -10617,7 +10723,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L691",
+      "source_location": "L793",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_runautoschedulerformonth",
@@ -10629,7 +10735,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/schedulerEngine.js",
-      "source_location": "L604",
+      "source_location": "L706",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_schedulerengine_runautoschedulerforweek",
@@ -10837,5 +10943,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "fb261e2f75355ce9f898e47d3c66df2c8ad3d7ed"
+  "built_at_commit": "5e70aae29142fda0f4e2021a5a8e86050053c47e"
 }

@@ -1,26 +1,26 @@
 # Graph Report - Proyecto  (2026-09-10)
 
 ## Corpus Check
-- 56 files · ~101,224 words
+- 56 files · ~101,115 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 290 nodes · 649 edges · 21 communities (13 shown, 8 thin omitted)
+- 290 nodes · 656 edges · 22 communities (14 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5e70aae2`
+- Built from commit: `34477962`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - App.jsx
-- ControllerPortal.jsx
+- useNotifications
 - solve_schedule
 - package.json
 - firebase-messaging-sw.js
-- schedulerEngine.js
+- ControllerPortal.jsx
 - devDependencies
 - storage.js
 - manifest.json
@@ -34,6 +34,7 @@
 - rules/graphify.md
 - workflows/graphify.md
 - MobileProfileView.jsx
+- notamUtils.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `App()` - 28 edges
@@ -43,9 +44,9 @@
 5. `MobileProfileView()` - 13 edges
 6. `solve_schedule()` - 12 edges
 7. `validateAssignment()` - 12 edges
-8. `getSlotDescription()` - 11 edges
-9. `runAutoSchedulerForMonth()` - 11 edges
-10. `sync_skbo_notams()` - 10 edges
+8. `generateBoletaPdf()` - 11 edges
+9. `getSlotDescription()` - 11 edges
+10. `runAutoSchedulerForMonth()` - 11 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `AirControl HTML Entrypoint` --references--> `AirControl Favicon SVG`  [EXTRACTED]
@@ -62,15 +63,15 @@
 ## Import Cycles
 - None detected.
 
-## Communities (21 total, 8 thin omitted)
+## Communities (22 total, 8 thin omitted)
 
 ### Community 0 - "App.jsx"
-Cohesion: 0.14
-Nodes (24): App(), ControllerList(), addControllerDB(), addRequestDB(), addTradeDB(), DEFAULT_SEQUENCE, deleteControllerDB(), deleteControllerNoteDB() (+16 more)
+Cohesion: 0.15
+Nodes (26): App(), ControllerList(), ControllerPortal(), addControllerDB(), addRequestDB(), addTradeDB(), DEFAULT_SEQUENCE, deleteControllerDB() (+18 more)
 
-### Community 1 - "ControllerPortal.jsx"
-Cohesion: 0.17
-Nodes (22): ControllerPortal(), LoginScreen(), MobileHeader(), MobileNotamsView(), NotificationCenterModal(), ThemeToggle(), addManualAlertDB(), deleteManualAlertDB() (+14 more)
+### Community 1 - "useNotifications"
+Cohesion: 0.23
+Nodes (10): LoginScreen(), MobileHeader(), NotificationCenterModal(), ThemeToggle(), getUserReadNotificationsDB(), markAllNotificationsAsReadDB(), markNotificationAsReadDB(), markNotificationAsUnreadDB() (+2 more)
 
 ### Community 2 - "solve_schedule"
 Cohesion: 0.08
@@ -80,9 +81,9 @@ Nodes (39): health(), solve(), sync_notams(), scheduled_sync_notams(), send_push
 Cohesion: 0.09
 Nodes (22): firebase, lucide-react, dependencies, firebase, lucide-react, pdf-lib, react, react-dom (+14 more)
 
-### Community 5 - "schedulerEngine.js"
-Cohesion: 0.15
-Nodes (24): AICopilotPanel(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), app, activeRequests (+16 more)
+### Community 5 - "ControllerPortal.jsx"
+Cohesion: 0.18
+Nodes (22): MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), activeRequests, adjustDynamicSlots(), DAYS_OF_WEEK (+14 more)
 
 ### Community 6 - "devDependencies"
 Cohesion: 0.11
@@ -97,16 +98,20 @@ Cohesion: 0.15
 Nodes (12): background_color, description, display, gcm_sender_id, icons, id, name, orientation (+4 more)
 
 ### Community 9 - "getSlotAcronym"
-Cohesion: 0.14
-Nodes (22): BoletaPreviewModal(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade() (+14 more)
+Cohesion: 0.15
+Nodes (21): BoletaPreviewModal(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade() (+13 more)
 
 ### Community 10 - "AirControl Architecture Summary"
 Cohesion: 0.67
 Nodes (3): AirControl Stitch Specification, AirControl Design System, AirControl Architecture Summary
 
 ### Community 20 - "MobileProfileView.jsx"
-Cohesion: 0.14
-Nodes (28): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+20 more)
+Cohesion: 0.12
+Nodes (31): AICopilotPanel(), MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile() (+23 more)
+
+### Community 21 - "notamUtils.js"
+Cohesion: 0.38
+Nodes (10): MobileNotamsView(), addManualAlertDB(), categorizeNotam(), extractNotamDates(), filterNotamsByDate(), formatNotamDateRange(), formatShortUtcDate(), getUtcDateString() (+2 more)
 
 ## Knowledge Gaps
 - **63 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+58 more)
@@ -116,16 +121,16 @@ Nodes (28): MobileProfileView(), controllers, exceptions, schedule, syncControll
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `getSlotAcronym()` connect `getSlotAcronym` to `ControllerPortal.jsx`, `schedulerEngine.js`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
-- **Why does `ControllerPortal()` connect `ControllerPortal.jsx` to `App.jsx`, `getSlotAcronym`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **Why does `getSlotAcronym()` connect `getSlotAcronym` to `App.jsx`, `ControllerPortal.jsx`?**
+  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+- **Why does `ControllerPortal()` connect `App.jsx` to `useNotifications`, `ControllerPortal.jsx`, `getSlotAcronym`, `MobileProfileView.jsx`, `notamUtils.js`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _63 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.14408602150537633 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14772727272727273 - nodes in this community are weakly interconnected._
 - **Should `solve_schedule` be split into smaller, more focused modules?**
   _Cohesion score 0.07928118393234672 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**

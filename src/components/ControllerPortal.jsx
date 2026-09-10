@@ -1036,7 +1036,22 @@ export default function ControllerPortal({
     try {
       await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
 
-      const updatedTrade = { ...trade, status: 'APROBADO' };
+      const supervisorSignature = currentController?.signatureDataUrl || currentController?.signatureUrl || trade.supervisorSignature || null;
+      const supervisorName = currentController?.fullName || currentController?.name || 'Encargado de Turno';
+      const supervisorId = currentController?.id || currentController?.signature || 'SUPERVISOR';
+      const supervisorReferenceNumber = currentController?.referenceNumber || '';
+
+      const updatedTrade = { 
+        ...trade, 
+        status: 'APROBADO',
+        approvedAt: new Date().toISOString(),
+        approvedBy: supervisorName,
+        approvedById: supervisorId,
+        supervisorId: supervisorId,
+        supervisorName: supervisorName,
+        supervisorSignature: supervisorSignature,
+        supervisorReferenceNumber: supervisorReferenceNumber
+      };
       await updateTradeDB(updatedTrade);
 
       const parts = dateStr.split('-');

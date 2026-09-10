@@ -865,6 +865,23 @@ export default function App() {
     // Guardar cuadrante actualizado en Firestore
     await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
 
+    // Identificar al supervisor / encargado de turno que realiza la aprobación
+    const approvingSupervisor = controllers.find(c => 
+      (c.email && c.email.toLowerCase() === currentUser?.email?.toLowerCase()) || 
+      isSameCtrl(c, currentUser?.email?.split('@')[0]) ||
+      isSameCtrl(c, currentUser?.displayName)
+    ) || {
+      id: currentUser?.email?.split('@')[0] || 'SUPERVISOR',
+      name: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Encargado de Turno',
+      fullName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Encargado de Turno',
+      referenceNumber: ''
+    };
+
+    const supervisorSignature = approvingSupervisor?.signatureDataUrl || approvingSupervisor?.signatureUrl || trade.supervisorSignature || null;
+    const supervisorName = approvingSupervisor?.fullName || approvingSupervisor?.name || currentUser?.displayName || 'Encargado de Turno';
+    const supervisorId = approvingSupervisor?.id || approvingSupervisor?.signature || currentUser?.email?.split('@')[0] || 'SUPERVISOR';
+    const supervisorReferenceNumber = approvingSupervisor?.referenceNumber || '';
+
     // Actualizar estado de la solicitud de cambio a APROBADO en Firestore
     const updatedTrade = {
       ...trade,
@@ -875,7 +892,13 @@ export default function App() {
       fromSlot,
       toSlot,
       status: 'APROBADO',
-      approvedAt: new Date().toISOString()
+      approvedAt: new Date().toISOString(),
+      approvedBy: supervisorName,
+      approvedById: supervisorId,
+      supervisorId: supervisorId,
+      supervisorName: supervisorName,
+      supervisorSignature: supervisorSignature,
+      supervisorReferenceNumber: supervisorReferenceNumber
     };
     await updateTradeDB(updatedTrade);
 

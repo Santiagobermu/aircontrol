@@ -426,27 +426,6 @@ export default function MobileTradesView({
         </div>
 
         <div style={{ display: 'flex', gap: '0.4rem' }}>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedBoletaTrade(null);
-              setIsBoletaModalOpen(true);
-            }}
-            className="btn btn-secondary"
-            style={{
-              padding: '0.5rem 0.65rem',
-              borderRadius: '10px',
-              fontSize: '0.75rem',
-              fontWeight: '700',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3rem'
-            }}
-            title="Simular Boleta Oficial GSAN"
-          >
-            <FileText size={15} />
-            Boleta GSAN
-          </button>
 
           <button
             onClick={() => {
@@ -991,7 +970,11 @@ export default function MobileTradesView({
         onClose={() => setIsBoletaModalOpen(false)}
         trade={selectedBoletaTrade}
         controllers={controllers}
-        supervisor={controllers.find(c => c.role === 'admin' || c.role === 'supervisor')}
+        supervisor={
+          controllers.find(c => isSameCtrl(c, selectedBoletaTrade?.supervisorId || selectedBoletaTrade?.approvedBy, controllers)) ||
+          controllers.find(c => (c.isSupervisor || c.isAdmin || (c.skills && c.skills.includes('CTE'))) && (c.signatureDataUrl || c.signatureUrl)) ||
+          currentUser
+        }
       />
 
     </div>

@@ -10,7 +10,7 @@ import {
   BookOpen,
   FileText
 } from 'lucide-react';
-import { getSlotAcronym, getSlotDescription } from '../utils/schedulerEngine';
+import { getSlotAcronym, getSlotDescription, isSameCtrl } from '../utils/schedulerEngine';
 import BoletaPreviewModal from './BoletaPreviewModal';
 
 // Helper function outside component to avoid impure calls during render analysis
@@ -289,18 +289,6 @@ export default function TradePanel({
                 Registrar Cambio de Turno
               </h3>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedBoletaTrade(null);
-                setIsBoletaModalOpen(true);
-              }}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-              title="Abrir visor y calibrador de boleta oficial GSAN"
-            >
-              <FileText size={14} /> Simular Boleta GSAN
-            </button>
           </div>
 
           <form onSubmit={handleRegisterTrade} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -714,7 +702,11 @@ export default function TradePanel({
         onClose={() => setIsBoletaModalOpen(false)}
         trade={selectedBoletaTrade}
         controllers={controllers}
-        supervisor={controllers.find(c => c.role === 'admin' || c.role === 'supervisor')}
+        supervisor={
+          controllers.find(c => isSameCtrl(c, selectedBoletaTrade?.supervisorId || selectedBoletaTrade?.approvedBy, controllers)) ||
+          controllers.find(c => (c.isSupervisor || c.isAdmin || (c.skills && c.skills.includes('CTE'))) && (c.signatureDataUrl || c.signatureUrl)) ||
+          controllers.find(c => c.isSupervisor || c.isAdmin)
+        }
       />
 
     </div>
