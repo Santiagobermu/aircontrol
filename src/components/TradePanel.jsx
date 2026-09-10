@@ -7,9 +7,11 @@ import {
   ChevronRight, 
   UserCheck, 
   UserX, 
-  BookOpen 
+  BookOpen,
+  FileText
 } from 'lucide-react';
 import { getSlotAcronym, getSlotDescription } from '../utils/schedulerEngine';
+import BoletaPreviewModal from './BoletaPreviewModal';
 
 // Helper function outside component to avoid impure calls during render analysis
 function generateSettleTrade(debtorId, creditorId) {
@@ -40,6 +42,10 @@ export default function TradePanel({
   const [slotAKey, setSlotAKey] = useState(''); // "shift|slotKey"
   const [ctrlBId, setCtrlBId] = useState('');
   const [slotBKey, setSlotBKey] = useState(''); // "shift|slotKey" (solo para SWAP)
+
+  // Estados para Modal de Boleta Oficial GSAN
+  const [selectedBoletaTrade, setSelectedBoletaTrade] = useState(null);
+  const [isBoletaModalOpen, setIsBoletaModalOpen] = useState(false);
 
   // 1. Obtener los turnos programados reales del controlador A en la fecha seleccionada
   const ctrlASlots = useMemo(() => {
@@ -276,11 +282,25 @@ export default function TradePanel({
           
           {/* Formulario */}
           <div className="glass-panel" style={{ height: 'fit-content' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
-            <RefreshCw size={22} style={{ color: 'var(--accent-cyan)' }} />
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: '700', fontSize: '1.2rem' }}>
-              Registrar Cambio de Turno
-            </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <RefreshCw size={22} style={{ color: 'var(--accent-cyan)' }} />
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: '700', fontSize: '1.2rem', margin: 0 }}>
+                Registrar Cambio de Turno
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBoletaTrade(null);
+                setIsBoletaModalOpen(true);
+              }}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              title="Abrir visor y calibrador de boleta oficial GSAN"
+            >
+              <FileText size={14} /> Simular Boleta GSAN
+            </button>
           </div>
 
           <form onSubmit={handleRegisterTrade} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -574,18 +594,30 @@ export default function TradePanel({
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.35rem' }}>
                       <button
                         onClick={() => onApproveTrade(t.id)}
                         className="btn btn-primary"
                         style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
                       >
-                        <UserCheck size={14} /> Aprobar y Ejecutar
+                        <UserCheck size={14} /> Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBoletaTrade(t);
+                          setIsBoletaModalOpen(true);
+                        }}
+                        className="btn btn-secondary"
+                        style={{ padding: '0.4rem 0.65rem', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        title="Ver Boleta Oficial GSAN"
+                      >
+                        <FileText size={13} /> Boleta GSAN
                       </button>
                       <button
                         onClick={() => onDeleteTrade(t.id)}
                         className="btn btn-danger-outline"
-                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        style={{ padding: '0.4rem 0.65rem', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                       >
                         <UserX size={14} /> Rechazar
                       </button>
@@ -644,6 +676,29 @@ export default function TradePanel({
                         </>
                       )}
                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.35rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBoletaTrade(t);
+                          setIsBoletaModalOpen(true);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--accent-cyan)',
+                          fontSize: '0.72rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          padding: 0
+                        }}
+                      >
+                        <FileText size={12} /> Ver Boleta Oficial GSAN
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -652,6 +707,15 @@ export default function TradePanel({
         )}
 
       </div>
+
+      {/* Modal de Previsualización de Boleta Oficial */}
+      <BoletaPreviewModal
+        isOpen={isBoletaModalOpen}
+        onClose={() => setIsBoletaModalOpen(false)}
+        trade={selectedBoletaTrade}
+        controllers={controllers}
+        supervisor={controllers.find(c => c.role === 'admin' || c.role === 'supervisor')}
+      />
 
     </div>
   );

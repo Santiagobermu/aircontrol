@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User } from 'lucide-react';
+import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User, FileText } from 'lucide-react';
 import { getSlotAcronym } from '../../utils/schedulerEngine';
+import BoletaPreviewModal from '../BoletaPreviewModal';
 
 export default function MobileTradesView({ 
   currentUser, 
@@ -16,6 +17,10 @@ export default function MobileTradesView({
 }) {
   const [filter, setFilter] = useState('all'); // 'all' | 'pending' | 'approved'
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Estados para Modal de Boleta Oficial GSAN
+  const [selectedBoletaTrade, setSelectedBoletaTrade] = useState(null);
+  const [isBoletaModalOpen, setIsBoletaModalOpen] = useState(false);
 
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
 
@@ -314,29 +319,53 @@ export default function MobileTradesView({
           <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>Intercambios (SWAP) y Reemplazos (COVER)</span>
         </div>
 
-        <button
-          onClick={() => {
-            setTradeDate('');
-            setSelectedMyShift('');
-            setTargetShiftToSwap('');
-            setSelectedColleagueSig('OPEN');
-            setTradeType('COVER');
-            setIsModalOpen(true);
-          }}
-          className="btn btn-primary"
-          style={{
-            padding: '0.5rem 0.8rem',
-            borderRadius: '10px',
-            fontSize: '0.78rem',
-            fontWeight: '700',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem'
-          }}
-        >
-          <Plus size={16} />
-          Nuevo cambio
-        </button>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedBoletaTrade(null);
+              setIsBoletaModalOpen(true);
+            }}
+            className="btn btn-secondary"
+            style={{
+              padding: '0.5rem 0.65rem',
+              borderRadius: '10px',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem'
+            }}
+            title="Simular Boleta Oficial GSAN"
+          >
+            <FileText size={15} />
+            Boleta GSAN
+          </button>
+
+          <button
+            onClick={() => {
+              setTradeDate('');
+              setSelectedMyShift('');
+              setTargetShiftToSwap('');
+              setSelectedColleagueSig('OPEN');
+              setTradeType('COVER');
+              setIsModalOpen(true);
+            }}
+            className="btn btn-primary"
+            style={{
+              padding: '0.5rem 0.8rem',
+              borderRadius: '10px',
+              fontSize: '0.78rem',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem'
+            }}
+          >
+            <Plus size={16} />
+            Nuevo cambio
+          </button>
+        </div>
       </div>
 
       {/* Tabs de Filtro */}
@@ -572,6 +601,31 @@ export default function MobileTradesView({
                     </button>
                   </div>
                 )}
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.35rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedBoletaTrade(trade.rawTrade || trade);
+                      setIsBoletaModalOpen(true);
+                    }}
+                    style={{
+                      background: 'rgba(6, 182, 212, 0.08)',
+                      border: '1px solid rgba(6, 182, 212, 0.25)',
+                      color: 'var(--accent-cyan)',
+                      borderRadius: '8px',
+                      padding: '0.3rem 0.6rem',
+                      fontWeight: '700',
+                      fontSize: '0.72rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                  >
+                    <FileText size={12} /> Boleta Oficial GSAN
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -823,6 +877,15 @@ export default function MobileTradesView({
           </div>
         </div>
       )}
+
+      {/* Modal de Previsualización de Boleta Oficial GSAN */}
+      <BoletaPreviewModal
+        isOpen={isBoletaModalOpen}
+        onClose={() => setIsBoletaModalOpen(false)}
+        trade={selectedBoletaTrade}
+        controllers={controllers}
+        supervisor={controllers.find(c => c.role === 'admin' || c.role === 'supervisor')}
+      />
 
     </div>
   );

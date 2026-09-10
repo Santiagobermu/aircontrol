@@ -45,9 +45,9 @@
     "semantic_hash": "08224d36d2dfd10e5be13a24541dffe8"
   },
   "package.json": {
-    "mtime": 1782739745.2434266,
-    "ast_hash": "6b35e438e404183ffeedba6a21e42cb7",
-    "semantic_hash": "6b35e438e404183ffeedba6a21e42cb7"
+    "mtime": 1789065185.2105396,
+    "ast_hash": "63e584a6f6488fb8c141870f1e8f04cf",
+    "semantic_hash": ""
   },
   "public/manifest.json": {
     "mtime": 1788217426.937585,
@@ -110,8 +110,8 @@
     "semantic_hash": "052c73f280d967d437af72eaa8a6da11"
   },
   "src/components/TradePanel.jsx": {
-    "mtime": 1787847462.5561876,
-    "ast_hash": "207dd1028f98e06e8e4197caf16cfbbe",
+    "mtime": 1789073639.4809585,
+    "ast_hash": "44709f8da85591bfd135a54002aa42a1",
     "semantic_hash": ""
   },
   "src/components/mobile/MobileBottomNav.jsx": {
@@ -150,8 +150,8 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileTradesView.jsx": {
-    "mtime": 1787179615.8012018,
-    "ast_hash": "d21176406aec40818e023ed7decb78a4",
+    "mtime": 1789073792.0311809,
+    "ast_hash": "81f72cb0d9995a13805c830ba748f925",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -302,6 +302,36 @@
   "src/utils/signatureUtils.js": {
     "mtime": 1789063420.639439,
     "ast_hash": "665c2708f86f2a7b45bde178d807733e",
+    "semantic_hash": ""
+  },
+  "src/components/BoletaPreviewModal.jsx": {
+    "mtime": 1789074336.2195444,
+    "ast_hash": "98490a601529dd1dc8be3da711417b83",
+    "semantic_hash": ""
+  },
+  "src/utils/boletaGenerator.js": {
+    "mtime": 1789074318.733372,
+    "ast_hash": "6df8b1148e8a1c500fcb984e2b9c5c4f",
+    "semantic_hash": ""
+  },
+  "Boleta de cambio de turno.pdf": {
+    "mtime": 1788568232.102283,
+    "ast_hash": "af8b57fe5fc1885c16f88cac0d2440ce",
+    "semantic_hash": ""
+  },
+  "instructivo Camnbio.pdf": {
+    "mtime": 1789064677.9341362,
+    "ast_hash": "e8e8d56ae0b5d3abadb9e888f38c3b14",
+    "semantic_hash": ""
+  },
+  "public/templates/boleta_cambio_turno.pdf": {
+    "mtime": 1789073452.624987,
+    "ast_hash": "af8b57fe5fc1885c16f88cac0d2440ce",
+    "semantic_hash": ""
+  },
+  "scratch/test_boleta.pdf": {
+    "mtime": 1789065322.608152,
+    "ast_hash": "0a701f536f968596226925b4c49bf6ca",
     "semantic_hash": ""
   }
 }

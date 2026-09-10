@@ -1,16 +1,16 @@
 # Graph Report - Proyecto  (2026-09-10)
 
 ## Corpus Check
-- 54 files · ~97,159 words
+- 56 files · ~100,389 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 274 nodes · 613 edges · 20 communities (12 shown, 8 thin omitted)
+- 288 nodes · 642 edges · 21 communities (13 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d99d55db`
+- Built from commit: `fb261e2f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -24,6 +24,7 @@
 - devDependencies
 - storage.js
 - manifest.json
+- MobileLayout.jsx
 - AirControl Architecture Summary
 - AirControl HTML Entrypoint
 - Firebase Functions Dependencies
@@ -37,7 +38,7 @@
 ## God Nodes (most connected - your core abstractions)
 1. `App()` - 28 edges
 2. `ControllerPortal()` - 25 edges
-3. `getSlotAcronym()` - 17 edges
+3. `getSlotAcronym()` - 19 edges
 4. `isColombianHoliday()` - 16 edges
 5. `MobileProfileView()` - 13 edges
 6. `solve_schedule()` - 12 edges
@@ -61,27 +62,27 @@
 ## Import Cycles
 - None detected.
 
-## Communities (20 total, 8 thin omitted)
+## Communities (21 total, 8 thin omitted)
 
 ### Community 0 - "App.jsx"
 Cohesion: 0.14
-Nodes (23): App(), ControllerList(), addControllerDB(), addRequestDB(), addTradeDB(), DEFAULT_SEQUENCE, deleteControllerDB(), deleteControllerNoteDB() (+15 more)
+Nodes (24): App(), ControllerList(), addControllerDB(), addRequestDB(), addTradeDB(), DEFAULT_SEQUENCE, deleteControllerDB(), deleteControllerNoteDB() (+16 more)
 
 ### Community 1 - "ControllerPortal.jsx"
-Cohesion: 0.16
-Nodes (23): ControllerPortal(), LoginScreen(), MobileHeader(), MobileNotamsView(), NotificationCenterModal(), ThemeToggle(), addManualAlertDB(), deleteManualAlertDB() (+15 more)
+Cohesion: 0.17
+Nodes (22): ControllerPortal(), LoginScreen(), MobileHeader(), MobileNotamsView(), NotificationCenterModal(), ThemeToggle(), addManualAlertDB(), deleteManualAlertDB() (+14 more)
 
 ### Community 2 - "solve_schedule"
 Cohesion: 0.08
 Nodes (39): health(), solve(), sync_notams(), scheduled_sync_notams(), send_push_notification_api(), solve_schedule_api(), sync_notams_api(), categorize_notam() (+31 more)
 
 ### Community 3 - "package.json"
-Cohesion: 0.10
-Nodes (20): firebase, lucide-react, dependencies, firebase, lucide-react, react, react-dom, xlsx (+12 more)
+Cohesion: 0.09
+Nodes (22): firebase, lucide-react, dependencies, firebase, lucide-react, pdf-lib, react, react-dom (+14 more)
 
 ### Community 5 - "schedulerEngine.js"
-Cohesion: 0.12
-Nodes (32): AICopilotPanel(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), MonthlyGrid() (+24 more)
+Cohesion: 0.16
+Nodes (23): AICopilotPanel(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), activeRequests, adjustDynamicSlots() (+15 more)
 
 ### Community 6 - "devDependencies"
 Cohesion: 0.11
@@ -95,33 +96,37 @@ Nodes (8): ControllerForm(), SignatureModal(), generateOfficialSeal(), uploadSig
 Cohesion: 0.15
 Nodes (12): background_color, description, display, gcm_sender_id, icons, id, name, orientation (+4 more)
 
+### Community 9 - "MobileLayout.jsx"
+Cohesion: 0.15
+Nodes (20): BoletaPreviewModal(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade() (+12 more)
+
 ### Community 10 - "AirControl Architecture Summary"
 Cohesion: 0.67
 Nodes (3): AirControl Stitch Specification, AirControl Design System, AirControl Architecture Summary
 
 ### Community 20 - "MobileProfileView.jsx"
 Cohesion: 0.13
-Nodes (30): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+22 more)
+Nodes (29): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+21 more)
 
 ## Knowledge Gaps
-- **61 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+56 more)
+- **63 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+58 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+- **Why does `getSlotAcronym()` connect `MobileLayout.jsx` to `ControllerPortal.jsx`, `schedulerEngine.js`?**
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+- **Why does `ControllerPortal()` connect `ControllerPortal.jsx` to `App.jsx`, `MobileLayout.jsx`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `ControllerPortal()` connect `ControllerPortal.jsx` to `App.jsx`, `MobileProfileView.jsx`, `schedulerEngine.js`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _61 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _63 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
   _Cohesion score 0.14408602150537633 - nodes in this community are weakly interconnected._
 - **Should `solve_schedule` be split into smaller, more focused modules?**
   _Cohesion score 0.07928118393234672 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
-- **Should `schedulerEngine.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.11627906976744186 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected._

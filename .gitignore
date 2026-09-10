@@ -30,3 +30,6 @@ dist-ssr
 venv/
 __pycache__/
 *.pyc
+
+# Scratch
+scratch/

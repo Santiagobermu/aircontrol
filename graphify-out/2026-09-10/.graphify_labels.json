@@ -1,6 +1,6 @@
 {
   "0": "App.jsx",
-  "1": "useNotifications",
+  "1": "ControllerPortal.jsx",
   "2": "solve_schedule",
   "3": "package.json",
   "4": "firebase-messaging-sw.js",
@@ -8,7 +8,7 @@
   "6": "devDependencies",
   "7": "storage.js",
   "8": "manifest.json",
-  "9": "ControllerPortal.jsx",
+  "9": "MobileLayout.jsx",
   "10": "AirControl Architecture Summary",
   "11": "AirControl HTML Entrypoint",
   "12": "eslint.config.js",
