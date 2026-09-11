@@ -193,35 +193,28 @@ export async function generateBoletaPdf({
   const isSwap = trade.type === 'SWAP';
   const isApproved = trade.status === 'APROBADO' || trade.status === 'approved';
 
-  // Resolver supervisor que dio la última aprobación
+  // Resolver EXCLUSIVAMENTE al supervisor (encargado de turno) que aprobó el cambio
   let supervisorCtrl = null;
   const supIdentifier = trade.supervisorId || trade.approvedById || trade.approvedBy;
   if (supIdentifier) {
     supervisorCtrl = controllers.find(c => isSameCtrl(c, supIdentifier, controllers));
   }
-  if (!supervisorCtrl && supervisor) {
-    supervisorCtrl = controllers.find(c => isSameCtrl(c, supervisor, controllers)) || supervisor;
-  }
 
   const sigA = trade.solicitanteSignature || ctrlA.signatureDataUrl || ctrlA.signatureUrl;
   const sigB = trade.receptorSignature || ctrlB.signatureDataUrl || ctrlB.signatureUrl;
   
-  // Firma digital del supervisor que aprobó el cambio (si tiene firma registrada en el sistema)
+  // La firma digital de supervisor pertenece ÚNICA Y EXCLUSIVAMENTE al supervisor que dio la aprobación
   const rawSupervisorSig = trade.supervisorSignature || 
                            supervisorCtrl?.signatureDataUrl || 
                            supervisorCtrl?.signatureUrl || 
-                           supervisor?.signatureDataUrl || 
-                           supervisor?.signatureUrl || 
                            null;
 
-  const sigSupervisor = isApproved ? rawSupervisorSig : null;
+  const sigSupervisor = (isApproved && supIdentifier) ? rawSupervisorSig : null;
 
   const supervisorName = trade.supervisorName || 
                          trade.approvedBy || 
                          supervisorCtrl?.fullName || 
                          supervisorCtrl?.name || 
-                         supervisor?.fullName || 
-                         supervisor?.name || 
                          'Encargado de Turno';
 
   const imgSigA = await embedSignatureImage(pdfDoc, sigA);

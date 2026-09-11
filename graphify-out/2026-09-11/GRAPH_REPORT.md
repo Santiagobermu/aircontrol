@@ -1,11 +1,11 @@
 # Graph Report - Proyecto  (2026-09-11)
 
 ## Corpus Check
-- 57 files · ~102,695 words
+- 57 files · ~102,440 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 296 nodes · 680 edges · 21 communities (13 shown, 8 thin omitted)
+- 296 nodes · 679 edges · 21 communities (13 shown, 8 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -24,7 +24,7 @@
 - devDependencies
 - storage.js
 - manifest.json
-- getSlotAcronym
+- boletaGenerator.js
 - AirControl Architecture Summary
 - AirControl HTML Entrypoint
 - Firebase Functions Dependencies
@@ -42,9 +42,9 @@
 4. `isColombianHoliday()` - 16 edges
 5. `MobileProfileView()` - 13 edges
 6. `generateBoletaPdf()` - 13 edges
-7. `isSameCtrl()` - 13 edges
-8. `solve_schedule()` - 12 edges
-9. `dispatchBoletaToPowerAutomate()` - 12 edges
+7. `solve_schedule()` - 12 edges
+8. `dispatchBoletaToPowerAutomate()` - 12 edges
+9. `isSameCtrl()` - 12 edges
 10. `validateAssignment()` - 12 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -65,8 +65,8 @@
 ## Communities (21 total, 8 thin omitted)
 
 ### Community 0 - "App.jsx"
-Cohesion: 0.14
-Nodes (27): App(), ControllerList(), ControllerPortal(), addControllerDB(), addRequestDB(), addTradeDB(), DEFAULT_SEQUENCE, deleteControllerDB() (+19 more)
+Cohesion: 0.15
+Nodes (26): App(), ControllerList(), ControllerPortal(), addControllerDB(), addRequestDB(), addTradeDB(), DEFAULT_SEQUENCE, deleteControllerDB() (+18 more)
 
 ### Community 1 - "ControllerPortal.jsx"
 Cohesion: 0.16
@@ -81,8 +81,8 @@ Cohesion: 0.09
 Nodes (22): firebase, lucide-react, dependencies, firebase, lucide-react, pdf-lib, react, react-dom (+14 more)
 
 ### Community 5 - "schedulerEngine.js"
-Cohesion: 0.17
-Nodes (23): AICopilotPanel(), MonthlyGrid(), RequestPanel(), getPositionPriority(), SchedulerGrid(), SchedulerSummary(), activeRequests, adjustDynamicSlots() (+15 more)
+Cohesion: 0.12
+Nodes (30): AICopilotPanel(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MonthlyGrid(), RequestPanel() (+22 more)
 
 ### Community 6 - "devDependencies"
 Cohesion: 0.11
@@ -96,9 +96,9 @@ Nodes (8): ControllerForm(), SignatureModal(), generateOfficialSeal(), uploadSig
 Cohesion: 0.15
 Nodes (12): background_color, description, display, gcm_sender_id, icons, id, name, orientation (+4 more)
 
-### Community 9 - "getSlotAcronym"
-Cohesion: 0.13
-Nodes (26): BoletaPreviewModal(), MobileBottomNav(), MobileGeneralRosterView(), MobileGuardiaView(), MobileLayout(), MobileRosterView(), MobileTradesView(), generateSettleTrade() (+18 more)
+### Community 9 - "boletaGenerator.js"
+Cohesion: 0.18
+Nodes (19): BoletaPreviewModal(), MobileTradesView(), generateSettleTrade(), TradePanel(), buildShiftDetails(), dispatchBoletaToPowerAutomate(), POWER_AUTOMATE_WEBHOOK_URL, resolveRecipients() (+11 more)
 
 ### Community 10 - "AirControl Architecture Summary"
 Cohesion: 0.67
@@ -106,7 +106,7 @@ Nodes (3): AirControl Stitch Specification, AirControl Design System, AirControl
 
 ### Community 20 - "MobileProfileView.jsx"
 Cohesion: 0.13
-Nodes (29): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+21 more)
+Nodes (30): MobileProfileView(), controllers, exceptions, schedule, syncControllers, detectUserDevice(), downloadICSFile(), generateICS() (+22 more)
 
 ## Knowledge Gaps
 - **64 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+59 more)
@@ -116,16 +116,16 @@ Nodes (29): MobileProfileView(), controllers, exceptions, schedule, syncControll
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `getSlotAcronym()` connect `getSlotAcronym` to `App.jsx`, `ControllerPortal.jsx`, `schedulerEngine.js`?**
+- **Why does `getSlotAcronym()` connect `schedulerEngine.js` to `App.jsx`, `ControllerPortal.jsx`, `boletaGenerator.js`?**
   _High betweenness centrality (0.016) - this node is a cross-community bridge._
-- **Why does `dispatchBoletaToPowerAutomate()` connect `getSlotAcronym` to `App.jsx`, `ControllerPortal.jsx`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `ControllerPortal()` connect `App.jsx` to `ControllerPortal.jsx`, `MobileProfileView.jsx`, `schedulerEngine.js`, `getSlotAcronym`?**
+- **Why does `dispatchBoletaToPowerAutomate()` connect `boletaGenerator.js` to `App.jsx`, `ControllerPortal.jsx`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `ControllerPortal()` connect `App.jsx` to `ControllerPortal.jsx`, `MobileProfileView.jsx`, `schedulerEngine.js`, `boletaGenerator.js`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _64 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.14260249554367202 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14772727272727273 - nodes in this community are weakly interconnected._
 - **Should `solve_schedule` be split into smaller, more focused modules?**
   _Cohesion score 0.07928118393234672 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**

@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1789146976.3793807,
-    "ast_hash": "4b1ee95b12dbdd972305d30e7dad8489",
+    "mtime": 1789147819.2717953,
+    "ast_hash": "05e32d65d1292770df2b5a0c69d68a08",
     "semantic_hash": ""
   },
   "src/components/AICopilotPanel.jsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "src/components/ControllerPortal.jsx": {
-    "mtime": 1789146995.282817,
-    "ast_hash": "98237587cd7e99f8e726b9d43788bb97",
+    "mtime": 1789147798.8959463,
+    "ast_hash": "925f78d283c7813ed62ec34f08af6dfe",
     "semantic_hash": ""
   },
   "src/components/LoginScreen.jsx": {
@@ -310,8 +310,8 @@
     "semantic_hash": ""
   },
   "src/utils/boletaGenerator.js": {
-    "mtime": 1789146830.4702156,
-    "ast_hash": "8a8a86595048637004481215557e7f27",
+    "mtime": 1789147998.7668412,
+    "ast_hash": "78f9321acd57854e971020c000d760d3",
     "semantic_hash": ""
   },
   "Boleta de cambio de turno.pdf": {
@@ -330,8 +330,8 @@
     "semantic_hash": ""
   },
   "src/utils/boletaDispatcher.js": {
-    "mtime": 1789146874.3663507,
-    "ast_hash": "8bc1add5bff88a7b5c3cf8a9a491a652",
+    "mtime": 1789147784.8446798,
+    "ast_hash": "63fa8de1bcc2a06f068ab13afb68c1b8",
     "semantic_hash": ""
   }
 }

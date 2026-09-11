@@ -1037,10 +1037,22 @@ export default function ControllerPortal({
     try {
       await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
 
-      const supervisorSignature = currentController?.signatureDataUrl || currentController?.signatureUrl || trade.supervisorSignature || null;
-      const supervisorName = currentController?.fullName || currentController?.name || 'Encargado de Turno';
-      const supervisorId = currentController?.id || currentController?.signature || 'SUPERVISOR';
-      const supervisorReferenceNumber = currentController?.referenceNumber || '';
+      // Identificar si el usuario actual es legítimamente supervisor o si hay un CTE asignado al turno
+      let approvingSupervisor = null;
+      if (currentController && (currentController.isSupervisor || (currentController.skills && currentController.skills.includes('CTE')))) {
+        approvingSupervisor = currentController;
+      } else {
+        const shift = trade.fromSlot?.shift;
+        const shiftCteId = updatedSchedule?.[dateStr]?.[shift]?.['CTE-1'];
+        if (shiftCteId) {
+          approvingSupervisor = controllers.find(c => isSameCtrl(c, shiftCteId, controllers));
+        }
+      }
+
+      const supervisorSignature = approvingSupervisor?.signatureDataUrl || approvingSupervisor?.signatureUrl || null;
+      const supervisorName = approvingSupervisor?.fullName || approvingSupervisor?.name || 'Encargado de Turno';
+      const supervisorId = approvingSupervisor?.id || 'SUPERVISOR';
+      const supervisorReferenceNumber = approvingSupervisor?.referenceNumber || '';
 
       const updatedTrade = { 
         ...trade, 
@@ -1067,7 +1079,7 @@ export default function ControllerPortal({
       dispatchBoletaToPowerAutomate({
         trade: updatedTrade,
         controllers,
-        supervisor: currentController
+        supervisor: approvingSupervisor || currentController
       }).then(async (res) => {
         console.log('Despacho de boleta exitoso (Portal):', res);
         await updateTradeDB({

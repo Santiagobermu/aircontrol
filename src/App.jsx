@@ -806,7 +806,7 @@ export default function App() {
   };
 
   // Ejecución física del cambio en el cuadrante (Roster)
-  const executeTradeScheduleChange = async (trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot) => {
+  const executeTradeScheduleChange = async (trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot, chosenSupervisorId = null) => {
     const updatedSchedule = { ...schedule };
     if (!updatedSchedule[dateStr]) {
       updatedSchedule[dateStr] = createEmptyDaySchedule(dateStr);
@@ -866,26 +866,46 @@ export default function App() {
     // Guardar cuadrante actualizado en Firestore
     await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
 
-    // Identificar al supervisor / encargado de turno que realiza la aprobación
-    const loggedInCtrl = controllers.find(c => 
-      (c.email && c.email.toLowerCase() === currentUser?.email?.toLowerCase()) || 
-      isSameCtrl(c, currentUser?.email?.split('@')[0], controllers) ||
-      isSameCtrl(c, currentUser?.displayName, controllers)
-    );
+    // Identificar EXCLUSIVAMENTE al supervisor (encargado de turno) que realiza la aprobación
+    let approvingSupervisor = null;
 
-    // Buscar si hay un CTE asignado en el Roster para ese día y turno
-    const shiftCteId = updatedSchedule?.[dateStr]?.[fromShift]?.['CTE-1'];
-    const shiftCteCtrl = shiftCteId ? controllers.find(c => isSameCtrl(c, shiftCteId, controllers)) : null;
+    // 1. Si se especificó explícitamente un supervisor al autorizar el cambio
+    if (chosenSupervisorId) {
+      approvingSupervisor = controllers.find(c => isSameCtrl(c, chosenSupervisorId, controllers));
+    }
 
-    const approvingSupervisor = loggedInCtrl || shiftCteCtrl || {
-      id: 'CTE-TORRE',
-      name: 'Encargado de Turno',
-      fullName: 'Encargado de Turno',
-      referenceNumber: ''
-    };
+    // 2. Si no, buscar al CTE asignado en el Roster oficial para ese día y turno
+    if (!approvingSupervisor) {
+      const shiftCteId = updatedSchedule?.[dateStr]?.[fromShift]?.['CTE-1'];
+      if (shiftCteId) {
+        approvingSupervisor = controllers.find(c => isSameCtrl(c, shiftCteId, controllers));
+      }
+    }
 
-    // Estampar la firma del supervisor que aprobó el cambio si la tiene registrada
-    const supervisorSignature = approvingSupervisor?.signatureDataUrl || approvingSupervisor?.signatureUrl || trade.supervisorSignature || null;
+    // 3. Si no, verificar si el usuario actual conectado es Encargado de Turno / Supervisor legítimo
+    if (!approvingSupervisor) {
+      const loggedInCtrl = controllers.find(c => 
+        (c.email && c.email.toLowerCase() === currentUser?.email?.toLowerCase()) || 
+        isSameCtrl(c, currentUser?.email?.split('@')[0], controllers) ||
+        isSameCtrl(c, currentUser?.displayName, controllers)
+      );
+      if (loggedInCtrl && (loggedInCtrl.isSupervisor || (loggedInCtrl.skills && loggedInCtrl.skills.includes('CTE')))) {
+        approvingSupervisor = loggedInCtrl;
+      }
+    }
+
+    // 4. Fallback institucional sin firma gráfica
+    if (!approvingSupervisor) {
+      approvingSupervisor = {
+        id: 'CTE-TORRE',
+        name: 'Encargado de Turno',
+        fullName: 'Encargado de Turno',
+        referenceNumber: ''
+      };
+    }
+
+    // Estampar ÚNICAMENTE la firma de ESE supervisor que aprobó si la tiene registrada
+    const supervisorSignature = approvingSupervisor?.signatureDataUrl || approvingSupervisor?.signatureUrl || null;
     const supervisorName = approvingSupervisor?.fullName || approvingSupervisor?.name || 'Encargado de Turno';
     const supervisorId = approvingSupervisor?.id || 'SUPERVISOR';
     const supervisorReferenceNumber = approvingSupervisor?.referenceNumber || '';
@@ -998,7 +1018,7 @@ export default function App() {
   };
 
   // Aprobación final por Jefatura / Supervisor (Paso 2: Aplicación en Roster)
-  const handleApproveTrade = async (id) => {
+  const handleApproveTrade = async (id, chosenSupervisorId = null) => {
     const trade = trades.find(t => t.id === id);
     if (!trade) {
       alert('No se encontró la solicitud de cambio.');
@@ -1010,7 +1030,7 @@ export default function App() {
     }
 
     const { ctrlA, ctrlB, dateStr, fromSlot, toSlot } = resolveTradeSlots(trade, schedule);
-    await executeTradeScheduleChange(trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot);
+    await executeTradeScheduleChange(trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot, chosenSupervisorId);
   };
 
   // Ejecutar el auto-completador para el MES COMPLETO

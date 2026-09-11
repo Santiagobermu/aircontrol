@@ -47,6 +47,28 @@ export default function TradePanel({
   const [selectedBoletaTrade, setSelectedBoletaTrade] = useState(null);
   const [isBoletaModalOpen, setIsBoletaModalOpen] = useState(false);
 
+  // Estados y manejadores para Modal de Selección de Encargado de Turno que aprueba
+  const [tradeToApprove, setTradeToApprove] = useState(null);
+  const [selectedApproverId, setSelectedApproverId] = useState('');
+
+  const handleStartApproval = (t) => {
+    setTradeToApprove(t);
+    const fromShift = t.fromSlot?.shift;
+    const dateStr = t.date;
+    const shiftCteId = schedule?.[dateStr]?.[fromShift]?.['CTE-1'];
+    const allSupervisors = controllers.filter(c => c.isSupervisor || (c.skills && c.skills.includes('CTE')));
+    const defaultSup = (shiftCteId && allSupervisors.find(c => isSameCtrl(c, shiftCteId, controllers)))
+      ? shiftCteId
+      : (allSupervisors[0]?.id || '');
+    setSelectedApproverId(defaultSup);
+  };
+
+  const handleConfirmApproval = () => {
+    if (!tradeToApprove) return;
+    onApproveTrade(tradeToApprove.id, selectedApproverId);
+    setTradeToApprove(null);
+  };
+
   // 1. Obtener los turnos programados reales del controlador A en la fecha seleccionada
   const ctrlASlots = useMemo(() => {
     if (!date || !ctrlAId || !schedule[date]) return [];
@@ -584,7 +606,7 @@ export default function TradePanel({
 
                     <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.35rem' }}>
                       <button
-                        onClick={() => onApproveTrade(t.id)}
+                        onClick={() => handleStartApproval(t)}
                         className="btn btn-primary"
                         style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
                       >
@@ -702,27 +724,115 @@ export default function TradePanel({
         onClose={() => setIsBoletaModalOpen(false)}
         trade={selectedBoletaTrade}
         controllers={controllers}
-        supervisor={(() => {
-          if (!selectedBoletaTrade) return null;
-          const supIdentifier = selectedBoletaTrade.supervisorId || selectedBoletaTrade.approvedById || selectedBoletaTrade.approvedBy;
-          if (supIdentifier) {
-            const found = controllers.find(c => isSameCtrl(c, supIdentifier, controllers));
-            if (found && !isSameCtrl(found, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(found, selectedBoletaTrade.toControllerId, controllers)) {
-              return found;
-            }
-          }
-          const shift = selectedBoletaTrade.fromSlot?.shift;
-          const dateStr = selectedBoletaTrade.date;
-          const shiftCteId = schedule?.[dateStr]?.[shift]?.['CTE-1'];
-          if (shiftCteId) {
-            const cteCtrl = controllers.find(c => isSameCtrl(c, shiftCteId, controllers));
-            if (cteCtrl && !isSameCtrl(cteCtrl, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(cteCtrl, selectedBoletaTrade.toControllerId, controllers)) {
-              return cteCtrl;
-            }
-          }
-          return null;
-        })()}
       />
+
+      {/* Modal de Selección y Confirmación del Encargado de Turno que aprueba */}
+      {tradeToApprove && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          padding: '1rem'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '520px',
+            width: '100%',
+            background: '#0d131f',
+            borderRadius: '16px',
+            border: '1px solid rgba(6, 182, 212, 0.4)',
+            padding: '1.5rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', borderBottom: '1px solid #1e293b', paddingBottom: '0.75rem' }}>
+              <UserCheck size={24} color="var(--accent-cyan)" />
+              <div>
+                <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', fontWeight: '800' }}>
+                  Aprobación Oficial de Cambio de Turno
+                </h4>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  Indica el Encargado de Turno (Supervisor) que autoriza y firma esta boleta.
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              padding: '0.85rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.07)',
+              fontSize: '0.8rem',
+              color: 'var(--text-primary)',
+              lineHeight: '1.4'
+            }}>
+              <div><strong>Trámite:</strong> {tradeToApprove.type === 'SWAP' ? 'Cambio de Secuencia (SWAP)' : 'Hechura de Turno (COVER)'}</div>
+              <div><strong>Fecha:</strong> {tradeToApprove.date}</div>
+              <div><strong>Turno:</strong> {tradeToApprove.fromSlot?.shift} ({getSlotDescription(tradeToApprove.fromSlot?.slotKey)})</div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                Encargado de Turno (Supervisor) que Autoriza:
+              </label>
+              <select
+                value={selectedApproverId}
+                onChange={(e) => setSelectedApproverId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.75rem',
+                  borderRadius: '8px',
+                  backgroundColor: '#161e2e',
+                  border: '1px solid rgba(6, 182, 212, 0.4)',
+                  color: '#fff',
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}
+              >
+                {controllers
+                  .filter(c => c.isSupervisor || (c.skills && c.skills.includes('CTE')))
+                  .map(sup => (
+                    <option key={sup.id} value={sup.id}>
+                      {sup.name} - {sup.fullName || sup.name} {sup.signatureDataUrl || sup.signatureUrl ? '✓ (Firma digital registrada)' : '(Pendiente firma electrónica)'}
+                    </option>
+                  ))
+                }
+              </select>
+              <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                * Su firma electrónica se estampará exclusivamente en la casilla de supervisor de la boleta oficial GSAN.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setTradeToApprove(null)}
+                className="btn btn-secondary"
+                style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmApproval}
+                className="btn btn-primary"
+                style={{ fontSize: '0.8rem', padding: '0.5rem 1.2rem', fontWeight: '800' }}
+              >
+                Confirmar y Aplicar al Roster
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

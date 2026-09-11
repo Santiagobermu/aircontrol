@@ -104,14 +104,11 @@ export async function dispatchBoletaToPowerAutomate({
     name: trade.toControllerId
   };
 
-  // Resolver supervisor
-  let supervisorCtrl = null;
+  // Resolver EXCLUSIVAMENTE al supervisor que aprobó el cambio
+  let supervisorCtrl = supervisor || null;
   const supIdentifier = trade.supervisorId || trade.approvedById || trade.approvedBy;
-  if (supIdentifier) {
+  if (!supervisorCtrl && supIdentifier) {
     supervisorCtrl = controllers.find(c => isSameCtrl(c, supIdentifier, controllers));
-  }
-  if (!supervisorCtrl && supervisor) {
-    supervisorCtrl = controllers.find(c => isSameCtrl(c, supervisor, controllers)) || supervisor;
   }
 
   // 2. Asegurar que tengamos el documento PDF compilado

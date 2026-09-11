@@ -1188,8 +1188,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_aicopilotpanel",
-      "community": 5,
-      "community_name": "schedulerEngine.js",
+      "community": 20,
+      "community_name": "MobileProfileView.jsx",
       "norm_label": "aicopilotpanel.jsx"
     },
     {
@@ -1212,7 +1212,7 @@
       "_origin": "ast",
       "id": "src_components_boletapreviewmodal",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "boletapreviewmodal.jsx"
     },
     {
@@ -1224,7 +1224,7 @@
       "_origin": "ast",
       "id": "src_components_boletapreviewmodal_boletapreviewmodal",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "boletapreviewmodal()"
     },
     {
@@ -1500,7 +1500,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "tradepanel.jsx"
     },
     {
@@ -1512,7 +1512,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel_generatesettletrade",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "generatesettletrade()"
     },
     {
@@ -1524,7 +1524,7 @@
       "_origin": "ast",
       "id": "src_components_tradepanel_tradepanel",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "tradepanel()"
     },
     {
@@ -1534,8 +1534,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilebottomnav.jsx"
     },
     {
@@ -1546,8 +1546,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobilebottomnav_mobilebottomnav",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilebottomnav()"
     },
     {
@@ -1557,8 +1557,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobilegeneralrosterview",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilegeneralrosterview.jsx"
     },
     {
@@ -1569,8 +1569,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobilegeneralrosterview_mobilegeneralrosterview",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilegeneralrosterview()"
     },
     {
@@ -1580,8 +1580,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobileguardiaview.jsx"
     },
     {
@@ -1592,8 +1592,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobileguardiaview_mobileguardiaview",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobileguardiaview()"
     },
     {
@@ -1626,8 +1626,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilelayout.jsx"
     },
     {
@@ -1638,8 +1638,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobilelayout_mobilelayout",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilelayout()"
     },
     {
@@ -1695,8 +1695,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilerosterview.jsx"
     },
     {
@@ -1707,8 +1707,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_components_mobile_mobilerosterview_mobilerosterview",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "mobilerosterview()"
     },
     {
@@ -1719,7 +1719,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "mobiletradesview.jsx"
     },
     {
@@ -1731,7 +1731,7 @@
       "_origin": "ast",
       "id": "src_components_mobile_mobiletradesview_mobiletradesview",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "mobiletradesview()"
     },
     {
@@ -1808,7 +1808,7 @@
       "_origin": "ast",
       "id": "src_utils_boletadispatcher",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "boletadispatcher.js"
     },
     {
@@ -1819,7 +1819,7 @@
       "_origin": "ast",
       "id": "src_utils_boletadispatcher_power_automate_webhook_url",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "power_automate_webhook_url"
     },
     {
@@ -1831,7 +1831,7 @@
       "_origin": "ast",
       "id": "src_utils_boletadispatcher_uint8arraytobase64",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "uint8arraytobase64()"
     },
     {
@@ -1843,31 +1843,31 @@
       "_origin": "ast",
       "id": "src_utils_boletadispatcher_resolverecipients",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "resolverecipients()"
     },
     {
       "label": "buildShiftDetails()",
       "file_type": "code",
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L57",
+      "source_location": "L55",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_boletadispatcher_buildshiftdetails",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "buildshiftdetails()"
     },
     {
       "label": "dispatchBoletaToPowerAutomate()",
       "file_type": "code",
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L87",
+      "source_location": "L85",
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_boletadispatcher_dispatchboletatopowerautomate",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "dispatchboletatopowerautomate()"
     },
     {
@@ -1878,7 +1878,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "boletagenerator.js"
     },
     {
@@ -1889,7 +1889,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_calibration",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "calibration"
     },
     {
@@ -1901,7 +1901,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_topdfx",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "topdfx()"
     },
     {
@@ -1913,7 +1913,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_topdfy",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "topdfy()"
     },
     {
@@ -1925,7 +1925,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_embedsignatureimage",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "embedsignatureimage()"
     },
     {
@@ -1937,7 +1937,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_drawimagecontained",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "drawimagecontained()"
     },
     {
@@ -1949,7 +1949,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_drawtextcentered",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "drawtextcentered()"
     },
     {
@@ -1961,7 +1961,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_formatshiftlabel",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "formatshiftlabel()"
     },
     {
@@ -1973,7 +1973,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_parsedateparts",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "parsedateparts()"
     },
     {
@@ -1985,7 +1985,7 @@
       "_origin": "ast",
       "id": "src_utils_boletagenerator_generateboletapdf",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "generateboletapdf()"
     },
     {
@@ -2538,8 +2538,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_utils_firebase_db",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 20,
+      "community_name": "MobileProfileView.jsx",
       "norm_label": "db"
     },
     {
@@ -2876,8 +2876,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getslotacronym",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "getslotacronym()"
     },
     {
@@ -2888,8 +2888,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "src_utils_schedulerengine_getctrlsig",
-      "community": 9,
-      "community_name": "getSlotAcronym",
+      "community": 5,
+      "community_name": "schedulerEngine.js",
       "norm_label": "getctrlsig()"
     },
     {
@@ -2901,7 +2901,7 @@
       "_origin": "ast",
       "id": "src_utils_schedulerengine_issamectrl",
       "community": 9,
-      "community_name": "getSlotAcronym",
+      "community_name": "boletaGenerator.js",
       "norm_label": "issamectrl()"
     },
     {
@@ -5685,7 +5685,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L938",
+      "source_location": "L924",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5769,7 +5769,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1189",
+      "source_location": "L1175",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5817,7 +5817,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1179",
+      "source_location": "L1165",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5841,7 +5841,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1064",
+      "source_location": "L1050",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5901,7 +5901,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L925",
+      "source_location": "L911",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -5937,7 +5937,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1059",
+      "source_location": "L1045",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6880,7 +6880,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L1072",
+      "source_location": "L1067",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6916,7 +6916,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L4088",
+      "source_location": "L4083",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -6964,7 +6964,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L1132",
+      "source_location": "L1127",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -7000,7 +7000,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L1150",
+      "source_location": "L1145",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -7048,7 +7048,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L2369",
+      "source_location": "L2364",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -7060,7 +7060,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L2407",
+      "source_location": "L2402",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -7084,7 +7084,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ControllerPortal.jsx",
-      "source_location": "L2152",
+      "source_location": "L2147",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_controllerportal_controllerportal",
@@ -9182,7 +9182,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L57",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletadispatcher",
@@ -9193,7 +9193,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L87",
+      "source_location": "L85",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletadispatcher",
@@ -9286,7 +9286,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L143",
+      "source_location": "L136",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletadispatcher_dispatchboletatopowerautomate",
@@ -9298,7 +9298,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L146",
+      "source_location": "L139",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletadispatcher_dispatchboletatopowerautomate",
@@ -9309,20 +9309,8 @@
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L44",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_utils_boletadispatcher_resolverecipients",
-      "target": "src_utils_schedulerengine_issamectrl"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L159",
+      "source_location": "L145",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletadispatcher_dispatchboletatopowerautomate",
@@ -9335,7 +9323,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L129",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletadispatcher_dispatchboletatopowerautomate",
@@ -9347,7 +9335,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/utils/boletaDispatcher.js",
-      "source_location": "L99",
+      "source_location": "L97",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletadispatcher_dispatchboletatopowerautomate",
@@ -9493,7 +9481,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L244",
+      "source_location": "L233",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9505,7 +9493,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L245",
+      "source_location": "L234",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9517,7 +9505,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L238",
+      "source_location": "L227",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9529,7 +9517,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L300",
+      "source_location": "L289",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9541,7 +9529,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L286",
+      "source_location": "L275",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9565,7 +9553,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L261",
+      "source_location": "L250",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",
@@ -9577,7 +9565,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/boletaGenerator.js",
-      "source_location": "L260",
+      "source_location": "L249",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_boletagenerator_generateboletapdf",

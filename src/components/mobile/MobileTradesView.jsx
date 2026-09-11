@@ -22,7 +22,34 @@ export default function MobileTradesView({
   const [selectedBoletaTrade, setSelectedBoletaTrade] = useState(null);
   const [isBoletaModalOpen, setIsBoletaModalOpen] = useState(false);
 
+  // Estados y manejadores para Modal de Aprobación de Supervisor (Mobile)
+  const [tradeToApprove, setTradeToApprove] = useState(null);
+  const [selectedApproverId, setSelectedApproverId] = useState('');
+
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
+
+  const handleStartApproval = (trade) => {
+    setTradeToApprove(trade);
+    const fromShift = trade.fromSlot?.shift;
+    const dateStr = trade.date;
+    const shiftCteId = scheduleMonth?.[dateStr]?.[fromShift]?.['CTE-1'];
+    const allSupervisors = controllers.filter(c => c.isSupervisor || (c.skills && c.skills.includes('CTE')));
+    
+    // Si el usuario actual es CTE/supervisor legítimo, preseleccionarlo a él
+    const isCurrentSup = currentUser && (currentUser.isSupervisor || (currentUser.skills && currentUser.skills.includes('CTE')));
+    const defaultSup = isCurrentSup 
+      ? currentUser.id 
+      : ((shiftCteId && allSupervisors.find(c => isSameCtrl(c, shiftCteId, controllers)))
+          ? shiftCteId
+          : (allSupervisors[0]?.id || ''));
+    setSelectedApproverId(defaultSup);
+  };
+
+  const handleConfirmApproval = () => {
+    if (!tradeToApprove) return;
+    onApproveTrade && onApproveTrade(tradeToApprove.id, selectedApproverId);
+    setTradeToApprove(null);
+  };
 
   // Estados del Formulario de Nuevo Cambio
   const [tradeType, setTradeType] = useState('COVER'); // 'COVER' | 'SWAP'
@@ -616,7 +643,7 @@ export default function MobileTradesView({
                 {isEncargado && (trade.status === 'pending_admin' || trade.rawStatus === 'PENDIENTE_APROBACION') && (
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
                     <button
-                      onClick={() => onApproveTrade && onApproveTrade(trade.id)}
+                      onClick={() => handleStartApproval(trade)}
                       style={{
                         flex: 1,
                         background: 'rgba(6, 182, 212, 0.2)',
@@ -970,27 +997,115 @@ export default function MobileTradesView({
         onClose={() => setIsBoletaModalOpen(false)}
         trade={selectedBoletaTrade}
         controllers={controllers}
-        supervisor={(() => {
-          if (!selectedBoletaTrade) return null;
-          const supIdentifier = selectedBoletaTrade.supervisorId || selectedBoletaTrade.approvedById || selectedBoletaTrade.approvedBy;
-          if (supIdentifier) {
-            const found = controllers.find(c => isSameCtrl(c, supIdentifier, controllers));
-            if (found && !isSameCtrl(found, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(found, selectedBoletaTrade.toControllerId, controllers)) {
-              return found;
-            }
-          }
-          const shift = selectedBoletaTrade.fromSlot?.shift;
-          const dateStr = selectedBoletaTrade.date;
-          const shiftCteId = scheduleMonth?.[dateStr]?.[shift]?.['CTE-1'];
-          if (shiftCteId) {
-            const cteCtrl = controllers.find(c => isSameCtrl(c, shiftCteId, controllers));
-            if (cteCtrl && !isSameCtrl(cteCtrl, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(cteCtrl, selectedBoletaTrade.toControllerId, controllers)) {
-              return cteCtrl;
-            }
-          }
-          return null;
-        })()}
       />
+
+      {/* Modal de Selección y Confirmación del Encargado de Turno que aprueba (Mobile) */}
+      {tradeToApprove && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          padding: '1rem'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '480px',
+            width: '100%',
+            background: '#0d131f',
+            borderRadius: '16px',
+            border: '1px solid rgba(6, 182, 212, 0.4)',
+            padding: '1.25rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.85rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid #1e293b', paddingBottom: '0.6rem' }}>
+              <ShieldCheck size={22} color="var(--accent-cyan)" />
+              <div>
+                <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '800' }}>
+                  Aprobación Oficial de Cambio
+                </h4>
+                <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                  Indica el Encargado de Turno (Supervisor) que autoriza esta boleta.
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              padding: '0.75rem',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.07)',
+              fontSize: '0.75rem',
+              color: 'var(--text-primary)',
+              lineHeight: '1.4'
+            }}>
+              <div><strong>Trámite:</strong> {tradeToApprove.type === 'SWAP' ? 'Cambio de Secuencia (SWAP)' : 'Hechura de Turno (COVER)'}</div>
+              <div><strong>Fecha:</strong> {tradeToApprove.date}</div>
+              <div><strong>Turno:</strong> {tradeToApprove.fromSlot?.shift}</div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+                Encargado de Turno (Supervisor) que Autoriza:
+              </label>
+              <select
+                value={selectedApproverId}
+                onChange={(e) => setSelectedApproverId(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 0.7rem',
+                  borderRadius: '8px',
+                  backgroundColor: '#161e2e',
+                  border: '1px solid rgba(6, 182, 212, 0.4)',
+                  color: '#fff',
+                  fontSize: '0.8rem',
+                  fontWeight: '600'
+                }}
+              >
+                {controllers
+                  .filter(c => c.isSupervisor || (c.skills && c.skills.includes('CTE')))
+                  .map(sup => (
+                    <option key={sup.id} value={sup.id}>
+                      {sup.name} - {sup.fullName || sup.name} {sup.signatureDataUrl || sup.signatureUrl ? '✓ (Firma digital registrada)' : '(Pendiente firma electrónica)'}
+                    </option>
+                  ))
+                }
+              </select>
+              <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                * Su firma electrónica se estampará exclusivamente en la boleta oficial GSAN.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.4rem' }}>
+              <button
+                type="button"
+                onClick={() => setTradeToApprove(null)}
+                className="btn btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.45rem 0.85rem' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmApproval}
+                className="btn btn-primary"
+                style={{ fontSize: '0.75rem', padding: '0.45rem 1rem', fontWeight: '800' }}
+              >
+                Confirmar y Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
