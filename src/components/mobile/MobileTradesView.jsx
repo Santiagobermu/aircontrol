@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User, FileText } from 'lucide-react';
+import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { getSlotAcronym } from '../../utils/schedulerEngine';
 import BoletaPreviewModal from '../BoletaPreviewModal';
 
@@ -25,6 +25,7 @@ export default function MobileTradesView({
   // Estados y manejadores para Modal de Aprobación de Supervisor (Mobile)
   const [tradeToApprove, setTradeToApprove] = useState(null);
   const [selectedApproverId, setSelectedApproverId] = useState('');
+  const [isCtePanelExpanded, setIsCtePanelExpanded] = useState(true);
 
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
 
@@ -410,7 +411,8 @@ export default function MobileTradesView({
       isPublic,
       comment: t.comment || t.comments || '',
       status: isApproved ? 'approved' : isRejected ? 'rejected' : (isPendingAdmin ? 'pending_admin' : 'pending'),
-      rawStatus: t.status || 'PENDIENTE_ACEPTACION'
+      rawStatus: t.status || 'PENDIENTE_ACEPTACION',
+      createdAt: t.createdAt || t.timestamp || null
     };
   }).filter(t => t.fromSig && t.fromSig.trim() !== '');
 
@@ -428,6 +430,76 @@ export default function MobileTradesView({
     if (filter === 'approved') return t.status === 'approved';
     return true;
   });
+
+  // Ordenar los cambios: los más recientes de primeros y los más antiguos de último
+  const sortedTrades = [...userTrades].sort((a, b) => {
+    // 1. Prioridad: Fecha del turno/cambio (dateStr / date) en orden descendente (más reciente primero)
+    const dateA = (a.dateStr || a.date || a.rawTrade?.dateStr || a.rawTrade?.date || '').trim();
+    const dateB = (b.dateStr || b.date || b.rawTrade?.dateStr || b.rawTrade?.date || '').trim();
+
+    if (dateA && dateB && dateA !== dateB) {
+      return dateB.localeCompare(dateA);
+    }
+    if (dateA && !dateB) return -1;
+    if (!dateA && dateB) return 1;
+
+    // 2. Desempate: Fecha y hora de creación/registro de la solicitud (createdAt / timestamp / epoch de ID)
+    const getCreationTime = (item) => {
+      const created = item.createdAt || item.rawTrade?.createdAt || item.rawTrade?.timestamp;
+      if (created) {
+        const time = new Date(created).getTime();
+        if (!isNaN(time) && time > 0) return time;
+      }
+      if (item.id) {
+        const match = item.id.match(/\d{10,13}/);
+        if (match) {
+          const num = Number(match[0]);
+          if (!isNaN(num) && num > 1000000000000) return num;
+        }
+      }
+      return 0;
+    };
+
+    const timeA = getCreationTime(a);
+    const timeB = getCreationTime(b);
+    if (timeA !== timeB) {
+      return timeB - timeA;
+    }
+
+    return (b.id || '').localeCompare(a.id || '');
+  });
+
+  // Solicitudes pendientes de aprobación CTE / Jefatura (Panel CTE)
+  const ctePendingTrades = normalizedTrades
+    .filter(t => t.status === 'pending_admin' || t.rawStatus === 'PENDIENTE_APROBACION')
+    .sort((a, b) => {
+      const dateA = (a.dateStr || a.date || a.rawTrade?.dateStr || a.rawTrade?.date || '').trim();
+      const dateB = (b.dateStr || b.date || b.rawTrade?.dateStr || b.rawTrade?.date || '').trim();
+
+      if (dateA && dateB && dateA !== dateB) {
+        return dateB.localeCompare(dateA);
+      }
+      if (dateA && !dateB) return -1;
+      if (!dateA && dateB) return 1;
+
+      const getCreationTime = (item) => {
+        const created = item.createdAt || item.rawTrade?.createdAt || item.rawTrade?.timestamp;
+        if (created) {
+          const time = new Date(created).getTime();
+          if (!isNaN(time) && time > 0) return time;
+        }
+        if (item.id) {
+          const match = item.id.match(/\d{10,13}/);
+          if (match) {
+            const num = Number(match[0]);
+            if (!isNaN(num) && num > 1000000000000) return num;
+          }
+        }
+        return 0;
+      };
+
+      return getCreationTime(b) - getCreationTime(a);
+    });
 
   const getStatusBadge = (trade) => {
     if (trade.status === 'approved') {
@@ -480,6 +552,224 @@ export default function MobileTradesView({
         </div>
       </div>
 
+      {/* SECCIÓN DEDICADA: Solicitudes por Aprobar (Panel CTE) */}
+      {isEncargado && (
+        <div style={{
+          background: 'var(--glass-bg)',
+          border: '1px solid var(--glass-border)',
+          borderLeft: '4px solid var(--accent-cyan)',
+          borderRadius: '14px',
+          padding: '0.9rem',
+          boxShadow: 'var(--glass-shadow)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem'
+        }}>
+          {/* Header del Panel CTE */}
+          <div 
+            onClick={() => setIsCtePanelExpanded(!isCtePanelExpanded)}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              userSelect: 'none'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldCheck size={20} color="var(--accent-cyan)" />
+              <div>
+                <h3 style={{ fontSize: '0.92rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                  Solicitudes por Aprobar (Panel CTE)
+                </h3>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                  Supervisión y aplicación al Roster oficial
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{
+                fontSize: '0.72rem',
+                fontWeight: '800',
+                backgroundColor: ctePendingTrades.length > 0 ? 'rgba(6, 182, 212, 0.18)' : 'rgba(16, 185, 129, 0.15)',
+                color: ctePendingTrades.length > 0 ? 'var(--accent-cyan)' : 'var(--status-success)',
+                padding: '0.15rem 0.5rem',
+                borderRadius: '99px',
+                border: ctePendingTrades.length > 0 ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)'
+              }}>
+                {ctePendingTrades.length} {ctePendingTrades.length === 1 ? 'pendiente' : 'pendientes'}
+              </span>
+              {isCtePanelExpanded ? (
+                <ChevronUp size={18} color="var(--text-muted)" />
+              ) : (
+                <ChevronDown size={18} color="var(--text-muted)" />
+              )}
+            </div>
+          </div>
+
+          {/* Lista de Solicitudes Pendientes CTE */}
+          {isCtePanelExpanded && (
+            <>
+              {ctePendingTrades.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.2rem' }}>
+                  {ctePendingTrades.map((trade) => {
+                    const isSwap = trade.type === 'SWAP';
+
+                    return (
+                      <div 
+                        key={`cte_${trade.id}`}
+                        style={{
+                          backgroundColor: 'var(--bg-tertiary)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: '12px',
+                          padding: '0.85rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.55rem'
+                        }}
+                      >
+                        {/* Tipo y Fecha */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontWeight: '800',
+                            backgroundColor: isSwap ? 'rgba(6, 182, 212, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                            color: isSwap ? 'var(--accent-cyan)' : 'var(--status-warning)',
+                            padding: '0.18rem 0.45rem',
+                            borderRadius: '6px'
+                          }}>
+                            {isSwap ? 'INTERCAMBIO (SWAP)' : 'REEMPLAZO (COVER)'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)' }}>
+                            Fecha: {trade.dateStr || 'Sin fecha'}
+                          </span>
+                        </div>
+
+                        {/* Detalle de Solicitante y Receptor */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto 1fr',
+                          alignItems: 'center',
+                          background: 'var(--bg-primary)',
+                          padding: '0.6rem 0.75rem',
+                          borderRadius: '10px',
+                          gap: '0.5rem',
+                          fontSize: '0.78rem'
+                        }}>
+                          <div>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block' }}>Solicitante</span>
+                            <strong style={{ color: 'var(--text-primary)' }}>{trade.fromName}</strong>
+                            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', fontSize: '0.75rem', fontWeight: '800' }}>
+                              {trade.fromShift}
+                            </span>
+                          </div>
+
+                          <ArrowRightLeft size={16} color="var(--text-muted)" />
+
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block' }}>Receptor</span>
+                            <strong style={{ color: 'var(--text-primary)' }}>{trade.toName}</strong>
+                            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', fontSize: '0.75rem', fontWeight: '800' }}>
+                              {trade.toShift}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Comentario si existe */}
+                        {trade.comment && (
+                          <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                            "{trade.comment}"
+                          </p>
+                        )}
+
+                        {/* Botones de Acción */}
+                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem' }}>
+                          <button
+                            onClick={() => handleStartApproval(trade)}
+                            className="btn btn-primary"
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem',
+                              fontSize: '0.78rem',
+                              fontWeight: '800',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem',
+                              borderRadius: '8px'
+                            }}
+                          >
+                            <ShieldCheck size={15} />
+                            Aprobar
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedBoletaTrade(trade.rawTrade || trade);
+                              setIsBoletaModalOpen(true);
+                            }}
+                            className="btn btn-secondary"
+                            style={{
+                              padding: '0.5rem 0.65rem',
+                              fontSize: '0.76rem',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              borderRadius: '8px'
+                            }}
+                            title="Ver Boleta Oficial GSAN"
+                          >
+                            <FileText size={14} color="var(--accent-cyan)" />
+                            Boleta
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (window.confirm('¿Deseas rechazar esta solicitud de cambio como Supervisor CTE?')) {
+                                onRejectTrade && onRejectTrade(trade.id);
+                              }
+                            }}
+                            className="btn btn-danger-outline"
+                            style={{
+                              padding: '0.5rem 0.65rem',
+                              fontSize: '0.76rem',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              borderRadius: '8px'
+                            }}
+                          >
+                            <XCircle size={14} />
+                            Rechazar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '0.85rem',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.76rem',
+                  fontStyle: 'italic',
+                  background: 'rgba(16, 185, 129, 0.04)',
+                  border: '1px dashed rgba(16, 185, 129, 0.25)',
+                  borderRadius: '10px'
+                }}>
+                  ✨ No hay solicitudes pendientes de aprobación de jefatura.
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Tabs de Filtro */}
       <div style={{ display: 'flex', background: 'var(--bg-secondary)', borderRadius: '10px', padding: '0.2rem', border: '1px solid var(--glass-border)' }}>
         {[
@@ -508,16 +798,16 @@ export default function MobileTradesView({
       </div>
 
       {/* LISTA DE TARJETAS DE CAMBIO */}
-      {userTrades.length > 0 ? (
+      {sortedTrades.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-          {userTrades.map((trade, idx) => {
+          {sortedTrades.map((trade, idx) => {
             const statusInfo = getStatusBadge(trade);
             const StatusIcon = statusInfo.icon;
             const isTarget = isSameCtrl(trade.toSig, currentUser);
             const isMyRequest = isSameCtrl(trade.fromSig, currentUser);
 
             return (
-              <div key={idx} style={{
+              <div key={trade.id || idx} style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
                 borderRadius: '14px',

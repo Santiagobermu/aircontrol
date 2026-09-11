@@ -178,7 +178,8 @@ export default function TradePanel({
       toControllerId: ctrlBId,
       fromSlot: { shift: shiftA, slotKey: keyA },
       toSlot: type === 'SWAP' ? { shift: shiftB, slotKey: keyB } : null,
-      status: userRole === 'admin' || userRole === 'supervisor' ? 'PENDIENTE_APROBACION' : 'PENDIENTE'
+      status: userRole === 'admin' || userRole === 'supervisor' ? 'PENDIENTE_APROBACION' : 'PENDIENTE',
+      createdAt: new Date().toISOString()
     };
 
     onAddTrade(newTrade);
