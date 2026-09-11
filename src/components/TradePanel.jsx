@@ -577,7 +577,7 @@ export default function TradePanel({
                         </>
                       ) : (
                         <>
-                          <strong>{ctrlB?.name || t.toControllerId}</strong> asume el turno de <em>{t.fromSlot.shift} - {getSlotDescription(t.fromSlot.slotKey)}</em> original de <strong>{ctrlA?.name || t.fromControllerId}</strong> (SMG cede, SBG hace el turno).
+                          <strong>{ctrlB?.name || t.toControllerId}</strong> asume el turno de <em>{t.fromSlot.shift} - {getSlotDescription(t.fromSlot.slotKey)}</em> original de <strong>{ctrlA?.name || t.fromControllerId}</strong> ({ctrlA?.name || t.fromControllerId} cede, {ctrlB?.name || t.toControllerId} asume el turno).
                         </>
                       )}
                     </div>
@@ -702,11 +702,26 @@ export default function TradePanel({
         onClose={() => setIsBoletaModalOpen(false)}
         trade={selectedBoletaTrade}
         controllers={controllers}
-        supervisor={
-          controllers.find(c => isSameCtrl(c, selectedBoletaTrade?.supervisorId || selectedBoletaTrade?.approvedBy, controllers)) ||
-          controllers.find(c => (c.isSupervisor || c.isAdmin || (c.skills && c.skills.includes('CTE'))) && (c.signatureDataUrl || c.signatureUrl)) ||
-          controllers.find(c => c.isSupervisor || c.isAdmin)
-        }
+        supervisor={(() => {
+          if (!selectedBoletaTrade) return null;
+          const supIdentifier = selectedBoletaTrade.supervisorId || selectedBoletaTrade.approvedById || selectedBoletaTrade.approvedBy;
+          if (supIdentifier) {
+            const found = controllers.find(c => isSameCtrl(c, supIdentifier, controllers));
+            if (found && !isSameCtrl(found, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(found, selectedBoletaTrade.toControllerId, controllers)) {
+              return found;
+            }
+          }
+          const shift = selectedBoletaTrade.fromSlot?.shift;
+          const dateStr = selectedBoletaTrade.date;
+          const shiftCteId = schedule?.[dateStr]?.[shift]?.['CTE-1'];
+          if (shiftCteId) {
+            const cteCtrl = controllers.find(c => isSameCtrl(c, shiftCteId, controllers));
+            if (cteCtrl && !isSameCtrl(cteCtrl, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(cteCtrl, selectedBoletaTrade.toControllerId, controllers)) {
+              return cteCtrl;
+            }
+          }
+          return null;
+        })()}
       />
 
     </div>

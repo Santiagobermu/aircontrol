@@ -60,6 +60,7 @@ import { isNotamActiveOnDate, formatNotamDateRange, categorizeNotam, getUtcDateS
 import NotificationCenterModal from './NotificationCenterModal';
 import { useNotifications } from '../utils/useNotifications';
 import SignatureModal from './SignatureModal';
+import { dispatchBoletaToPowerAutomate } from '../utils/boletaDispatcher';
 
 export default function ControllerPortal({ 
   userEmail, 
@@ -1061,6 +1062,23 @@ export default function ControllerPortal({
       await triggerCalendarSyncIfEnabled(trade.toControllerId, controllers, yr, mo, updatedSchedule, exceptions);
       
       alert('Solicitud de cambio aprobada y ejecutada con éxito.');
+
+      // Despacho automático de la boleta oficial firmada a SharePoint y correos vía Power Automate
+      dispatchBoletaToPowerAutomate({
+        trade: updatedTrade,
+        controllers,
+        supervisor: currentController
+      }).then(async (res) => {
+        console.log('Despacho de boleta exitoso (Portal):', res);
+        await updateTradeDB({
+          ...updatedTrade,
+          dispatchStatus: 'sent',
+          dispatchedAt: res.dispatchedAt,
+          dispatchedRecipients: res.recipients.join(';')
+        });
+      }).catch(err => {
+        console.error('Error despachando boleta a Power Automate (Portal):', err);
+      });
     } catch (err) {
       console.error(err);
       alert('Error al ejecutar la aprobación: ' + err.message);

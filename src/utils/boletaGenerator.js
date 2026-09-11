@@ -202,21 +202,19 @@ export async function generateBoletaPdf({
   if (!supervisorCtrl && supervisor) {
     supervisorCtrl = controllers.find(c => isSameCtrl(c, supervisor, controllers)) || supervisor;
   }
-  // Si está aprobado y aún no encontramos controller con firma, buscar en controllers a un supervisor/admin con firma
-  if (!supervisorCtrl && isApproved) {
-    supervisorCtrl = controllers.find(c => 
-      (c.isSupervisor || c.isAdmin || c.role === 'admin' || c.role === 'supervisor' || (c.skills && c.skills.includes('CTE'))) &&
-      (c.signatureDataUrl || c.signatureUrl)
-    );
-  }
 
   const sigA = trade.solicitanteSignature || ctrlA.signatureDataUrl || ctrlA.signatureUrl;
   const sigB = trade.receptorSignature || ctrlB.signatureDataUrl || ctrlB.signatureUrl;
-  const sigSupervisor = trade.supervisorSignature || 
-                        supervisorCtrl?.signatureDataUrl || 
-                        supervisorCtrl?.signatureUrl || 
-                        supervisor?.signatureDataUrl || 
-                        supervisor?.signatureUrl;
+  
+  // Firma digital del supervisor que aprobó el cambio (si tiene firma registrada en el sistema)
+  const rawSupervisorSig = trade.supervisorSignature || 
+                           supervisorCtrl?.signatureDataUrl || 
+                           supervisorCtrl?.signatureUrl || 
+                           supervisor?.signatureDataUrl || 
+                           supervisor?.signatureUrl || 
+                           null;
+
+  const sigSupervisor = isApproved ? rawSupervisorSig : null;
 
   const supervisorName = trade.supervisorName || 
                          trade.approvedBy || 
@@ -290,7 +288,7 @@ export async function generateBoletaPdf({
   if (imgSigB) {
     drawImageContained(page, imgSigB, colX.firmaBox.x, colX.firmaBox.y, colX.firmaBox.w, colX.firmaBox.h);
   } else {
-    drawTextCentered(page, `(Pendiente ${ctrlB.name || 'ATC'})`, toPdfX(865), row1Y, 6.5, fontRegular, rgb(0.5, 0.5, 0.5));
+    drawTextCentered(page, '(Pendiente firma electrónica)', toPdfX(865), row1Y, 5.8, fontRegular, rgb(0.5, 0.5, 0.5));
   }
 
   // --- FILA 2 (Solo si es SWAP: turno recíproco devuelto) ---
@@ -320,7 +318,7 @@ export async function generateBoletaPdf({
     if (imgSigA) {
       drawImageContained(page, imgSigA, firmaBox2.x, firmaBox2.y, firmaBox2.w, firmaBox2.h);
     } else {
-      drawTextCentered(page, `(Pendiente ${ctrlA.name || 'ATC'})`, toPdfX(865), row2Y, 6.5, fontRegular, rgb(0.5, 0.5, 0.5));
+      drawTextCentered(page, '(Pendiente firma electrónica)', toPdfX(865), row2Y, 5.8, fontRegular, rgb(0.5, 0.5, 0.5));
     }
   }
 
@@ -353,12 +351,12 @@ export async function generateBoletaPdf({
   if (imgSigA) {
     drawImageContained(page, imgSigA, firmaSolBox.x, firmaSolBox.y, firmaSolBox.w, firmaSolBox.h);
   } else {
-    page.drawText(`Pendiente firma ${ctrlA.name || ''}`, {
-      x: firmaSolBox.x + 20,
+    page.drawText(`(Pendiente firma electrónica ${ctrlA.name || ''})`, {
+      x: firmaSolBox.x + 10,
       y: firmaSolBox.y + 8,
-      size: 7,
+      size: 6.8,
       font: fontRegular,
-      color: rgb(0.6, 0.6, 0.6)
+      color: rgb(0.5, 0.5, 0.5)
     });
   }
 
@@ -375,10 +373,17 @@ export async function generateBoletaPdf({
   } else if (isApproved) {
     page.drawText(`APROBADO - ${supervisorName.toUpperCase()}`, {
       x: firmaSupBox.x + 5,
-      y: firmaSupBox.y + 8,
-      size: 7,
+      y: firmaSupBox.y + 14,
+      size: 6.8,
       font: fontBold,
       color: rgb(0.1, 0.55, 0.2)
+    });
+    page.drawText('(Pendiente firma electrónica)', {
+      x: firmaSupBox.x + 5,
+      y: firmaSupBox.y + 5,
+      size: 5.8,
+      font: fontRegular,
+      color: rgb(0.45, 0.45, 0.45)
     });
   } else {
     page.drawText('(Pendiente Aprobación Supervisor)', {
@@ -386,7 +391,7 @@ export async function generateBoletaPdf({
       y: firmaSupBox.y + 8,
       size: 6.8,
       font: fontRegular,
-      color: rgb(0.6, 0.6, 0.6)
+      color: rgb(0.5, 0.5, 0.5)
     });
   }
 

@@ -46,6 +46,7 @@ import { db, auth } from './utils/firebase';
 import { onSnapshot, collection, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword } from 'firebase/auth';
 import { triggerCalendarSyncIfEnabled, syncAllEnabledCalendars } from './utils/calendarExport';
+import { dispatchBoletaToPowerAutomate } from './utils/boletaDispatcher';
 import {
   seedDatabaseIfEmpty,
   addControllerDB,
@@ -866,20 +867,27 @@ export default function App() {
     await saveScheduleDayDB(dateStr, updatedSchedule[dateStr]);
 
     // Identificar al supervisor / encargado de turno que realiza la aprobación
-    const approvingSupervisor = controllers.find(c => 
+    const loggedInCtrl = controllers.find(c => 
       (c.email && c.email.toLowerCase() === currentUser?.email?.toLowerCase()) || 
-      isSameCtrl(c, currentUser?.email?.split('@')[0]) ||
-      isSameCtrl(c, currentUser?.displayName)
-    ) || {
-      id: currentUser?.email?.split('@')[0] || 'SUPERVISOR',
-      name: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Encargado de Turno',
-      fullName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Encargado de Turno',
+      isSameCtrl(c, currentUser?.email?.split('@')[0], controllers) ||
+      isSameCtrl(c, currentUser?.displayName, controllers)
+    );
+
+    // Buscar si hay un CTE asignado en el Roster para ese día y turno
+    const shiftCteId = updatedSchedule?.[dateStr]?.[fromShift]?.['CTE-1'];
+    const shiftCteCtrl = shiftCteId ? controllers.find(c => isSameCtrl(c, shiftCteId, controllers)) : null;
+
+    const approvingSupervisor = loggedInCtrl || shiftCteCtrl || {
+      id: 'CTE-TORRE',
+      name: 'Encargado de Turno',
+      fullName: 'Encargado de Turno',
       referenceNumber: ''
     };
 
+    // Estampar la firma del supervisor que aprobó el cambio si la tiene registrada
     const supervisorSignature = approvingSupervisor?.signatureDataUrl || approvingSupervisor?.signatureUrl || trade.supervisorSignature || null;
-    const supervisorName = approvingSupervisor?.fullName || approvingSupervisor?.name || currentUser?.displayName || 'Encargado de Turno';
-    const supervisorId = approvingSupervisor?.id || approvingSupervisor?.signature || currentUser?.email?.split('@')[0] || 'SUPERVISOR';
+    const supervisorName = approvingSupervisor?.fullName || approvingSupervisor?.name || 'Encargado de Turno';
+    const supervisorId = approvingSupervisor?.id || 'SUPERVISOR';
     const supervisorReferenceNumber = approvingSupervisor?.referenceNumber || '';
 
     // Actualizar estado de la solicitud de cambio a APROBADO en Firestore
@@ -911,6 +919,25 @@ export default function App() {
 
     setSelectedDayStr(dateStr);
     alert(`¡Cambio para el día ${dateStr} aprobado y aplicado con éxito en el Roster oficial!`);
+
+    // Despacho automático de la boleta oficial firmada a SharePoint y correos vía Power Automate
+    dispatchBoletaToPowerAutomate({
+      trade: updatedTrade,
+      controllers,
+      supervisor: approvingSupervisor
+    }).then(async (res) => {
+      console.log('Despacho de boleta exitoso:', res);
+      await updateTradeDB({
+        ...updatedTrade,
+        dispatchStatus: 'sent',
+        dispatchedAt: res.dispatchedAt,
+        dispatchedRecipients: res.recipients.join(';')
+      });
+      showNotification(`✓ Boleta oficial archivada en SharePoint y enviada por correo a ${res.recipients.length} destinatarios.`, 'success');
+    }).catch(err => {
+      console.error('Error despachando boleta a Power Automate:', err);
+      showNotification(`Cambio aprobado, pero hubo un aviso en el despacho de correo: ${err.message}`, 'warning');
+    });
   };
 
   // Aceptar propuesta recibida (Paso 1: Acuerdo entre compañeros)

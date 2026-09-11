@@ -970,11 +970,26 @@ export default function MobileTradesView({
         onClose={() => setIsBoletaModalOpen(false)}
         trade={selectedBoletaTrade}
         controllers={controllers}
-        supervisor={
-          controllers.find(c => isSameCtrl(c, selectedBoletaTrade?.supervisorId || selectedBoletaTrade?.approvedBy, controllers)) ||
-          controllers.find(c => (c.isSupervisor || c.isAdmin || (c.skills && c.skills.includes('CTE'))) && (c.signatureDataUrl || c.signatureUrl)) ||
-          currentUser
-        }
+        supervisor={(() => {
+          if (!selectedBoletaTrade) return null;
+          const supIdentifier = selectedBoletaTrade.supervisorId || selectedBoletaTrade.approvedById || selectedBoletaTrade.approvedBy;
+          if (supIdentifier) {
+            const found = controllers.find(c => isSameCtrl(c, supIdentifier, controllers));
+            if (found && !isSameCtrl(found, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(found, selectedBoletaTrade.toControllerId, controllers)) {
+              return found;
+            }
+          }
+          const shift = selectedBoletaTrade.fromSlot?.shift;
+          const dateStr = selectedBoletaTrade.date;
+          const shiftCteId = scheduleMonth?.[dateStr]?.[shift]?.['CTE-1'];
+          if (shiftCteId) {
+            const cteCtrl = controllers.find(c => isSameCtrl(c, shiftCteId, controllers));
+            if (cteCtrl && !isSameCtrl(cteCtrl, selectedBoletaTrade.fromControllerId, controllers) && !isSameCtrl(cteCtrl, selectedBoletaTrade.toControllerId, controllers)) {
+              return cteCtrl;
+            }
+          }
+          return null;
+        })()}
       />
 
     </div>

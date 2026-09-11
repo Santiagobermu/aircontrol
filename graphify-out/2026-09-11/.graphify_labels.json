@@ -8,7 +8,7 @@
   "6": "devDependencies",
   "7": "storage.js",
   "8": "manifest.json",
-  "9": "boletaGenerator.js",
+  "9": "getSlotAcronym",
   "10": "AirControl Architecture Summary",
   "11": "AirControl HTML Entrypoint",
   "12": "eslint.config.js",

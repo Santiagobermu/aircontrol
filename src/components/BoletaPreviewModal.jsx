@@ -8,10 +8,13 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Send,
+  Share2
 } from 'lucide-react';
 import { generateBoletaPdf } from '../utils/boletaGenerator';
 import { isSameCtrl } from '../utils/schedulerEngine';
+import { dispatchBoletaToPowerAutomate } from '../utils/boletaDispatcher';
 
 export default function BoletaPreviewModal({
   isOpen,
@@ -21,9 +24,12 @@ export default function BoletaPreviewModal({
   supervisor = null
 }) {
   const [loading, setLoading] = useState(true);
+  const [pdfBytes, setPdfBytes] = useState(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
   const [fileName, setFileName] = useState('Boleta_ATC.pdf');
   const [error, setError] = useState(null);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchResult, setDispatchResult] = useState(null);
 
   const renderPdf = async () => {
     if (!trade) {
@@ -38,6 +44,7 @@ export default function BoletaPreviewModal({
         controllers,
         supervisor
       });
+      setPdfBytes(result.pdfBytes);
       setPdfBlobUrl(result.blobUrl);
       setFileName(result.fileName);
     } catch (err) {
@@ -45,6 +52,28 @@ export default function BoletaPreviewModal({
       setError('Error generando el documento PDF: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDispatch = async () => {
+    if (!trade || !pdfBytes) return;
+    setDispatching(true);
+    setDispatchResult(null);
+    try {
+      const res = await dispatchBoletaToPowerAutomate({
+        trade,
+        controllers,
+        supervisor,
+        pdfBytes,
+        fileName
+      });
+      setDispatchResult({ success: true, message: res.message });
+      setTimeout(() => setDispatchResult(null), 8000);
+    } catch (err) {
+      console.error('Error despachando boleta a Power Automate:', err);
+      setDispatchResult({ success: false, message: 'Error: ' + err.message });
+    } finally {
+      setDispatching(false);
     }
   };
 
@@ -153,7 +182,7 @@ export default function BoletaPreviewModal({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             {trade && (
               <button
                 type="button"
@@ -163,6 +192,46 @@ export default function BoletaPreviewModal({
                 title="Recargar documento"
               >
                 <RefreshCw size={13} className={loading ? 'spin' : ''} />
+              </button>
+            )}
+
+            {trade && pdfBytes && (
+              <button
+                type="button"
+                id="btn-despachar-boleta"
+                onClick={handleDispatch}
+                disabled={dispatching || loading}
+                className="btn"
+                style={{
+                  fontSize: '0.78rem',
+                  padding: '0.45rem 0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  backgroundColor: dispatchResult?.success 
+                    ? 'rgba(16, 185, 129, 0.2)' 
+                    : 'rgba(6, 182, 212, 0.2)',
+                  border: `1px solid ${dispatchResult?.success ? 'var(--status-success)' : 'var(--accent-cyan)'}`,
+                  color: dispatchResult?.success ? 'var(--status-success)' : 'var(--accent-cyan)',
+                  fontWeight: '700',
+                  cursor: dispatching ? 'not-allowed' : 'pointer',
+                  borderRadius: '8px'
+                }}
+                title="Despachar boleta por correo a los interesados y archivar en SharePoint de la Torre"
+              >
+                {dispatching ? (
+                  <>
+                    <RefreshCw size={14} className="spin" /> Despachando...
+                  </>
+                ) : dispatchResult?.success ? (
+                  <>
+                    <CheckCircle2 size={14} /> ¡Despachado a SharePoint!
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} /> Despachar a Correos & SharePoint
+                  </>
+                )}
               </button>
             )}
 
@@ -200,6 +269,23 @@ export default function BoletaPreviewModal({
             </button>
           </div>
         </div>
+
+        {/* Notificación de resultado del despacho */}
+        {dispatchResult && (
+          <div style={{
+            padding: '0.45rem 1.5rem',
+            background: dispatchResult.success ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+            borderBottom: `1px solid ${dispatchResult.success ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.78rem',
+            color: dispatchResult.success ? 'var(--status-success)' : 'var(--status-danger)'
+          }}>
+            {dispatchResult.success ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+            <span>{dispatchResult.message}</span>
+          </div>
+        )}
 
         {/* Visor Interactivo de la Boleta Oficial */}
         <div style={{
