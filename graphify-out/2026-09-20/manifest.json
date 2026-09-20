@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1789929366.6355581,
-    "ast_hash": "2235f13c3c3c1a851135469c04c3669b",
+    "mtime": 1789149140.6603339,
+    "ast_hash": "e60e605ad5c411e1dbc1cf24ab93b02b",
     "semantic_hash": ""
   },
   "src/components/AICopilotPanel.jsx": {
@@ -150,8 +150,8 @@
     "semantic_hash": ""
   },
   "src/components/mobile/MobileTradesView.jsx": {
-    "mtime": 1789929443.3347814,
-    "ast_hash": "6a0aba5294f77c7dfd598c67dfc480b0",
+    "mtime": 1789153589.700662,
+    "ast_hash": "3bc048bfa5269d33c7726f2431ef37d8",
     "semantic_hash": ""
   },
   "src/main.jsx": {

@@ -960,44 +960,43 @@ export default function App() {
     });
   };
 
-  // Aceptar propuesta recibida (Paso 1: Acuerdo entre compañeros)
-  const handleAcceptTrade = async (id) => {
+  // Aceptar propuesta recibida (Paso 1: Acuerdo entre compañeros - Directa o Abierta)
+  const handleAcceptTrade = async (id, acceptingController = null, chosenToSlot = null) => {
     const trade = trades.find(t => t.id === id);
     if (!trade) {
       alert('No se encontró la solicitud de cambio especificada.');
       return;
     }
 
-    const { ctrlA, ctrlB, dateStr, fromSlot, toSlot } = resolveTradeSlots(trade, schedule);
+    const { ctrlA, ctrlB: resolvedCtrlB, dateStr, fromSlot, toSlot: resolvedToSlot } = resolveTradeSlots(trade, schedule);
+
+    // Si es solicitud abierta o se especifica acceptingController, resolver ctrlB adecuadamente
+    const isOpenTrade = Boolean(trade.isPublic || trade.toControllerId === 'OPEN' || trade.targetSignature === 'OPEN' || trade.targetSignature === 'Abierta');
+    const ctrlB = (isOpenTrade || acceptingController)
+      ? (acceptingController || (currentUser ? resolveController(currentUser) : null) || resolvedCtrlB)
+      : (resolvedCtrlB || acceptingController);
+
+    // Resolver el toSlot: si se pasa chosenToSlot (ej. en SWAP abierto)
+    const toSlot = chosenToSlot || resolvedToSlot || trade.toSlot || null;
+
     const isEncargadoOrAdmin = isUserAdmin || userRole === 'admin' || userRole === 'supervisor' || ctrlB?.isSupervisor || ctrlB?.isAdmin || (ctrlB?.skills && ctrlB.skills.includes('CTE'));
 
     // Validaciones de habilidades
-    const posA = fromSlot.slotKey.split('-')[0];
-    if (posA !== 'ENT' && ctrlB?.skills && !ctrlB.skills.includes(posA)) {
+    const posA = fromSlot?.slotKey?.split('-')?.[0];
+    if (posA && posA !== 'ENT' && ctrlB?.skills && !ctrlB.skills.includes(posA)) {
       const proceed = window.confirm(`Advertencia: ${ctrlB.name || 'El receptor'} no tiene registrada la certificación ${posA} para cubrir este turno. ¿Deseas continuar?`);
       if (!proceed) return;
     }
 
     if (trade.type === 'SWAP' && toSlot) {
-      const posB = toSlot.slotKey.split('-')[0];
-      if (posB !== 'ENT' && ctrlA?.skills && !ctrlA.skills.includes(posB)) {
+      const posB = toSlot?.slotKey?.split('-')?.[0];
+      if (posB && posB !== 'ENT' && ctrlA?.skills && !ctrlA.skills.includes(posB)) {
         const proceed = window.confirm(`Advertencia: ${ctrlA.name || 'El solicitante'} no tiene registrada la certificación ${posB} para cubrir tu turno. ¿Deseas continuar?`);
         if (!proceed) return;
       }
     }
 
-    // Si el usuario que acepta es Supervisor/Admin, puede ejecutar directamente si lo desea
-    if (isEncargadoOrAdmin) {
-      const confirmDirect = window.confirm(
-        `Eres Supervisor/Jefatura. ¿Deseas APROBAR Y APLICAR directamente este cambio al Roster oficial del ${dateStr}?`
-      );
-      if (confirmDirect) {
-        await executeTradeScheduleChange(trade, ctrlA, ctrlB, dateStr, fromSlot, toSlot);
-        return;
-      }
-    }
-
-    // Actualizar estado a PENDIENTE_APROBACION en Firestore
+    // Preparar objeto actualizado del cambio acordado
     const updatedTrade = {
       ...trade,
       date: dateStr,
@@ -1006,11 +1005,26 @@ export default function App() {
       fromControllerSignature: getCtrlSig(ctrlA),
       toControllerId: ctrlB?.id || trade.toControllerId || getCtrlSig(ctrlB),
       toControllerSignature: getCtrlSig(ctrlB),
+      targetSignature: getCtrlSig(ctrlB),
+      targetName: ctrlB?.name || ctrlB?.id || 'Compañero',
+      targetShift: toSlot ? `${toSlot.shift}${getSlotAcronym(toSlot.slotKey, toSlot.shift)}` : (trade.type === 'COVER' ? 'Reemplazo' : trade.targetShift),
       fromSlot,
       toSlot,
+      isPublic: false,
       status: 'PENDIENTE_APROBACION',
       acceptedAt: new Date().toISOString()
     };
+
+    // Si el usuario que acepta es Supervisor/Admin, puede ejecutar directamente si lo desea
+    if (isEncargadoOrAdmin) {
+      const confirmDirect = window.confirm(
+        `Eres Supervisor/Jefatura. ¿Deseas APROBAR Y APLICAR directamente este cambio al Roster oficial del ${dateStr}?`
+      );
+      if (confirmDirect) {
+        await executeTradeScheduleChange(updatedTrade, ctrlA, ctrlB, dateStr, fromSlot, toSlot);
+        return;
+      }
+    }
 
     await updateTradeDB(updatedTrade);
     alert(`¡Has aceptado la propuesta de cambio para el ${dateStr} con ${ctrlA?.name || 'tu compañero'}! Ha sido enviada a Jefatura/Supervisor para su aprobación final.`);

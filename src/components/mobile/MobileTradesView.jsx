@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, CheckCircle2, Clock, XCircle, Plus, ArrowRightLeft, ShieldCheck, X, User, FileText, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { getSlotAcronym } from '../../utils/schedulerEngine';
 import BoletaPreviewModal from '../BoletaPreviewModal';
 
@@ -22,10 +22,55 @@ export default function MobileTradesView({
   const [selectedBoletaTrade, setSelectedBoletaTrade] = useState(null);
   const [isBoletaModalOpen, setIsBoletaModalOpen] = useState(false);
 
+  // Estados y manejadores para Modal de Aceptación de Propuesta (Directa o Abierta)
+  const [tradeToAccept, setTradeToAccept] = useState(null);
+  const [selectedSwapSlot, setSelectedSwapSlot] = useState(null);
+  const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
+
   // Estados y manejadores para Modal de Aprobación de Supervisor (Mobile)
   const [tradeToApprove, setTradeToApprove] = useState(null);
   const [selectedApproverId, setSelectedApproverId] = useState('');
   const [isCtePanelExpanded, setIsCtePanelExpanded] = useState(true);
+
+  const handleStartAcceptTrade = (trade) => {
+    setTradeToAccept(trade);
+    const isTradeOpen = Boolean(trade.isPublic || trade.toSig === 'OPEN' || trade.toSig === 'ALL' || trade.rawTrade?.toControllerId === 'OPEN');
+    const targetDate = (trade.dateStr || trade.date || trade.rawTrade?.dateStr || trade.rawTrade?.date || '').trim();
+
+    if (trade.type === 'SWAP') {
+      const myShifts = getMyShiftsForDate(targetDate);
+      const fromCtrl = controllers.find(c => isSameCtrl(c, trade.fromSig));
+      // Preseleccionar el primer turno compatible del usuario en esa fecha
+      const compatible = myShifts.find(s => isControllerQualified(fromCtrl, s.requiredSkill)) || myShifts[0] || null;
+      setSelectedSwapSlot(compatible);
+    } else {
+      setSelectedSwapSlot(null);
+    }
+
+    setIsAcceptModalOpen(true);
+  };
+
+  const handleConfirmAcceptTrade = () => {
+    if (!tradeToAccept) return;
+    const isTradeOpen = Boolean(tradeToAccept.isPublic || tradeToAccept.toSig === 'OPEN' || tradeToAccept.toSig === 'ALL' || tradeToAccept.rawTrade?.toControllerId === 'OPEN');
+
+    if (tradeToAccept.type === 'SWAP') {
+      if (!selectedSwapSlot) {
+        alert('Debes tener y seleccionar un turno asignado para realizar el intercambio.');
+        return;
+      }
+      onAcceptTrade && onAcceptTrade(tradeToAccept.id, currentUser, {
+        shift: selectedSwapSlot.shift,
+        slotKey: selectedSwapSlot.slotKey
+      });
+    } else {
+      onAcceptTrade && onAcceptTrade(tradeToAccept.id, currentUser, null);
+    }
+
+    setIsAcceptModalOpen(false);
+    setTradeToAccept(null);
+    setSelectedSwapSlot(null);
+  };
 
   const isEncargado = userRole === 'admin' || currentUser?.isSupervisor || currentUser?.isAdmin || (currentUser?.skills && currentUser.skills.includes('CTE'));
 
@@ -511,6 +556,10 @@ export default function MobileTradesView({
     if (trade.status === 'pending_admin' || trade.rawStatus === 'PENDIENTE_APROBACION') {
       return { label: 'Esperando Jefatura', color: 'var(--accent-cyan)', bg: 'rgba(6, 182, 212, 0.15)', icon: Clock };
     }
+    const isTradeOpen = Boolean(trade.isPublic || trade.toSig === 'OPEN' || trade.toSig === 'ALL' || trade.rawTrade?.toControllerId === 'OPEN');
+    if (isTradeOpen) {
+      return { label: 'Oferta Abierta', color: 'var(--accent-cyan)', bg: 'rgba(6, 182, 212, 0.15)', icon: ArrowRightLeft };
+    }
     return { label: 'Pendiente Aceptación', color: 'var(--status-warning)', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock };
   };
 
@@ -805,6 +854,7 @@ export default function MobileTradesView({
             const StatusIcon = statusInfo.icon;
             const isTarget = isSameCtrl(trade.toSig, currentUser);
             const isMyRequest = isSameCtrl(trade.fromSig, currentUser);
+            const isOpen = Boolean(trade.isPublic || trade.toSig === 'OPEN' || trade.toSig === 'ALL' || trade.rawTrade?.toControllerId === 'OPEN');
 
             return (
               <div key={trade.id || idx} style={{
@@ -818,11 +868,24 @@ export default function MobileTradesView({
                 gap: '0.6rem'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                     <ArrowRightLeft size={16} color="var(--accent-cyan)" />
                     <span style={{ fontSize: '0.82rem', fontWeight: '800', color: 'var(--text-primary)' }}>
                       Fecha: {trade.dateStr || 'Sin fecha'}
                     </span>
+                    {isOpen && (
+                      <span style={{
+                        background: 'rgba(6, 182, 212, 0.12)',
+                        border: '1px solid rgba(6, 182, 212, 0.3)',
+                        color: 'var(--accent-cyan)',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '6px',
+                        fontSize: '0.65rem',
+                        fontWeight: '800'
+                      }}>
+                        🌐 Abierta
+                      </span>
+                    )}
                   </div>
                   <span style={{
                     background: statusInfo.bg,
@@ -877,11 +940,11 @@ export default function MobileTradesView({
 
                 {/* Acciones según el rol y estado de la solicitud */}
                 
-                {/* 1. Solicitud pendiente de aceptación dirigida a mí */}
+                {/* 1. Solicitud pendiente de aceptación dirigida directamente a mí */}
                 {isTarget && (trade.status === 'pending' || trade.rawStatus === 'PENDIENTE_ACEPTACION') && (
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
                     <button
-                      onClick={() => onAcceptTrade && onAcceptTrade(trade.id)}
+                      onClick={() => handleStartAcceptTrade(trade)}
                       style={{
                         flex: 1,
                         background: 'rgba(16, 185, 129, 0.18)',
@@ -929,7 +992,44 @@ export default function MobileTradesView({
                   </div>
                 )}
 
-                {/* 2. Solicitud acordada entre compañeros, pendiente de aprobación de jefatura (si soy encargado/admin) */}
+                {/* 2. Solicitud abierta a cualquier compañero y yo NO soy el solicitante */}
+                {isOpen && !isMyRequest && (trade.status === 'pending' || trade.rawStatus === 'PENDIENTE_ACEPTACION') && (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+                    <button
+                      onClick={() => handleStartAcceptTrade(trade)}
+                      style={{
+                        flex: 1,
+                        background: trade.type === 'COVER' ? 'rgba(16, 185, 129, 0.18)' : 'rgba(6, 182, 212, 0.18)',
+                        border: `1px solid ${trade.type === 'COVER' ? 'var(--status-success)' : 'var(--accent-cyan)'}`,
+                        color: trade.type === 'COVER' ? 'var(--status-success)' : 'var(--accent-cyan)',
+                        borderRadius: '8px',
+                        padding: '0.55rem',
+                        fontWeight: '800',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                      }}
+                    >
+                      {trade.type === 'COVER' ? (
+                        <>
+                          <CheckCircle2 size={16} />
+                          Tomar Turno (Cubrir)
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRightLeft size={16} />
+                          Aceptar Intercambio (SWAP)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* 3. Solicitud acordada entre compañeros, pendiente de aprobación de jefatura (si soy encargado/admin) */}
                 {isEncargado && (trade.status === 'pending_admin' || trade.rawStatus === 'PENDIENTE_APROBACION') && (
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
                     <button
@@ -979,9 +1079,18 @@ export default function MobileTradesView({
                   </div>
                 )}
 
-                {/* 3. Solicitud enviada por mí que sigue pendiente: opción para cancelarla */}
+                {/* 4. Solicitud enviada por mí que sigue pendiente: opción para cancelarla */}
                 {isMyRequest && (trade.status === 'pending' || trade.status === 'pending_admin') && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.2rem' }}>
+                    {isOpen ? (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', fontStyle: 'italic' }}>
+                        Esperando que un compañero tome la oferta abierta
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Esperando respuesta del compañero
+                      </span>
+                    )}
                     <button
                       onClick={() => {
                         if (window.confirm('¿Deseas cancelar esta propuesta de cambio enviada?')) {
@@ -1396,6 +1505,299 @@ export default function MobileTradesView({
           </div>
         </div>
       )}
+
+      {/* Modal de Aceptar Propuesta (Directa o Abierta) */}
+      {isAcceptModalOpen && tradeToAccept && (() => {
+        const isTradeOpen = Boolean(tradeToAccept.isPublic || tradeToAccept.toSig === 'OPEN' || tradeToAccept.toSig === 'ALL' || tradeToAccept.rawTrade?.toControllerId === 'OPEN');
+        const fromCtrl = controllers.find(c => isSameCtrl(c, tradeToAccept.fromSig));
+        const targetDate = (tradeToAccept.dateStr || tradeToAccept.date || tradeToAccept.rawTrade?.dateStr || tradeToAccept.rawTrade?.date || '').trim();
+        const myShiftsOnDate = getMyShiftsForDate(targetDate);
+
+        // Determinar habilidad requerida para el turno que deja fromCtrl
+        const fromShiftObj = tradeToAccept.rawTrade?.fromSlot;
+        const requiredSkillForFromShift = fromShiftObj 
+          ? getRequiredSkillForSlot(fromShiftObj.slotKey, fromShiftObj.shift)
+          : getRequiredSkillForSlot(tradeToAccept.fromShift);
+
+        const isCurrentQualified = isControllerQualified(currentUser, requiredSkillForFromShift);
+
+        // En COVER: verificar si el usuario ya tiene un turno en la misma jornada (ej: ambos turno Mañana M)
+        const hasSameShiftConflict = tradeToAccept.type === 'COVER' && fromShiftObj && myShiftsOnDate.some(s => s.shift === fromShiftObj.shift);
+
+        // En SWAP: verificar si fromCtrl está habilitado para el turno seleccionado del usuario actual
+        const isFromCtrlQualifiedForSelected = selectedSwapSlot 
+          ? isControllerQualified(fromCtrl, selectedSwapSlot.requiredSkill)
+          : true;
+
+        const canConfirm = tradeToAccept.type === 'COVER' 
+          ? !hasSameShiftConflict 
+          : (myShiftsOnDate.length > 0 && selectedSwapSlot !== null);
+
+        return (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999999,
+            padding: '1rem'
+          }}>
+            <div className="glass-panel" style={{
+              maxWidth: '480px',
+              width: '100%',
+              background: '#0d131f',
+              borderRadius: '16px',
+              border: `1px solid ${tradeToAccept.type === 'COVER' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(6, 182, 212, 0.4)'}`,
+              padding: '1.25rem',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '0.6rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {tradeToAccept.type === 'COVER' ? (
+                    <CheckCircle2 size={22} color="var(--status-success)" />
+                  ) : (
+                    <ArrowRightLeft size={22} color="var(--accent-cyan)" />
+                  )}
+                  <div>
+                    <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '800' }}>
+                      {tradeToAccept.type === 'COVER' ? 'Aceptar Reemplazo (COVER)' : 'Aceptar Intercambio (SWAP)'}
+                    </h4>
+                    <span style={{ fontSize: '0.7rem', color: isTradeOpen ? 'var(--accent-cyan)' : 'var(--text-secondary)' }}>
+                      {isTradeOpen ? '🌐 Solicitud abierta a cualquier compañero' : 'Solicitud directa'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAcceptModalOpen(false);
+                    setTradeToAccept(null);
+                    setSelectedSwapSlot(null);
+                  }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Resumen del Turno Solicitado */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.07)',
+                fontSize: '0.76rem',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.35rem'
+              }}>
+                <div><strong>Solicitante:</strong> {tradeToAccept.fromName} ({tradeToAccept.fromSig})</div>
+                <div><strong>Fecha:</strong> {tradeToAccept.dateStr}</div>
+                <div>
+                  <strong>Turno a recibir / cubrir:</strong>{' '}
+                  <span style={{ color: 'var(--accent-cyan)', fontWeight: '800', fontFamily: 'var(--font-mono)' }}>
+                    {tradeToAccept.fromShift}
+                  </span>
+                </div>
+                {tradeToAccept.comment && (
+                  <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '0.2rem' }}>
+                    "{tradeToAccept.comment}"
+                  </div>
+                )}
+              </div>
+
+              {/* Advertencia de Habilitación para el usuario actual */}
+              {!isCurrentQualified && requiredSkillForFromShift && (
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.1)',
+                  border: '1px solid var(--status-warning)',
+                  borderRadius: '8px',
+                  padding: '0.6rem',
+                  fontSize: '0.72rem',
+                  color: 'var(--status-warning)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}>
+                  <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                  <span>
+                    Aviso: No tienes registrada la habilitación operativa <strong>{requiredSkillForFromShift}</strong> para este turno.
+                  </span>
+                </div>
+              )}
+
+              {/* LÓGICA ESPECÍFICA SEGÚN TIPO */}
+              {tradeToAccept.type === 'COVER' ? (
+                <div>
+                  {hasSameShiftConflict ? (
+                    <div style={{
+                      background: 'rgba(244, 63, 94, 0.1)',
+                      border: '1px solid var(--status-danger)',
+                      borderRadius: '8px',
+                      padding: '0.6rem',
+                      fontSize: '0.72rem',
+                      color: 'var(--status-danger)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}>
+                      <XCircle size={16} style={{ flexShrink: 0 }} />
+                      <span>
+                        Conflicto de horario: Ya tienes un turno asignado en la jornada ({fromShiftObj?.shift}) en esta misma fecha. No es posible cubrir dos posiciones al mismo tiempo.
+                      </span>
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                      Al aceptar, te comprometes a cubrir el turno de <strong>{tradeToAccept.fromName}</strong> el día <strong>{tradeToAccept.dateStr}</strong>.
+                      La solicitud quedará acordada y se remitirá a Jefatura/Supervisor para su aprobación y aplicación en el Roster oficial.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* SWAP */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  <label style={{ fontSize: '0.76rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    Selecciona tu turno a ceder ({currentUser?.name}):
+                  </label>
+
+                  {myShiftsOnDate.length === 0 ? (
+                    <div style={{
+                      background: 'rgba(244, 63, 94, 0.1)',
+                      border: '1px solid var(--status-danger)',
+                      borderRadius: '8px',
+                      padding: '0.6rem',
+                      fontSize: '0.72rem',
+                      color: 'var(--status-danger)',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.4rem'
+                    }}>
+                      <XCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <div>
+                        <strong>No tienes turno asignado este día ({tradeToAccept.dateStr}).</strong>
+                        <p style={{ margin: '0.2rem 0 0 0', opacity: 0.9 }}>
+                          Para realizar un intercambio (SWAP) debes tener una posición asignada en esa fecha para entregar a cambio.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {myShiftsOnDate.map((slot, idx) => {
+                        const isSelected = selectedSwapSlot && selectedSwapSlot.shift === slot.shift && selectedSwapSlot.slotKey === slot.slotKey;
+                        const isFromQualified = isControllerQualified(fromCtrl, slot.requiredSkill);
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedSwapSlot(slot)}
+                            style={{
+                              background: isSelected ? 'rgba(6, 182, 212, 0.15)' : 'var(--bg-tertiary)',
+                              border: `1px solid ${isSelected ? 'var(--accent-cyan)' : 'var(--glass-border)'}`,
+                              borderRadius: '8px',
+                              padding: '0.6rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <div style={{
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                border: `2px solid ${isSelected ? 'var(--accent-cyan)' : 'var(--text-muted)'}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}>
+                                {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-cyan)' }} />}
+                              </div>
+                              <div>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '800', fontSize: '0.82rem', color: isSelected ? 'var(--accent-cyan)' : 'var(--text-primary)' }}>
+                                  {slot.fullCode}
+                                </span>
+                                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block' }}>
+                                  Posición: {slot.slotKey} (Jornada {slot.shift})
+                                </span>
+                              </div>
+                            </div>
+
+                            {!isFromQualified && (
+                              <span style={{ fontSize: '0.65rem', color: 'var(--status-warning)', background: 'rgba(245, 158, 11, 0.1)', padding: '0.15rem 0.35rem', borderRadius: '4px' }}>
+                                Sin hab. {slot.requiredSkill}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {!isFromCtrlQualifiedForSelected && selectedSwapSlot && (
+                    <div style={{
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid var(--status-warning)',
+                      borderRadius: '8px',
+                      padding: '0.5rem',
+                      fontSize: '0.7rem',
+                      color: 'var(--status-warning)'
+                    }}>
+                      ⚠️ Advertencia: {tradeToAccept.fromName} no tiene registrada la certificación ({selectedSwapSlot.requiredSkill}) para el turno seleccionado.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Botones de Acción */}
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAcceptModalOpen(false);
+                    setTradeToAccept(null);
+                    setSelectedSwapSlot(null);
+                  }}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.78rem', padding: '0.5rem 0.9rem' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={!canConfirm}
+                  onClick={handleConfirmAcceptTrade}
+                  className="btn btn-primary"
+                  style={{
+                    fontSize: '0.78rem',
+                    padding: '0.5rem 1.1rem',
+                    fontWeight: '800',
+                    opacity: canConfirm ? 1 : 0.5,
+                    cursor: canConfirm ? 'pointer' : 'not-allowed',
+                    background: tradeToAccept.type === 'COVER' ? 'var(--status-success)' : 'var(--accent-cyan)',
+                    color: '#000'
+                  }}
+                >
+                  Confirmar y Acordar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
