@@ -31,5 +31,18 @@ venv/
 __pycache__/
 *.pyc
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Firebase & Cloud Credentials
+firebase-config.json
+*serviceAccount*.json
+*credentials*.json
+*.pem
+*.key
+*.p12
+
 # Scratch
 scratch/

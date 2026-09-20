@@ -4,11 +4,6 @@
     "ast_hash": "3aa4b57d7f08181d86bde52a4dcb7f22",
     "semantic_hash": "3aa4b57d7f08181d86bde52a4dcb7f22"
   },
-  "firebase-config.json": {
-    "mtime": 1780188992.520711,
-    "ast_hash": "",
-    "semantic_hash": ""
-  },
   "firebase.json": {
     "mtime": 1783648008.5243585,
     "ast_hash": "",
@@ -165,14 +160,14 @@
     "semantic_hash": ""
   },
   "src/utils/db.js": {
-    "mtime": 1788975915.0078197,
-    "ast_hash": "90587b7f91b3d575b78dead84d32d88d",
+    "mtime": 1789932318.6062102,
+    "ast_hash": "6c56ddb279287aee33f0a3a73d01758a",
     "semantic_hash": ""
   },
   "src/utils/firebase.js": {
-    "mtime": 1783038849.2988262,
-    "ast_hash": "92f4ec4d8a8cc7e0297a7df065a80448",
-    "semantic_hash": "92f4ec4d8a8cc7e0297a7df065a80448"
+    "mtime": 1789932303.23363,
+    "ast_hash": "af13bbbf31bce039bb59189e7a6e38bb",
+    "semantic_hash": ""
   },
   "src/utils/ortoolsScheduler.js": {
     "mtime": 1785020995.946934,
@@ -330,8 +325,8 @@
     "semantic_hash": ""
   },
   "src/utils/boletaDispatcher.js": {
-    "mtime": 1789149152.309573,
-    "ast_hash": "f772b617701886d69781b813ed0f7cf1",
+    "mtime": 1789932293.7314317,
+    "ast_hash": "50089c26638fbbe513c1086e3db68db4",
     "semantic_hash": ""
   }
 }

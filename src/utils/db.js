@@ -1,4 +1,4 @@
-import { db } from './firebase';
+import { db, firebaseConfig } from './firebase';
 import { 
   collection, 
   doc, 
@@ -262,15 +262,6 @@ export const deleteTradeDB = async (id) => {
   await deleteDoc(doc(db, 'trades', id));
 };
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDYg4_HddIkdsBuMk8td_2A-sOYS8tb8O8",
-  authDomain: "aircontrol-skbo-sbg.firebaseapp.com",
-  projectId: "aircontrol-skbo-sbg",
-  storageBucket: "aircontrol-skbo-sbg.firebasestorage.app",
-  messagingSenderId: "588241571134",
-  appId: "1:588241571134:web:c830794477a968392a306f",
-  measurementId: "G-XXZ19PF4WH"
-};
 
 /**
  * Registra un usuario en Firebase Authentication usando una aplicación secundaria,

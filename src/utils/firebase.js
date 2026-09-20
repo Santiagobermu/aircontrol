@@ -3,14 +3,14 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDYg4_HddIkdsBuMk8td_2A-sOYS8tb8O8",
-  authDomain: "aircontrol-skbo-sbg.firebaseapp.com",
-  projectId: "aircontrol-skbo-sbg",
-  storageBucket: "aircontrol-skbo-sbg.firebasestorage.app",
-  messagingSenderId: "588241571134",
-  appId: "1:588241571134:web:c830794477a968392a306f",
-  measurementId: "G-XXZ19PF4WH"
+export const firebaseConfig = {
+  apiKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) || "AIzaSyDYg4_HddIkdsBuMk8td_2A-sOYS8tb8O8",
+  authDomain: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN) || "aircontrol-skbo-sbg.firebaseapp.com",
+  projectId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_PROJECT_ID) || "aircontrol-skbo-sbg",
+  storageBucket: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET) || "aircontrol-skbo-sbg.firebasestorage.app",
+  messagingSenderId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID) || "588241571134",
+  appId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_APP_ID) || "1:588241571134:web:c830794477a968392a306f",
+  measurementId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_MEASUREMENT_ID) || "G-XXZ19PF4WH"
 };
 
 // Initialize Firebase

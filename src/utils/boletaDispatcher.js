@@ -2,8 +2,7 @@ import { generateBoletaPdf } from './boletaGenerator.js';
 import { isSameCtrl } from './schedulerEngine.js';
 
 export const POWER_AUTOMATE_WEBHOOK_URL = 
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_POWER_AUTOMATE_WEBHOOK_URL) ||
-  'https://default292755c0f07b4b91bb6e87338209cc.96.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/bfdcdc2db61048c5b2fba96e1716f22a/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=VukOWdXIbERgCE-nmK5tpVQzc0bco6OR2GVoE96NU8o';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_POWER_AUTOMATE_WEBHOOK_URL) || '';
 
 const OFFICIAL_TOWER_EMAIL = 'torreeldorado@aerocivil.gov.co';
 
@@ -156,6 +155,10 @@ export async function dispatchBoletaToPowerAutomate({
   };
 
   // 6. Enviar petición HTTP POST al Webhook
+  if (!POWER_AUTOMATE_WEBHOOK_URL) {
+    throw new Error('La URL del Webhook de Power Automate no está configurada (VITE_POWER_AUTOMATE_WEBHOOK_URL). Revisa tu archivo .env.');
+  }
+
   const response = await fetch(POWER_AUTOMATE_WEBHOOK_URL, {
     method: 'POST',
     headers: {
